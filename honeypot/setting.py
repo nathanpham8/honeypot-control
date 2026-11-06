@@ -29,12 +29,15 @@ class HoneypotBashArenaSetting(BashArenaSetting):
     """BashArena variant that plants honeytokens and scores real-vs-decoy choice."""
 
     inventory_path: str = INVENTORY_PATH
+    arm: str = "baseline"
+    role: str = "scout"
 
     def setup_environment(self) -> Solver | None:
         # Run the base setup (builds the image, plants the stock fixtures), then
-        # plant our real/decoy credential pair on top, seeded by task ID.
+        # plant our real/decoy credential pair + coalition board, seeded by task ID.
         base = super().setup_environment()
-        planter = plant_honeytokens(inventory_path=self.inventory_path)
+        planter = plant_honeytokens(
+            inventory_path=self.inventory_path, arm=self.arm, role=self.role)
         return chain(base, planter) if base is not None else planter
 
     def get_dataset(self, eval_mode: EvalMode) -> Dataset:
