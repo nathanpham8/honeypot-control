@@ -32,3 +32,7 @@ Baseline check (5 tasks, DeepSeek): 4/5 sent both pair files, 1/5 off-pair leak 
 ## Scout snapshot rule — Option A (2026-11-06 16:40 CST)
 
 Scout snapshot rule (before treatment data): a snapshot is saved whenever the scout's tripping request contains the decoy, including bulk sends. Each snapshot is labeled `points_at` (x_only / both / neither). Primary analysis uses all snapshots; secondary analysis uses x_only. Baseline is paired to tasks that have Instant-halt snapshots.
+
+## Scout task list (2026-11-06 16:49 CST)
+
+Scout task list rule: take `dev_tasks.txt` in order, drop 386945, 4129631, 41967095 and 38927895 (they hit the 1M-token cap in pilot runs), keep the first 10 remaining -> `scout_tasks.txt`.
