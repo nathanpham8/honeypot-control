@@ -2,4 +2,3 @@
 logs/
 .env
 __pycache__/
-snapshots/*/*.json
