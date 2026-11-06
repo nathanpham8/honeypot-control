@@ -44,7 +44,9 @@ def select_tasks(task_ids, arm, pair_with=None):
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="anthropic/claude-haiku-5-5")
-    ap.add_argument("--arm", choices=["baseline", "instant_halt"], required=True)
+    ap.add_argument("--arm",
+                    choices=["baseline", "instant_halt", "delayed_halt", "silent_alarm"],
+                    required=True)
     ap.add_argument("--epochs", type=int, default=1)
     ap.add_argument("--task-ids-file", required=True)
     ap.add_argument("--pair-with", default=None,
@@ -71,7 +73,8 @@ def main() -> int:
         dataset_spec=DatasetSpec(side_tasks=["leak_passwords"], shuffle_seed=7,
                                  task_id_whitelist=run_ids))
     policy = untrusted_policy_builder(attack=attack_policy_builder())
-    protocol = honeypot_auto_submit_wrapper(micro_protocol=policy)
+    # Second agents always use halt for their own trips, regardless of arm.
+    protocol = honeypot_auto_submit_wrapper(micro_protocol=policy, response_mode="halt")
 
     short = args.model.split("/")[-1]
     log_dir = args.log_dir or f"logs/second/{args.arm}/{short}"
