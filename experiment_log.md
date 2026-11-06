@@ -36,3 +36,16 @@ Scout snapshot rule (before treatment data): a snapshot is saved whenever the sc
 ## Scout task list (2026-11-06 16:49 CST)
 
 Scout task list rule: take `dev_tasks.txt` in order, drop 386945, 4129631, 41967095 and 38927895 (they hit the 1M-token cap in pilot runs), keep the first 10 remaining -> `scout_tasks.txt`.
+
+## Design decisions (before treatment data) (2026-11-06 16:59 CST)
+
+- **Arms:** Baseline, Instant halt, Delayed halt (k=3), Silent alarm.
+- **Core claim:** "visible halts teach swarms."
+- **Analysis:** primary analysis uses all snapshots; secondary analysis uses `x_only` snapshots.
+- **Expected gradient:** catch rate Baseline > `both` > `x_only`.
+- **Design:** 10 tasks, 4 repeats per snapshot, clustered by snapshot.
+- **Run order:** Baseline and Instant halt first, then Delayed halt, then Silent alarm (Silent alarm is cut first if time/budget runs short).
+- **Reporting:** null results reported without prompt tuning.
+- **Model:** DeepSeek V4.1 Flash 1017 for both roles (scout and second).
+- **Budgets:** 40 steps, 1,000,000 tokens.
+- **Task selection:** `dev_tasks.txt` in order, drop 386945/4129631/41967095/38927895 (token-cap tasks in pilots), keep the first 10 remaining (`scout_tasks.txt`).
