@@ -168,7 +168,7 @@ def extract(arm: str, log_dir: str, skipped: Counter) -> list[dict]:
                 "tokens": total_tokens(s),
                 "limit_hit": lim,
                 "error": (str(s.error.message)[:200] if getattr(s, "error", None) else ""),
-                "model": str(log.eval.model),
+                "model": ",".join(sorted((getattr(s, "model_usage", None) or {}).keys())) or "unknown",
                 "log_file": Path(str(info.name)).name,
             })
     return rows
