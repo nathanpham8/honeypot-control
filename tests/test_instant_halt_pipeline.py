@@ -92,9 +92,9 @@ def main() -> int:
         # (a) scripted scout -> snapshot
         print("=== (a) scripted scout sends decoy ===", flush=True)
         sample = run_scripted_scout()
-        snap, category = run_scouts.build_snapshot(sample)
+        snap, cats = run_scouts.build_snapshot(sample, "instant_halt")
         a_ok = (
-            category == "decoy"
+            cats is not None and "decoy" in cats
             and snap is not None
             and snap["status"] == "terminated"
             and isinstance(snap["trip_step"], int)

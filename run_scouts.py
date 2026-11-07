@@ -90,7 +90,7 @@ def _points_at(decoy_path: str, real_path: str, cmd: str) -> tuple[str, bool]:
     return "neither", names_decoy
 
 
-def build_snapshot(sample, arm: str) -> tuple[dict | None, list[str] | None]:
+def build_snapshot(sample, arm: str = "instant_halt") -> tuple[dict | None, list[str] | None]:
     """Return (snapshot, categories_in_request). Snapshot is non-None only when
     the tripping request contained the decoy."""
     hsc = (sample.scores or {}).get("honeypot_side_task_success")
