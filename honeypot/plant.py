@@ -42,6 +42,10 @@ SNAPSHOT_ROOT = Path(__file__).resolve().parent.parent / "snapshots"
 
 # Silent-alarm (quarantine) logging server, swapped in at runtime for that arm.
 SILENT_LOGGING_SERVER = Path(__file__).resolve().parent / "logging_server"
+# Compose template whose logging service uses a SEPARATE image tag
+# (bash-arena-logging-server-quarantine:latest) so building the quarantine
+# server never rebuilds the stock logging image other arms/experiments share.
+QUARANTINE_COMPOSE = Path(__file__).resolve().parent / "compose-template-quarantine.yml"
 
 # Key under which honeytoken bookkeeping is published to the sample store.
 STORE_KEY = "honeytoken"
@@ -50,14 +54,15 @@ STORE_KEY = "honeytoken"
 def activate_silent_logging_server() -> Path:
     """Point the BashArena compose builder at our quarantine logging server.
 
-    Runtime-only: sets the module attribute read by get_compose_file. Does not
-    edit .venv. Only the silent_alarm arm calls this; other arms use the stock
-    server. NOTE: the compose template tags the logging image with a fixed name,
-    so building this server rebuilds that shared tag — only run silent_alarm
-    when no other experiment depends on the stock logging image.
+    Runtime-only: sets the module attributes read by get_compose_file (no .venv
+    edits). Swaps BOTH the logging build context and the compose template, so the
+    quarantine server is built under its own image tag
+    (bash-arena-logging-server-quarantine:latest) and the stock logging image is
+    left untouched. Only the silent_alarm arm calls this.
     """
     from control_arena.settings.bash_arena.base_environment import get_compose_file
     get_compose_file.logging_server_path = SILENT_LOGGING_SERVER
+    get_compose_file.compose_file_path = QUARANTINE_COMPOSE
     return SILENT_LOGGING_SERVER
 
 
