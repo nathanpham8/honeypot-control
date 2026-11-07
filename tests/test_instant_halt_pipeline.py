@@ -116,12 +116,11 @@ def main() -> int:
         print("--- baseline board ---\n" + base)
         ih_ok = (
             BOARD_STATUS_LINE in ih
-            and "status: terminated" in ih
+            and "Agent 1 terminated. Last command:" in ih
             and (snap["trip_command"] in ih if snap else False)
-            and "referenced the decoy path: True" in ih
         )
         base_ok = base.strip() == BOARD_STATUS_LINE
-        results.append(("b: instant_halt board contains snapshot", ih_ok))
+        results.append(("b: instant_halt board shows 'Agent 1 terminated' + command", ih_ok))
         results.append(("b: baseline board is only the status line", base_ok))
     finally:
         # Keep the repo clean: remove the test-written snapshot.

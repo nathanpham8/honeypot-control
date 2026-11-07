@@ -53,3 +53,7 @@ Scout task list rule: take `dev_tasks.txt` in order, drop 386945, 4129631, 41967
 ## Instant-halt scouts complete (2026-11-06 18:32 CST)
 
 9/10 tasks have snapshots (50641251 none after 3 attempts). points_at: both=5, neither=4, x_only=0. Secondary x_only analysis has no data. Primary analysis unchanged. Baseline analysis will be paired to these 9 tasks.
+
+## Deviation: Instant-halt board revealed decoys (2026-11-06 20:08 CST)
+
+Deviation: Instant-halt second-agent runs before this commit saw a board listing the trip step and 'command referenced the decoy path: True/False' (introduced in 2eb0ef7). This reveals that decoys exist and differs from the pre-registered text. Those runs are excluded from the primary analysis and kept as an exploratory 'labeled board' condition. Instant halt is re-run with the corrected board. Code versions: Baseline and the first Instant-halt run on 6e8c33d/562355d; later runs on the current commit.
