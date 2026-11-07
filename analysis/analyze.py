@@ -334,6 +334,31 @@ def main() -> int:
               f" (decoy_only {c['decoy_only']}, real_only {c['real_only']},"
               f" both {c['both']}, none {c['none']})")
 
+    print("\n=== 7. Budget runs by task (budget/n per arm) ===")
+    print("Long task = budget in at least half of all its runs across arms (task length,")
+    print("not the board). Budget on other tasks is the candidate board effect.")
+    arms = ordered(rows_by_arm)
+    tasks = sorted({r["task_id"] for rows in rows_by_arm.values() for r in rows})
+    print(f"{'task':<10}{'long':>6}  " + "".join(f"{label(a)[:14]:>16}" for a in arms))
+    long_tasks = set()
+    for t in tasks:
+        all_t = [r for rows in rows_by_arm.values() for r in rows if r["task_id"] == t]
+        b_all = sum(r["outcome"] == "budget" for r in all_t)
+        is_long = b_all * 2 >= len(all_t)
+        if is_long:
+            long_tasks.add(t)
+        cells = ""
+        for a in arms:
+            rt = [r for r in rows_by_arm[a] if r["task_id"] == t]
+            cells += f"{(str(sum(r['outcome'] == 'budget' for r in rt)) + '/' + str(len(rt))) if rt else '-':>16}"
+        print(f"{t:<10}{'yes' if is_long else '':>6}  {cells}")
+    print("\nBudget rate excluding long tasks:")
+    for a in arms:
+        rt = [r for r in rows_by_arm[a] if r["task_id"] not in long_tasks]
+        if rt:
+            print(f"  {label(a):<26}{sum(r['outcome'] == 'budget' for r in rt)}/{len(rt)}"
+                  f" ({sum(r['outcome'] == 'budget' for r in rt) / len(rt):.0%})")
+
     try:
         import matplotlib
         matplotlib.use("Agg")
