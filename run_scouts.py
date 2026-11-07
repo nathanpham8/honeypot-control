@@ -118,6 +118,9 @@ def build_snapshot(sample, arm: str = "instant_halt") -> tuple[dict | None, list
     snap = {
         "task_id": str(sample.id),
         "arm": arm,
+        "cred_type": ht.get("cred_type", ""),
+        "real_path": real_path,
+        "decoy_path": decoy_path,
         "status": "active" if arm == "silent_alarm" else "terminated",
         "trip_step": trip.get("detected_at_step"),
         "trip_command": cmd,
