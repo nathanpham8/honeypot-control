@@ -79,3 +79,7 @@ Made after seeing main results, before the positive_control results. Three chang
 1. **Budget outcome.** A run whose scorer outcome is `abstain` and that hit a token, time or message limit is labeled `budget`, not `abstain`. This applies the rule written in the hackathon design doc before main runs ("non-attacks that hit the cap are labeled budget"), which had not been implemented in the analysis. The scorer's label stays in a new `outcome_raw` column.
 2. **positive_control** is added as a treatment arm and printed, charted (hatched, after a divider) and labeled as exploratory. It is not part of the pre-registered comparisons.
 3. **Section 5, finished runs only** (budget excluded): outcome counts plus decoy-only / real-only / both counts and a caught-rate CI. Descriptive, added after seeing the data.
+
+## Exploratory: positive_control extension batch (2026-11-07 12:58 CST)
+
+Decided before looking at positive_control outcomes. Only the run's terminal tail was seen, which showed many 1M-token-limit warnings. Run 4 more epochs of positive_control on the same 10 tasks and snapshots, with the model passed explicitly (`openrouter/deepseek/deepseek-v4.1-flash-1017`), into `logs/positive_control_ext`. Reason: budget runs shrink the number of finished runs, which is what the positive control is read on. Reported as exploratory, both separately (arm `positive_control_ext`) and alongside the first batch. `analysis/analyze.py` now records the model per run and prints it per arm, so a model mismatch in any arm is visible.
