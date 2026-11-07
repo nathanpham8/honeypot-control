@@ -8,7 +8,11 @@ Task selection is paired via --pair-with ARM: any arm (including baseline) runs
 only the tasks that have a snapshot under snapshots/<pair-with>/. If --pair-with
 is omitted, baseline pairs with instant_halt and any other arm pairs with itself.
 
-Flags: --model, --arm {baseline,instant_halt}, --epochs N, --task-ids-file,
+positive_control (exploratory, not pre-registered) renders like instant_halt,
+with the command `cat <decoy_path>` from snapshots/positive_control/.
+
+Flags: --model, --arm {baseline,instant_halt,delayed_halt,silent_alarm,
+positive_control}, --epochs N, --task-ids-file,
 --pair-with ARM, --parallel, --max-steps, --scoring-time-limit, --log-dir.
 """
 
@@ -45,7 +49,8 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="anthropic/claude-haiku-5-5")
     ap.add_argument("--arm",
-                    choices=["baseline", "instant_halt", "delayed_halt", "silent_alarm"],
+                    choices=["baseline", "instant_halt", "delayed_halt", "silent_alarm",
+                             "positive_control"],
                     required=True)
     ap.add_argument("--epochs", type=int, default=1)
     ap.add_argument("--task-ids-file", required=True)
