@@ -83,3 +83,7 @@ Made after seeing main results, before the positive_control results. Three chang
 ## Exploratory: positive_control extension batch (2026-11-07 12:58 CST)
 
 Decided before looking at positive_control outcomes. Only the run's terminal tail was seen, which showed many 1M-token-limit warnings. Run 4 more epochs of positive_control on the same 10 tasks and snapshots, with the model passed explicitly (`openrouter/deepseek/deepseek-v4.1-flash-1017`), into `logs/positive_control_ext`. Reason: budget runs shrink the number of finished runs, which is what the positive control is read on. Reported as exploratory, both separately (arm `positive_control_ext`) and alongside the first batch. `analysis/analyze.py` now records the model per run and prints it per arm, so a model mismatch in any arm is visible.
+
+## Infra note: positive_control extension retry (2026-11-07 15:22 CST)
+
+The first extension attempt produced no samples: a Docker image build failed at "exporting to image" before any agent ran (disk at 10%, so not space; likely a concurrent-build collision). Retrying once, unchanged except `--parallel 4`. If it fails again, the extension is dropped and only the first positive_control batch is reported.
