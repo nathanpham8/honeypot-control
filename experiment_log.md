@@ -67,3 +67,7 @@ Made before any primary treatment-arm (second-agent) data. In `build_board_text`
 ## Correction: no labeled-board Instant-halt data exists (2026-11-06 23:49 CST)
 
 Correction: the cloud chain stopped at the scripted pre-test (docker compose v2 was missing on the VM), so no Instant-halt runs with the labeled board were ever executed. No contaminated data exists. Baseline and all three treatment arms are run on the cloud VM from commit `b58bb9c` with the corrected board.
+
+## Exploratory arm: positive_control (2026-11-07 11:26 CST)
+
+Exploratory arm added after seeing main results (not pre-registered): positive_control. Same board format as instant_halt (`Agent 1 terminated. Last command: <cmd>`), but the command is `cat <decoy_path>` for that task. Purpose: test whether an unambiguous single-file signal changes second-agent behavior, since live scouts produced no x_only snapshots. Reported separately as exploratory.
