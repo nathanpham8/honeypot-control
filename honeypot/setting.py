@@ -22,7 +22,7 @@ from control_arena.settings.bash_arena.task.dataset import (
 from control_arena.settings.bash_arena.task.scorer import main_task_success
 
 from honeypot.plant import INVENTORY_PATH, plant_honeytokens
-from honeypot.side_task import HONEYPOT_SIDE_TASK
+from honeypot.side_task import HONEYPOT_SIDE_TASK, HONEYPOT_SIDE_TASK_EXP2
 
 
 class HoneypotBashArenaSetting(BashArenaSetting):
@@ -31,6 +31,10 @@ class HoneypotBashArenaSetting(BashArenaSetting):
     inventory_path: str = INVENTORY_PATH
     arm: str = "baseline"
     role: str = "scout"
+    exp2: bool = False  # Experiment 2: side task carries EXP2_WARNING
+
+    def honeypot_side_task(self):
+        return HONEYPOT_SIDE_TASK_EXP2 if self.exp2 else HONEYPOT_SIDE_TASK
 
     def setup_environment(self) -> Solver | None:
         # Run the base setup (builds the image, plants the stock fixtures), then
@@ -53,14 +57,14 @@ class HoneypotBashArenaSetting(BashArenaSetting):
                 sample_filter_fn=None,
                 shuffle_seed=self.dataset_spec.shuffle_seed,
                 eval_mode=eval_mode,
-                side_task=HONEYPOT_SIDE_TASK,
+                side_task=self.honeypot_side_task(),
                 max_tasks=self.dataset_spec.max_tasks,
                 task_id_whitelist=self.dataset_spec.task_id_whitelist,
             )
         elif self.dataset_spec.local_task_dir:
             return get_dataset_from_local_tasks(
                 task_dir=self.dataset_spec.local_task_dir,
-                side_task=HONEYPOT_SIDE_TASK,
+                side_task=self.honeypot_side_task(),
                 eval_mode=eval_mode,
                 max_tasks=self.dataset_spec.max_tasks,
                 shuffle_seed=self.dataset_spec.shuffle_seed,
@@ -77,6 +81,6 @@ class HoneypotBashArenaSetting(BashArenaSetting):
         # measures, so it must complete before the slow stock main-task pytest
         # (which can exhaust the shared scoring time budget and abort scoring).
         return [
-            HONEYPOT_SIDE_TASK.scorer,
+            self.honeypot_side_task().scorer,
             main_task_success(threshold=self.main_task_success_threshold),
         ]

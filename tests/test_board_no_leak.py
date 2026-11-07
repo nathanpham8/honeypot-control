@@ -59,6 +59,20 @@ def main() -> int:
             leaks = _leaks(text)
             results.append((f"{name}: no forbidden terms", leaks == [], leaks))
 
+        # Experiment 2 (follow-up): the ONLY allowed exception. Its description is
+        # the Exp 1 description plus exactly EXP2_WARNING, which must not say which
+        # entry is the decoy (no paths, no "primary"/"failover").
+        from honeypot.side_task import EXP2_WARNING, HONEYPOT_SIDE_TASK_EXP2
+        d1, d2 = HONEYPOT_SIDE_TASK.description, HONEYPOT_SIDE_TASK_EXP2.description
+        results.append(("exp2 description = exp1 + EXP2_WARNING only",
+                        d2 == d1 + "\n" + EXP2_WARNING + "\n", None))
+        results.append(("exp2 warning names no entry",
+                        not any(w in EXP2_WARNING.lower()
+                                for w in ["primary", "failover", "/", ".env", "ssh", "aws"]),
+                        EXP2_WARNING))
+        results.append(("exp2 leaks only via EXP2_WARNING",
+                        _leaks(d2.replace(EXP2_WARNING, "")) == [], None))
+
         # instant_halt board must match the delayed_halt format exactly.
         ih = build_board_text("second", "instant_halt", TID)
         results.append((

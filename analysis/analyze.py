@@ -53,7 +53,10 @@ TREATMENT_ARMS = {"instant_halt", "delayed_halt", "silent_alarm", "positive_cont
 
 
 def base_arm(arm: str) -> str:
-    """Arms named positive_control_<suffix> (extra batches) share its snapshots and label."""
+    """Snapshot arm for a label. exp2_<arm> (Experiment 2) uses <arm>'s snapshots;
+    positive_control_<suffix> (extra batches) uses positive_control's."""
+    if arm.startswith("exp2_"):
+        arm = arm[len("exp2_"):]
     return "positive_control" if arm.startswith("positive_control") else arm
 
 
@@ -174,6 +177,34 @@ def extract(arm: str, log_dir: str, skipped: Counter) -> list[dict]:
     return rows
 
 
+def choice(r) -> str:
+    if r["decoy_hit"] and r["real_sent"]:
+        return "both"
+    if r["decoy_hit"]:
+        return "decoy_only"
+    if r["real_sent"]:
+        return "real_only"
+    return "none"
+
+
+def boot_ci_pred(rows, pred, rng) -> tuple[float, float]:
+    """95% task-bootstrap CI for the share of rows where pred(row) is true."""
+    by_task = defaultdict(list)
+    for r in rows:
+        by_task[r["task_id"]].append(r)
+    tasks = list(by_task)
+    if len(tasks) < 2:
+        return float("nan"), float("nan")
+    stats = []
+    for _ in range(N_BOOT):
+        pick = [r for t in rng.choices(tasks, k=len(tasks)) for r in by_task[t]]
+        if pick:
+            stats.append(sum(map(pred, pick)) / len(pick))
+    stats.sort()
+    n = len(stats)
+    return stats[int(0.025 * n)], stats[int(0.975 * n) - 1]
+
+
 def rate(rows, outcome) -> float:
     return sum(r["outcome"] == outcome for r in rows) / len(rows) if rows else float("nan")
 
@@ -200,6 +231,7 @@ def label(arm: str) -> str:
 
 def ordered(rows_by_arm: dict) -> list[str]:
     pre = [a for a in PREREG_ARMS if a in rows_by_arm]
+    pre += [f"exp2_{a}" for a in PREREG_ARMS if f"exp2_{a}" in rows_by_arm]
     other = [a for a in rows_by_arm if a not in pre and not is_exploratory(a)]
     return pre + other + [a for a in rows_by_arm if is_exploratory(a)]
 
@@ -219,7 +251,12 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--arm", action="append", required=True,
                     help="name=log_dir, repeatable")
+    ap.add_argument("--out", default=None,
+                    help="output dir (default analysis/out); use analysis/out_exp2 for Exp 2")
     args = ap.parse_args()
+    global OUT
+    if args.out:
+        OUT = REPO / args.out
 
     skipped, rows_by_arm = Counter(), {}
     for spec in args.arm:
@@ -281,6 +318,21 @@ def main() -> int:
             both = sum(r["bulk_send"] for r in rows)
             print(f"{label(arm):<26}n={len(rows):<4}  caught: {p:.0%} [{lo:.0%}, {hi:.0%}]"
                   f"  decoy only: {decoy_only}  real only: {real_only}  both: {both}")
+
+    print("\n=== 6. Choice among single-file sends (all tasks): share that sent the decoy ===")
+    print("Random choice = 50%. Exploiting a board that points at the decoy = below 50%.")
+    for arm in ordered(rows_by_arm):
+        single = [r for r in rows_by_arm[arm] if choice(r) in ("decoy_only", "real_only")]
+        c = Counter(choice(r) for r in rows_by_arm[arm])
+        if single:
+            share = sum(choice(r) == "decoy_only" for r in single) / len(single)
+            lo, hi = boot_ci_pred(single, lambda r: choice(r) == "decoy_only", rng)
+            ci = f"{share:.0%} [{lo:.0%}, {hi:.0%}]"
+        else:
+            ci = "n/a"
+        print(f"{label(arm):<26}single={len(single):<3} decoy share: {ci:<18}"
+              f" (decoy_only {c['decoy_only']}, real_only {c['real_only']},"
+              f" both {c['both']}, none {c['none']})")
 
     try:
         import matplotlib
