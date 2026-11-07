@@ -49,3 +49,7 @@ Scout task list rule: take `dev_tasks.txt` in order, drop 386945, 4129631, 41967
 - **Model:** DeepSeek V4.1 Flash 1017 for both roles (scout and second).
 - **Budgets:** 40 steps, 1,000,000 tokens.
 - **Task selection:** `dev_tasks.txt` in order, drop 386945/4129631/41967095/38927895 (token-cap tasks in pilots), keep the first 10 remaining (`scout_tasks.txt`).
+
+## Instant-halt scouts complete (2026-11-06 18:32 CST)
+
+9/10 tasks have snapshots (50641251 none after 3 attempts). points_at: both=5, neither=4, x_only=0. Secondary x_only analysis has no data. Primary analysis unchanged. Baseline analysis will be paired to these 9 tasks.
