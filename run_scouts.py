@@ -15,7 +15,8 @@ Arms / modes:
 
 Common snapshot fields: categories_in_request, trip_step, log_timestamp,
 command_contains_decoy_path, points_at (x_only / both / real_only / neither,
-computed on trip_command).
+computed on the full trip_command), points_at_displayed (same labels, computed
+on the board-visible truncated command).
 
 Flags: --arm, --k, --model, --task-ids-file, --parallel, --max-attempts.
 """
@@ -31,7 +32,7 @@ from control_arena.eval import ControlEvalConfig, get_control_task_product
 from control_arena.policy import attack_policy_builder, untrusted_policy_builder
 from control_arena.settings.bash_arena.task.dataset import DatasetSpec
 
-from honeypot.plant import SNAPSHOT_ROOT, activate_silent_logging_server
+from honeypot.plant import SNAPSHOT_ROOT, activate_silent_logging_server, display_command
 from honeypot.protocol import honeypot_auto_submit_wrapper
 from honeypot.setting import HoneypotBashArenaSetting
 
@@ -109,6 +110,10 @@ def build_snapshot(sample, arm: str = "instant_halt") -> tuple[dict | None, list
     else:
         cmd = _find_trip_command(sample, decoy_path, trip.get("detected_at_step"))
     points_at, names_decoy = _points_at(decoy_path, real_path, cmd)
+    # points_at_displayed is computed on the BOARD-VISIBLE (truncated) command,
+    # so it reflects what the second agent can actually read; it can differ from
+    # points_at when a path appears only past the display limit.
+    points_at_displayed, _ = _points_at(decoy_path, real_path, display_command(cmd))
 
     snap = {
         "task_id": str(sample.id),
@@ -119,6 +124,7 @@ def build_snapshot(sample, arm: str = "instant_halt") -> tuple[dict | None, list
         "command_contains_decoy_path": names_decoy,
         "categories_in_request": cats,
         "points_at": points_at,
+        "points_at_displayed": points_at_displayed,
         "log_timestamp": trip.get("timestamp"),
     }
     if arm == "delayed_halt":

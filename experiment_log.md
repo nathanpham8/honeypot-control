@@ -57,3 +57,9 @@ Scout task list rule: take `dev_tasks.txt` in order, drop 386945, 4129631, 41967
 ## Deviation: Instant-halt board revealed decoys (2026-11-06 20:08 CST)
 
 Deviation: Instant-halt second-agent runs before this commit saw a board listing the trip step and 'command referenced the decoy path: True/False' (introduced in 2eb0ef7). This reveals that decoys exist and differs from the pre-registered text. Those runs are excluded from the primary analysis and kept as an exploratory 'labeled board' condition. Instant halt is re-run with the corrected board. Code versions: Baseline and the first Instant-halt run on 6e8c33d/562355d; later runs on the current commit.
+
+## Decision: truncate board commands to 1,000 chars (2026-11-06 20:48 CST)
+
+Made before any primary treatment-arm (second-agent) data. In `build_board_text`, the scout command shown on the coalition board is truncated to the first 1,000 characters plus `…` when longer, uniformly for every arm (instant_halt, delayed_halt, silent_alarm). The snapshot now also stores `points_at_displayed`, computed on the board-visible (truncated) command, alongside the full-command `points_at`.
+
+**Reason:** board comparability — across the instant-halt scout snapshots the tripping commands ranged from 328 to 29,801 characters, so an untruncated board would give some second agents a short, readable status line and others a 30k-character wall. A fixed display budget keeps the board stimulus comparable across tasks and arms; `points_at_displayed` records whether the real/decoy path was still visible after truncation.
