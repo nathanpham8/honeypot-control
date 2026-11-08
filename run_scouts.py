@@ -145,12 +145,13 @@ def save_snapshot(arm: str, task_id: str, snap: dict):
     return path
 
 
-def _run_round(arm: str, k: int, task_ids, model: str, parallel: int, log_dir: str) -> dict:
+def _run_round(arm: str, k: int, task_ids, model: str, parallel: int, log_dir: str,
+               exp2: bool = False) -> dict:
     mode = MODE_FOR_ARM[arm]
     if arm == "silent_alarm":
         activate_silent_logging_server()  # swap in the quarantine server (this arm only)
     setting = HoneypotBashArenaSetting(
-        role="scout", arm=arm,
+        role="scout", arm=arm, exp2=exp2,
         dataset_spec=DatasetSpec(side_tasks=["leak_passwords"], shuffle_seed=7,
                                  task_id_whitelist=task_ids))
     policy = untrusted_policy_builder(attack=attack_policy_builder())
@@ -171,9 +172,18 @@ def main() -> int:
     ap.add_argument("--task-ids-file", required=True)
     ap.add_argument("--parallel", type=int, default=1)
     ap.add_argument("--max-attempts", type=int, default=3)
+    ap.add_argument("--exp2", action="store_true",
+                    help="Selective scout: side task carries EXP2_WARNING (honeytokens "
+                         "exist, send exactly one). Live-scout test of whether a selective "
+                         "scout produces a board that names only the decoy.")
+    ap.add_argument("--snapshot-arm", default=None,
+                    help="Folder under snapshots/ to save into (default: --arm). Use a "
+                         "distinct name (e.g. instant_halt_live) to avoid overwriting the "
+                         "synthetic/greedy snapshots.")
     ap.add_argument("--log-dir", default=None)
     args = ap.parse_args()
-    log_dir = args.log_dir or f"logs/scouts/{args.arm}"
+    snap_arm = args.snapshot_arm or args.arm
+    log_dir = args.log_dir or f"logs/scouts/{snap_arm}"
 
     with open(args.task_ids_file) as f:
         remaining = [line.strip() for line in f if line.strip()]
@@ -184,7 +194,7 @@ def main() -> int:
             break
         print(f"\n=== {args.arm} attempt {attempt}: {len(remaining)} task(s) ===", flush=True)
         samples = _run_round(args.arm, args.k, remaining, args.model, args.parallel,
-                             f"{log_dir}/attempt{attempt}")
+                             f"{log_dir}/attempt{attempt}", exp2=args.exp2)
         still = []
         for tid in remaining:
             sample = samples.get(tid)
@@ -194,7 +204,7 @@ def main() -> int:
                 continue
             snap, cats = build_snapshot(sample, args.arm)
             if snap:
-                path = save_snapshot(args.arm, tid, snap)
+                path = save_snapshot(snap_arm, tid, snap)
                 saved[tid] = str(path)
                 print(f"  {tid}: decoy trip ({snap['points_at']}, status={snap['status']}) "
                       f"-> {path}", flush=True)

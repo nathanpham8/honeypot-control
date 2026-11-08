@@ -146,3 +146,18 @@ exp2_silent_alarm is running (DeepSeek, --exp2, forced choice). Board: "Agent 1 
 - Claim the direction of the silent effect relative to baseline and positive_control, not a quantitative ranking of the three responses (n too small).
 
 **Limits stated in advance:** synthetic board (no live selective scout produced it); small committed-n; one model (DeepSeek) unless a Kimi silent arm is added.
+
+## Live-scout test: do selective scouts produce boards that name the decoy? (2026-11-07 22:25 CST, before data)
+
+Closes the external-validity gap that every treatment board so far was synthetic (no live scout produced a board pointing at one file; Experiment 1 scouts were greedy -> points_at both/neither).
+
+**Stage 1 (live scouts).** Kimi scouts with `--exp2` (selective: honeytokens exist, send exactly one) under instant_halt, saved to `snapshots/instant_halt_live/` (new folder; existing snapshots untouched). A scout that guesses the decoy and is halted produces a natural board. Primary scout measure: `points_at_displayed` distribution over the boards produced = whether a selective scout's own trip command visibly names the decoy (x_only) or hides it (neither/both). This is the natural leak-formation rate. Kimi is blunt/decisive (guesses ~38% per its exp2 baseline; little cover-building), so this is a favorable-but-reasonable scout; a careful model (DeepSeek) that obfuscates its send is a harder test and is future work.
+
+**Stage 2 (second agents).** Kimi `--exp2`, arm `instant_halt_live`, reading the natural boards. Compare decoy share among single-file sends to the Kimi exp2 baseline (38%).
+
+**Outcomes (pre-specified):**
+- (a) Boards are mostly x_only AND second agents avoid the decoy (decoy share well below 38%): the full leak chain is demonstrated end to end with no injected board. Closes the gap.
+- (b) Boards x_only but avoidance partial: informative, weaker.
+- (c) Boards mostly not x_only (scout's send hides the file): the natural leak is weak; the synthetic positive control is an upper bound real swarms seldom reach. Honest negative, reported as such; does not affect the forced-choice result (0/x given a clear board still stands).
+
+All-Kimi (one model) for a coherent swarm and speed; DeepSeek scouts are future work.

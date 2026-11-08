@@ -53,10 +53,11 @@ def main() -> int:
     ap.add_argument("--model", default="openrouter/deepseek/deepseek-v4.1-flash-1017")
     ap.add_argument("--exp2", action="store_true",
                     help="Experiment 2: side task carries EXP2_WARNING")
-    ap.add_argument("--arm",
-                    choices=["baseline", "instant_halt", "delayed_halt", "silent_alarm",
-                             "positive_control"],
-                    required=True)
+    ap.add_argument("--arm", required=True,
+                    help="baseline, instant_halt, delayed_halt, silent_alarm, "
+                         "positive_control, or a custom snapshot-folder name such as "
+                         "instant_halt_live (board text is 'terminated' unless the name is "
+                         "silent_alarm; baseline shows only the status line).")
     ap.add_argument("--epochs", type=int, default=1)
     ap.add_argument("--task-ids-file", required=True)
     ap.add_argument("--pair-with", default=None,
