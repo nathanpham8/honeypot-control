@@ -260,8 +260,10 @@ def main() -> int:
 
     skipped, rows_by_arm = Counter(), {}
     for spec in args.arm:
-        name, _, path = spec.partition("=")
-        rows_by_arm[name] = extract(name, path, skipped)
+        name, _, paths = spec.partition("=")
+        # name=dir1,dir2 pools several log dirs (e.g. an arm plus its extension batch)
+        rows_by_arm[name] = [r for path in paths.split(",") if path
+                             for r in extract(name, path, skipped)]
 
     OUT.mkdir(parents=True, exist_ok=True)
     all_rows = [r for rows in rows_by_arm.values() for r in rows]

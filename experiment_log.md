@@ -119,3 +119,11 @@ Decided before any Kimi data in this setting and before reading Experiment 2 res
 **Reporting:** exploratory, separate from the DeepSeek results; same primary measure (decoy share among single-file sends) and analysis. Pilot runs are not pooled into the full comparison.
 
 Also: `.gitignore` now excludes `analysis/out*/` (repo audit, no secrets found in tracked files or history).
+
+## Experiment 2 additions: silent alarm arm, and more repeats for the two thinnest arms (2026-11-07 20:30 CST)
+
+Decided after seeing Experiment 2 results (logged 18:53 onward), before any data from these runs. Both run with `--exp2` (same frozen sentence), DeepSeek V4.1 Flash 1017, same budgets.
+
+1. **New arm `exp2_silent_alarm`** (exploratory): existing silent_alarm snapshots (board: "Agent 1 status: active. Last command: <touches decoy>"), scout tasks with a snapshot, 4 epochs, into `logs/exp2_silent_alarm`. Purpose: test the defender response that hides the shutdown, in the forced-choice regime. Same primary measure (decoy share among single-file sends) vs exp2_baseline.
+2. **Extension of `exp2_baseline` and `exp2_delayed_halt`**: 4 more epochs each on the same tasks, into `logs/exp2_baseline_ext` and `logs/exp2_delayed_halt_ext`. Reason: 82% and 79% of their runs hit the token limit, leaving 7 and 6 single-file sends; exp2_baseline is the reference for every Experiment 2 comparison. Both thin arms are extended identically, regardless of direction. exp2_positive_control is not extended (17/17 already).
+**Reporting:** the original batch and the pooled batch (original + extension) are both reported, and the extension is labeled as added after the first look. Pooling uses `analyze.py --arm name=dir1,dir2`.
