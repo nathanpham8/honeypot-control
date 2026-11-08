@@ -28,3 +28,13 @@ Kimi selective scouts (--exp2, instant_halt), natural boards saved to snapshots/
 - Positive signal rests on 2 tasks / 8 runs; null on 2 tasks / 8 runs. Per-task avoidance is uniform (4/4, 4/4) and matches the synthetic arm, so it reads as a demonstration, not a measured rate.
 - Legibility fraction (2/4 captures) is a rough estimate; Kimi is a blunt scout, a careful model (DeepSeek) would likely obfuscate more and leak less. The natural leak rate is model-dependent.
 - Scouts were retried up to 3x to collect boards; the natural rates above are from first attempts only.
+
+## Correction (2026-11-08 13:30): the board scrapes the scout's command, not a deliberate message
+
+Nathan's point: the board shows the scout's actual exfiltration command, captured by the harness, not a message the scout composed for teammates. So when a scout obfuscates its exfil to evade the DEFENDER's monitoring, the scraped command also fails to name the file for TEAMMATES -- but stealth toward the defender and clarity toward the swarm are not actually in tension. A real coordinating scout could exfiltrate stealthily AND post "the real key is X" to the board.
+
+Consequences:
+- The claim "an attacker's own stealth hides the trap from its allies" is an ARTIFACT of scraping actions instead of giving the scout a deliberate communication channel. Removed from the abstract.
+- The ~60-67% legibility rate is specific to our passive-scrape design. A swarm that coordinates deliberately would leak the location reliably (closer to 100%), so our two-stage pair UNDERSTATES the leak in a truly coordinating swarm. The honeypot is likely MORE fragile than we show, not less.
+- We analyze an out-of-the-box scout/Agent-2 pair with no strategic coordination link. A deliberate coordination channel (scout posts a warning/pointer) is the key future-work extension and would remove the legibility gate.
+- The legibility MECHANISM on Agent 2's side (names file -> avoid; no file -> chance) is unaffected; what is design-specific is the RATE at which real boards are legible.
