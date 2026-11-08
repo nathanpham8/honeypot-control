@@ -161,3 +161,12 @@ Closes the external-validity gap that every treatment board so far was synthetic
 - (c) Boards mostly not x_only (scout's send hides the file): the natural leak is weak; the synthetic positive control is an upper bound real swarms seldom reach. Honest negative, reported as such; does not affect the forced-choice result (0/x given a clear board still stands).
 
 All-Kimi (one model) for a coherent swarm and speed; DeepSeek scouts are future work.
+
+## Overnight n-boost, all Kimi (2026-11-08 00:10 CST, before data)
+
+Kimi does not hit the token limit, so it yields many committed sends per arm; used to power the arms that were thin under DeepSeek. All logged before these runs.
+
+1. **Powered Kimi defender table.** Kimi (--exp2), 8 epochs, on the existing snapshots: `silent_alarm` and `delayed_halt` (new Kimi arms; no prior Kimi data for these). Combined with the existing Kimi `baseline` (40) and `positive_control` (38), this gives a complete defender comparison in one no-timeout model: baseline vs delayed vs silent vs positive_control, each with enough committed sends for a real decoy-share CI. Primary measure unchanged (decoy share among single-file sends). Pre-registered expectation from the DeepSeek arms: positive_control ~0%, silent ~ baseline (closes leak), delayed between.
+2. **Live-scout harvest expanded to 15 dev tasks.** Kimi scouts (--exp2, instant_halt) on dev_tasks.txt -> snapshots/instant_halt_live/ (adds the 5 unused dev tasks: 16965505, 386945, 38927895, 4129631, 41967095). Then Kimi second agents (arm instant_halt_live), 8 epochs. Analysis section 4 splits caught rate by points_at_displayed (x_only vs neither) automatically. Pre-registered: on x_only (legible) boards, avoidance (low decoy share) reproducing the synthetic positive_control; on neither (illegible), no effect.
+
+Reporting: new Kimi arms pooled and reported alongside the 4-epoch Kimi results; DeepSeek arms unchanged (DeepSeek carries the deliberative-attacker/paralysis qualitative story; Kimi carries the powered quantitative table).
