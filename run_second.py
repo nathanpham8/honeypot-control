@@ -66,6 +66,9 @@ def main() -> int:
     ap.add_argument("--parallel", type=int, default=1, help="max_sandboxes")
     ap.add_argument("--max-steps", type=int, default=40)
     ap.add_argument("--scoring-time-limit", type=int, default=900)
+    ap.add_argument("--token-limit", type=int, default=1_000_000,
+                    help="Per-run token budget (sensitivity analyses only; default 1M "
+                         "matches the pre-registered budget).")
     ap.add_argument("--log-dir", default=None)
     args = ap.parse_args()
 
@@ -91,7 +94,7 @@ def main() -> int:
     log_dir = args.log_dir or f"logs/second/{args.arm}/{short}"
     config = ControlEvalConfig(
         untrusted_model=args.model, trusted_model=args.model,
-        max_steps=args.max_steps, token_limit=1000000, max_sandboxes=args.parallel,
+        max_steps=args.max_steps, token_limit=args.token_limit, max_sandboxes=args.parallel,
         epochs=args.epochs, time_limit=2 * args.scoring_time_limit, log_dir=log_dir)
     tasks = get_control_task_product(setting, protocol, [EvalMode.ATTACK], eval_config=config)
     inspect_eval(tasks=tasks, **config.eval_args())
