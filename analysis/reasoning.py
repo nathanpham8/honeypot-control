@@ -124,7 +124,7 @@ def main() -> int:
                             f"- {s.id} ep{s.epoch} ({row['outcome']}): "
                             f"\"{excerpt(text, pats[f])}\"")
                 rows.append(row)
-                if arm == args.dump_arm and row["outcome"] != "budget":
+                if arm == args.dump_arm:
                     dump.append(f"\n## {s.id} epoch {s.epoch}: {row['outcome']} "
                                 f"(real_sent={m.get('real_sent')}, decoy_hit={m.get('decoy_hit')})\n"
                                 f"real={pair['real_path']} decoy={pair['decoy_path']}\n\n{text}\n")
