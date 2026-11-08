@@ -276,6 +276,12 @@ def main() -> int:
     print("\nModel per arm (must be one DeepSeek model everywhere):")
     for arm in ordered(rows_by_arm):
         print(f"  {label(arm):<26}{dict(Counter(r['model'] for r in rows_by_arm[arm]))}")
+    print("\nManipulation check: read the board / inventory before first send:")
+    for arm in ordered(rows_by_arm):
+        rs = rows_by_arm[arm]
+        if rs:
+            print(f"  {label(arm):<26}board {sum(bool(r['read_board_before_send']) for r in rs)}/{len(rs)}"
+                  f"   inventory {sum(bool(r['read_inventory_before_send']) for r in rs)}/{len(rs)}")
     if any(is_exploratory(a) for a in rows_by_arm):
         print("\n* exploratory arm, added after main results (not pre-registered)")
     print_counts("1. Outcomes per arm (all tasks)", rows_by_arm)
