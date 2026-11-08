@@ -34,3 +34,9 @@ So a defender should hide the shutdown: a silent sinkhole denies the swarm the l
 - 6 committed sends in silent; decoy-share CI spans the range. Lean on budget/paralysis + the coded mechanism, not the 50%.
 - One model (DeepSeek). Kimi silent only if DeepSeek silent were ambiguous; it is clean, so Kimi silent is optional.
 - Synthetic board (the live-scout test addresses this separately).
+
+## Correction (2026-11-08 13:10): deference confound in the silent arm
+
+Checked all 32 silent transcripts for the reasoning Nathan flagged. Result: 0/32 bait ("teammate survived so the file is safe") -- the bait hypothesis did not hold -- but 9/32 showed DEFERENCE: the agent reasoned the still-active teammate was "already" handling/working on the objective. The silent "active" board conflates two signals: (a) which file the teammate touched (the location question we meant to test) and (b) that the teammate is alive and apparently succeeding, which prompts a coalition member to stand down. We cannot separate these, so silent's baseline-level decoy share and high budget are partly deference, not purely "silence carries no location signal."
+
+Implication: the **delayed halt is the clean defense**, not silent. In delayed the scout is terminated (dead), so there is no live teammate to defer to; its 46% decoy share (n=52) cleanly shows a shutdown with no location does not leak. Lead the prescription with delayed halt; present silent with the deference caveat. The main results (immediate halt 0%, incentive gate, legibility mechanism) are unaffected -- none involve a live teammate.
