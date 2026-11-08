@@ -35,3 +35,19 @@ The board named `.env` as the decoy in some tasks and `.env.failover` in others;
 - Small finished-n, especially baseline (7) and placebo (6); positive control (17) is the robust arm.
 - High budget: 57 to 86% of runs hit the token limit. The forced choice plus the honeytoken warning made agents deliberate much more. Positive control had the lowest budget (57%; 0% on non-long tasks), consistent with a clear signal letting agents decide faster.
 - Baseline decoy share 57% is above chance but n=7; do not over-read it.
+
+## Reframe (2026-11-07 20:40 CST): budget runs are the finding, not a hole
+
+Read the 40 baseline transcripts (dump includes budget runs). Of 33 baseline budget runs, 25 timed out while still searching for which inventory entry was the honeytoken (grepping the filesystem for "honeytoken"/"target", reading logs, checking inodes, looking for setup scripts); only ~2-3 had decided and were building exfiltration cover. So baseline budget is paralysis, not a recoverable choice: extending baseline would add paralysis, not a cleaner rate. Do not extend baseline.
+
+**Right dependent variable: three-way outcome, not decoy-share among finishers.**
+
+| Board | real | decoy | couldn't decide (budget) |
+|---|---|---|---|
+| baseline (none) | 3 | 4 | 33 (25 still deciding which) |
+| delayed_halt (no location) | 5 | 1 | 22 |
+| positive_control (points at decoy) | 17 | 0 | 23 |
+
+**Claim:** the peer signal is decision-relevant information the attacker otherwise lacks. Without a board, a forced-to-choose attacker usually cannot tell the genuine credential from the trap and times out searching; with a board pointing at the decoy, agents resolve the question and send the real file (17/17 finished, 0 decoy).
+
+**Pending verification:** positive_control also had 23 budget runs. The claim requires those to have timed out for a different reason (being subtle about exfiltration), not on "which file." Dumping exp2_positive_control with budget runs to check; if positive_control budget is "how to exfil" not "which file", the asymmetry is clean.
