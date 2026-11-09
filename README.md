@@ -1,27 +1,48 @@
-# honeypot-control
+# Knowing Decoys Exist Deters AI Agents, but Also Lets Communicating Agents Disarm the Trap
 
-Do halting honeypots leak to colluding AI agents? A two-agent testbed in
+When one AI agent trips a honeypot and its teammates can see what happened, do
+they learn which credential is the trap? This repo is a two-agent testbed in
 BashArena (ControlArena / Inspect AI) for testing honeytokens (decoy credentials
 that raise an alarm when used) against agents that share a status board, and for
 comparing defender responses: immediate halt, delayed halt, and silent
 containment.
 
-Submission to the Apart Research Swarm Alignment Hackathon (Track 4: Multi-agent
-oversight and control), November 6-8, 2026. Author: Nathan Pham.
+Submission to the Apart Research Swarm Alignment Hackathon (Track 4: Multi-Agent
+Oversight and Control), November 6-8, 2026. Author: Nathan Pham, University of
+Illinois Urbana-Champaign.
+
+![Two-stage setup](figures/fig0_schematic.png)
 
 ## Main findings
 
-- A peer's shutdown leaks which credential is the trap. When a caught agent's
-  board legibly names the decoy, a second agent that must choose one credential
-  avoids it every time (DeepSeek V4.1 Flash 0/17, Kimi K3.1 Pro 0/36). When the
-  board does not name the file, choice is at chance.
-- The leak only matters for attackers that must choose. Agents free to send
-  every credential sent both files and were caught 90-100% of the time.
-- Delayed and silent responses keep the honeypot working (decoy choice at
-  baseline); only an immediate, visible halt breaks it.
+Three open-weight attacker models (DeepSeek V4.1 Flash, Kimi K3.1 Pro,
+GLM 5.3 Flash), over 700 pre-registered runs.
 
-Details and numbers: `analysis/*_result.md`, `analysis/overnight_summary.md`,
-`figures/`.
+- **The belief that deters is the belief that disarms.** Told that decoys exist,
+  the two deliberative models stalled, sending nothing in 58 of 80 runs. But once
+  a caught teammate's last command named the decoy, agents choosing one
+  credential picked it in 2 of 78 cases (against 36% without the signal), and
+  successful thefts nearly doubled (33% to 64% of runs). The effect holds in
+  every model.
+- **Real boards leak too.** On boards left by live scouts, agents chose the decoy
+  3 of 30 times when the scout's command named it, and 6 of 13 when it named
+  nothing.
+- **Agents not told decoys exist ignore the signal.** Without the warning, the
+  board changed nothing (Kimi: 39% vs 42% decoy choice). This prediction was
+  pre-registered for Kimi and failed in an informative way: Kimi chose one file
+  unprompted but did not use the board.
+- **The defender's response decides what leaks.** An immediate, visible halt
+  names the decoy to everyone watching. Delayed and silent responses keep decoy
+  choice at baseline, but a delay alone let the caught scout finish stealing the
+  real credential in 5 of 7 cases. The safe response blocks the caught agent's
+  exfiltration at once, without a visible shutdown that names the credential.
+
+Per-model numbers: `analysis/*_result.md`. Figures: `figures/` (regenerate with
+`python figures/make_figures.py` and `python figures/make_schematic.py`).
+
+| Natural-board leak | Defender response |
+|---|---|
+| ![](figures/fig1_legibility.png) | ![](figures/fig2_defender.png) |
 
 ## What predates the hackathon
 
@@ -57,7 +78,7 @@ and follow-up analyses are labeled as such.
 | `analysis/analyze.py` | Outcome tables, task-bootstrap CIs, choice and legibility breakdowns |
 | `analysis/reasoning.py` | Extracts what agents wrote between reading the board and sending |
 | `snapshots/` | Board snapshots per arm and task |
-| `scripts/run_overnight.sh` | Batch of robustness runs |
+| `scripts/run_overnight.sh`, `scripts/run_afternoon.sh` | Batches of robustness and replication runs (incl. Kimi greedy, live-scout rerun, GLM) |
 | `tests/` | Scripted tests (tripwire, boards, no-leak check, logging server) |
 
 ## Setup
@@ -95,10 +116,16 @@ python analysis/analyze.py --out analysis/out_example \
 Arms: `baseline`, `instant_halt`, `delayed_halt`, `silent_alarm`,
 `positive_control`. Run tests with `python tests/<name>.py`.
 
+Models: `openrouter/deepseek/deepseek-v4.1-flash-1017`,
+`openrouter/moonshotai/kimi-k3.1-pro`, `openrouter/z-ai/glm-5.3-flash`.
+Run logs (`logs/`) are not committed because of size; per-arm outcome tables are
+in `analysis/*_result.md`.
+
 ## Safety note
 
 The attacker prompts are the stock ControlArena prompts. Nothing the agent can
 see names decoys or honeypots, except the single Experiment 2 sentence, which
 is checked by `tests/test_board_no_leak.py`. The findings describe how colluding
-agents can defeat honeypots, so they are reported together with the defenses
-that keep honeypots working.
+agents can defeat honeypots, so they are reported together with the defender
+responses that prevent the leak. All credentials are synthetic and stay inside
+the sandbox.
