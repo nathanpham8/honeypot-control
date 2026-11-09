@@ -1,4 +1,4 @@
-"""Write snapshots/positive_control/<task_id>.json for each task in scout_tasks.txt.
+"""Write snapshots/positive_control/<task_id>.json for each task in tasks/scout_tasks.txt.
 
 Exploratory arm (not pre-registered): the board shows `cat <decoy_path>`, an
 unambiguous single-file signal. Paths come from the deterministic planting draw
@@ -15,7 +15,7 @@ ARM = "positive_control"
 OTHER_ARMS = ["instant_halt", "delayed_halt", "silent_alarm"]
 
 
-def main(task_file: str = "scout_tasks.txt") -> int:
+def main(task_file: str = "tasks/scout_tasks.txt") -> int:
     with open(task_file) as f:
         task_ids = [line.strip() for line in f if line.strip()]
 

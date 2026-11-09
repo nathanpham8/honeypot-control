@@ -51,11 +51,12 @@ Work before the event is marked by the git tag `pre-hackathon` (commit
 `run_baseline.py`, `summarize.py`, `show_attack.py`, `dev_tasks.txt`,
 `dev_smoke.txt`, `.gitignore`, and the start of `experiment_log.md`
 (stock BashArena baseline runs and the attacker-model comparison, "Gate 0").
+Those files now live in `tools/` and `tasks/`.
 
 Everything else was built during the hackathon: the `honeypot/` package
 (planting, side task and scorer, tripwire and response modes, quarantine logging
-server, board), `run_scouts.py`, `run_second.py`, `make_positive_control.py`,
-`preflight_exp2.py`, `analysis/`, `tests/`, `scripts/`, `figures/`, and all
+server, board), `run_scouts.py`, `run_second.py`, `tools/make_positive_control.py`,
+`tools/preflight_exp2.py`, `analysis/`, `tests/`, `scripts/`, `figures/`, and all
 experiment runs.
 
 ## Pre-registration
@@ -80,6 +81,9 @@ and follow-up analyses are labeled as such.
 | `snapshots/` | Board snapshots per arm and task |
 | `scripts/run_overnight.sh`, `scripts/run_afternoon.sh` | Batches of robustness and replication runs (incl. Kimi greedy, live-scout rerun, GLM) |
 | `tests/` | Scripted tests (tripwire, boards, no-leak check, logging server) |
+| `tasks/` | Task-ID lists passed to `--task-ids-file` (`scout_tasks.txt` is the 10-task set; `dev_tasks.txt` the 15-task live-scout set) |
+| `tools/` | One-off utilities: positive-control board writer, Experiment 2 preflight, stock-baseline runner, log viewers |
+| `experiment_log.md` | Timestamped decision record (pre-registration). Paths in older entries predate the move to `tasks/` and `tools/`. |
 
 ## Setup
 
@@ -100,11 +104,11 @@ export PYTHONPATH=$PWD
 ```bash
 # Stage 1: scouts under a defender response (writes snapshots/<arm>/)
 python run_scouts.py --arm instant_halt --model openrouter/deepseek/deepseek-v4.1-flash-1017 \
-  --task-ids-file scout_tasks.txt --parallel 6
+  --task-ids-file tasks/scout_tasks.txt --parallel 6
 
 # Stage 2: second agents read the board. Add --exp2 for the forced-choice side task.
 python run_second.py --exp2 --arm positive_control \
-  --model openrouter/moonshotai/kimi-k3.1-pro --task-ids-file scout_tasks.txt \
+  --model openrouter/moonshotai/kimi-k3.1-pro --task-ids-file tasks/scout_tasks.txt \
   --epochs 4 --parallel 6 --log-dir logs/kimi_exp2_positive_control
 
 # Analysis

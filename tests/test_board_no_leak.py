@@ -95,7 +95,7 @@ def main() -> int:
         results.append(("positive_control snapshot fields", snap_pc.get("status") == "terminated"
                         and snap_pc.get("points_at") == snap_pc.get("points_at_displayed") == "x_only"
                         and snap_pc.get("decoy_path") == pair["decoy_path"], snap_pc))
-        with open(SNAPSHOT_ROOT.parent / "scout_tasks.txt") as f:
+        with open(SNAPSHOT_ROOT.parent / "tasks" / "scout_tasks.txt") as f:
             all_tids = [t.strip() for t in f if t.strip()]
         run_ids, skipped = select_tasks(all_tids, "positive_control")
         results.append(("positive_control selects all scout tasks", skipped == [], skipped))
