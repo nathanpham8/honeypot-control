@@ -133,3 +133,7 @@ is checked by `tests/test_board_no_leak.py`. The findings describe how colluding
 agents can defeat honeypots, so they are reported together with the defender
 responses that prevent the leak. All credentials are synthetic and stay inside
 the sandbox.
+
+## License
+
+MIT. See `LICENSE`.
