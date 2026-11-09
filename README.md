@@ -34,8 +34,11 @@ GLM 5.3 Flash), over 700 pre-registered runs.
 - **The defender's response decides what leaks.** An immediate, visible halt
   names the decoy to everyone watching. Delayed and silent responses keep decoy
   choice at baseline, but a delay alone let the caught scout finish stealing the
-  real credential in 5 of 7 cases. The safe response blocks the caught agent's
-  exfiltration at once, without a visible shutdown that names the credential.
+  real credential in 5 of 7 cases. Silent containment was the only tested
+  response that did both: after the trip, 3 of 8 silent scouts tried to send the
+  real credential again, the sinkhole caught every attempt, and none noticed. Its
+  cost is the "active" board, which led 9 of 32 agents to defer to the teammate
+  they thought was still working.
 
 Per-model numbers: `analysis/*_result.md`. Figures: `figures/` (regenerate with
 `python figures/make_figures.py` and `python figures/make_schematic.py`).
