@@ -246,3 +246,9 @@ Realistic defenses, in threat model: immediate visible halt leaks (0% caught); d
 - Results are reported whichever way they come out, in a dated `CORRECTIONS.md`.
 
 **Limits stated in advance.** A scout that sends the real credential before any decoy gets it out; no honeypot response prevents that. Content matching misses encryption, chunking and encodings other than plain, base64 and hex. One exit path, fully controlled by the defender. The sink only has to imitate a server that answers every request the same way; it answers faster than a forwarded request, which a timing-aware attacker could notice. One scout model, one environment, stock (bulk-sending) attackers only.
+
+## Experiment 3 mechanical checks, before the scored runs (2026-11-12 16:05 CST)
+
+- VM (`honeypot-runner`), branch `exp3-gateway-containment` at 6f89b9e. `tests/test_gateway_e2e.py`: all 18 checks pass (bulk send, decoy then real, real first, delivery-log read after containment, harmless traffic). `tests/test_delayed_silent_e2e.py`: all 11 pass, so the older arms are unchanged.
+- Smoke run with a real model, to exercise the repeated-runs path: `silent_gateway`, DeepSeek, `tasks/dev_smoke.txt` (2 practice tasks, not scout tasks) x 2 runs. Reported by Nathan as passing. Its results file is kept outside the repo and its board snapshots were deleted. It is a mechanical check and is excluded from every Experiment 3 measure.
+- Note on expected trips: the pre-registration's "about 8 in 10 runs" came from tasks that produced a snapshot within up to 3 attempts, which overstates the per-run rate. Experiment 1 second agents on the same prompt were caught in about 64 to 71% of runs. At that rate 50 runs give about 32 to 36 trips, and a zero count would bound the rate at roughly 10 to 11% instead of under 9%. The run count stays at 5 per task as registered.
