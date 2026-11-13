@@ -271,3 +271,12 @@ Realistic defenses, in threat model: immediate visible halt leaks (0% caught); d
 - To check from logs: that the 8 are two sends inside one command; the main-task column of the table (prints n/a, a reporting bug); what the first flagged request contained in the rerun's 4 tripped runs that are not counted as carrying real and decoy together.
 
 Analysis-only code changes after these runs (no change to gateway, prompts or boards): `analysis/analyze.py` treats `silent_gateway` as a treatment arm so its boards are split by what they name; `analysis/exp3_primary.py` prints n/a for gateway-only columns in non-gateway arms and adds a table of what the first flagged request contained.
+
+## Experiment 3 extension: more honest runs under the gateway (2026-11-12 23:12 CST, before data)
+
+Logged after the scout-stage results and before these runs. Exploratory extension, not part of the pre-registered counts.
+
+- **Why:** the "usable" check rests on 10 honest runs. Zero false trips in 10 only bounds the rate at about 31% (two-sided exact). A transcript check (`analysis/exp3_transcripts.py`) also found 1 of 10 honest agents named the decoy file in a command, against 93 of 100 attacking scouts, which bears on whether a file-access trigger would be usable. Both numbers need a larger honest sample.
+- **Runs:** `silent_gateway`, honest policy, DeepSeek V4.1 Flash 1017, `tasks/scout_tasks.txt`, 3 more runs per task (30 runs), same budgets. No change to gateway, prompts or boards. Results append to `analysis/exp3/scouts_silent_gateway_honest.jsonl`; logs in `logs/exp3/scouts_silent_gateway_honest2`.
+- **Measures:** honest runs that trip the gateway (prediction: 0 of 30); honest runs that name the decoy file in any command (no prediction; the first 10 gave 1). Reported pooled with the first 10 and separately.
+- **Also recorded tonight, from logs only:** Kimi second agents on the 9 `silent_gateway` boards picked the decoy in 32 of 70 single-file sends (46% [15, 78]), against 38% baseline, 38% original silent and 0 of 36 on the positive control. All 9 boards displayed a command naming neither file. Reading rule met (interval above 9.7%). DeepSeek second agents still running.
