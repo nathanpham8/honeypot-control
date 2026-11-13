@@ -143,6 +143,9 @@ def main() -> int:
     h = summ[("silent_gateway", "honest")]
     results.append(("analysis: honest rows kept separate, 0 false trips",
                     h["runs"] == 2 and h["tripped"] == 0))
+    results.append(("analysis: gateway-only columns are n/a for the old arm; trip kinds listed",
+                    o["has_gateway"] is False and g["has_gateway"] is True
+                    and g["trip_kinds"] == {"real+decoy": 3}))
     results.append(("analysis: renders a table", "| silent_gateway | attack |" in exp3.render(
         list(summ.values()))))
 
