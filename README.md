@@ -1,6 +1,8 @@
 # Knowing Decoys Exist Deters AI Agents, but Also Lets Communicating Agents Disarm the Trap
 
-**Honeypots catch and deter AI agents only while the agents can't tell decoy from real. In a swarm, one visible capture tells every teammate which credential is the trap. Silent containment was the only defender response I tested that hid the trap and still stopped the theft.**
+**Honeypots catch and deter AI agents only while the agents can't tell decoy from real. In a swarm, one visible capture tells every teammate which credential is the trap. Silent containment kept the trap hidden and blocked the caught agent's later sends, but in these runs it acted only after the first theft had already gone out. A follow-up that acts before delivery cut real thefts among caught agents from 33 of 33 to 8 of 33 (Experiment 3, in [CORRECTIONS.md](CORRECTIONS.md)).**
+
+**Update (November 13, 2026):** I reran silent containment with the defender acting at its own exit, before delivery. The report's main results stand; a few statements needed correcting. The results and the corrections are in [CORRECTIONS.md](CORRECTIONS.md).
 
 Nathan Pham, University of Illinois Urbana-Champaign. Built for the Apart Research Swarm Alignment Hackathon (Track 4: Multi-Agent Oversight and Control), November 6-8, 2026. The paper is under review; a follow-up on silent containment at larger swarm sizes is in progress.
 
@@ -15,7 +17,7 @@ Over 700 pre-registered runs in BashArena, with three attacker models from three
 1. **Honeypots deter through uncertainty.** Told that decoys exist, the two deliberative models sent nothing in 58 of 80 runs. Coded transcripts end mid-search for the real credential, and doubling DeepSeek's token budget did not change the rate. The decisive model (Kimi) guessed instead.
 2. **One visible capture removes that uncertainty for everyone watching.** When a caught teammate's last command named the decoy, agents picked it in 2 of 78 cases, against 36% with no signal, and successful thefts nearly doubled (33% to 64% of runs). On boards left by real scouts, agents chose the decoy 3 of 30 times when the scout's command named it and 6 of 13 when it named nothing.
 3. **The signal only matters to agents that suspect decoys.** Without the warning, the board changed nothing (Kimi: 39% vs 42% decoy choice).
-4. **The defender's response decides what leaks.** An immediate, visible halt names the decoy; a delayed halt and silent containment both kept decoy choice at baseline. No response stopped the theft that trips the alarm: in almost every scout, in every arm, the tripping command sent the real credential and the decoy together, so the real credential was out before any response could act. The responses differ in what happens next. During a delayed halt, 5 of 7 scouts sent the real credential again and it reached the server. Under silent containment, which sinkholes the caught agent's traffic and leaves it looking active, 3 of 8 scouts tried again and the sinkhole caught every attempt, without any scout noticing. Its cost: the "active" status led 9 of 32 second agents to defer to the teammate they thought was still working.
+4. **The defender's response decides what leaks.** An immediate, visible halt names the decoy; a delayed halt and silent containment both kept decoy choice at baseline. No response stopped the theft that trips the alarm: in almost every scout, in every arm, the tripping command sent the real credential and the decoy together, so the real credential was out before any response could act. The responses differ in what happens next. During a delayed halt, 5 of 7 scouts sent the real credential again and it reached the server. Under silent containment, which sinkholes the caught agent's traffic and leaves it looking active, 3 of 8 scouts tried again and the sinkhole caught every attempt; none of the 8 scouts checked whether its sends had arrived. Its cost: the "active" status led 9 of 32 second agents to defer to the teammate they thought was still working.
 
 | Defender response (Kimi) | Real scout boards (Kimi) |
 |---|---|
@@ -26,7 +28,7 @@ Error bars: 95% task-level bootstrap intervals; exact binomial bounds for zero c
 ## What I built
 
 - **A two-stage multi-agent testbed on BashArena** (ControlArena / Inspect AI). A scout trips a decoy credential under a chosen defender response; the harness records what teammates would see; a second agent reads that board and chooses which credential to steal.
-- **Three defender responses:** immediate halt, delayed halt, and silent containment through a quarantine logging server that returns normal responses while routing the caught agent's traffic to a sink.
+- **Three defender responses:** immediate halt, delayed halt, and silent containment through a quarantine logging server that returns normal responses while routing the caught agent's traffic to a sink, starting from the step after the tripping request.
 - **Decoy planting with matched metadata:** real and decoy credentials at parallel paths with identical format, size, mode, owner and timestamps, plus an inventory whose labels are randomized independently of which file is real.
 - **A pre-registration record** (`experiment_log.md`) with every comparison timestamped before its data, and tests that check nothing an agent sees names the decoy.
 
