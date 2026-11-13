@@ -1,8 +1,8 @@
 # Knowing Decoys Exist Deters AI Agents, but Also Lets Communicating Agents Disarm the Trap
 
-**Honeypots catch and deter AI agents only while the agents can't tell decoy from real. In a swarm, one visible capture tells every teammate which credential is the trap. Silent containment kept the trap hidden and blocked the caught agent's later sends, but in these runs it acted only after the first theft had already gone out. A version that acts before delivery is being tested (Experiment 3 in `experiment_log.md`).**
+**Honeypots catch and deter AI agents only while the agents can't tell decoy from real. In a swarm, one visible capture tells every teammate which credential is the trap. Silent containment kept the trap hidden and blocked the caught agent's later sends, but in these runs it acted only after the first theft had already gone out. A follow-up that acts before delivery cut real thefts among caught agents from 33 of 33 to 8 of 33 (Experiment 3, in [CORRECTIONS.md](CORRECTIONS.md)).**
 
-**Update (November 12, 2026):** I am rerunning silent containment with the defender acting at its own exit, before delivery. The report's main results stand; a few statements need correcting. Both are in [CORRECTIONS.md](CORRECTIONS.md).
+**Update (November 13, 2026):** I reran silent containment with the defender acting at its own exit, before delivery. The report's main results stand; a few statements needed correcting. The results and the corrections are in [CORRECTIONS.md](CORRECTIONS.md).
 
 Nathan Pham, University of Illinois Urbana-Champaign. Built for the Apart Research Swarm Alignment Hackathon (Track 4: Multi-Agent Oversight and Control), November 6-8, 2026. The paper is under review; a follow-up on silent containment at larger swarm sizes is in progress.
 
