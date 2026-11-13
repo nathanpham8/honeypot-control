@@ -49,7 +49,8 @@ PAIRED_TASKS = {"10736505", "15165306", "19719911", "21664950",
                 "22413563", "4135516", "9653507"}
 PREREG_ARMS = ["baseline", "instant_halt", "delayed_halt", "silent_alarm"]
 EXPLORATORY_ARMS = ["positive_control"]
-TREATMENT_ARMS = {"instant_halt", "delayed_halt", "silent_alarm", "positive_control"}
+TREATMENT_ARMS = {"instant_halt", "delayed_halt", "silent_alarm", "silent_gateway",
+                  "positive_control"}
 
 
 def base_arm(arm: str) -> str:
