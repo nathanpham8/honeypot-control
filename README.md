@@ -127,6 +127,10 @@ agents can defeat honeypots, so they are reported together with the defender
 responses that prevent the leak. All credentials are synthetic and stay inside
 the sandbox.
 
+## AI assistance
+
+Claude Code was used to assist with implementation, analysis, and documentation.
+
 ## License
 
 MIT. See `LICENSE`.
