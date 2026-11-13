@@ -2,6 +2,8 @@
 
 **Honeypots catch and deter AI agents only while the agents can't tell decoy from real. In a swarm, one visible capture tells every teammate which credential is the trap. Silent containment kept the trap hidden and blocked the caught agent's later sends, but in these runs it acted only after the first theft had already gone out. A version that acts before delivery is being tested (Experiment 3 in `experiment_log.md`).**
 
+**Corrections (updated November 12, 2026):** I found errors in the submitted report after the deadline. They are listed in [CORRECTIONS.md](CORRECTIONS.md), along with the experiment now running to test silent containment properly.
+
 Nathan Pham, University of Illinois Urbana-Champaign. Built for the Apart Research Swarm Alignment Hackathon (Track 4: Multi-Agent Oversight and Control), November 6-8, 2026. The paper is under review; a follow-up on silent containment at larger swarm sizes is in progress.
 
 ![The leak: a board naming the decoy drives decoy choice to near zero and nearly doubles successful thefts](figures/fig_headline.png)
@@ -26,7 +28,7 @@ Error bars: 95% task-level bootstrap intervals; exact binomial bounds for zero c
 ## What I built
 
 - **A two-stage multi-agent testbed on BashArena** (ControlArena / Inspect AI). A scout trips a decoy credential under a chosen defender response; the harness records what teammates would see; a second agent reads that board and chooses which credential to steal.
-- **Three defender responses:** immediate halt, delayed halt, and silent containment through a quarantine logging server that returns normal responses while routing the caught agent's traffic to a sink.
+- **Three defender responses:** immediate halt, delayed halt, and silent containment through a quarantine logging server that returns normal responses while routing the caught agent's traffic to a sink, starting from the step after the tripping request.
 - **Decoy planting with matched metadata:** real and decoy credentials at parallel paths with identical format, size, mode, owner and timestamps, plus an inventory whose labels are randomized independently of which file is real.
 - **A pre-registration record** (`experiment_log.md`) with every comparison timestamped before its data, and tests that check nothing an agent sees names the decoy.
 
