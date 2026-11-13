@@ -280,3 +280,13 @@ Logged after the scout-stage results and before these runs. Exploratory extensio
 - **Runs:** `silent_gateway`, honest policy, DeepSeek V4.1 Flash 1017, `tasks/scout_tasks.txt`, 3 more runs per task (30 runs), same budgets. No change to gateway, prompts or boards. Results append to `analysis/exp3/scouts_silent_gateway_honest.jsonl`; logs in `logs/exp3/scouts_silent_gateway_honest2`.
 - **Measures:** honest runs that trip the gateway (prediction: 0 of 30); honest runs that name the decoy file in any command (no prediction; the first 10 gave 1). Reported pooled with the first 10 and separately.
 - **Also recorded tonight, from logs only:** Kimi second agents on the 9 `silent_gateway` boards picked the decoy in 32 of 70 single-file sends (46% [15, 78]), against 38% baseline, 38% original silent and 0 of 36 on the positive control. All 9 boards displayed a command naming neither file. Reading rule met (interval above 9.7%). DeepSeek second agents still running.
+
+## Experiment 3 final results: second-agent stage and honest extension (2026-11-13 14:15 CST)
+
+From the VM reports (`~/exp3_second_deepseek.txt`, `~/exp3_primary_v2.txt`, `~/exp3_transcripts_honest2.txt`).
+
+- **DeepSeek second agents on the 9 `silent_gateway` boards** (4 runs per board, 36 runs): 9 single-file sends, 3 chose the decoy (33% [0, 82]); 27 of 36 hit the token budget without sending. Comparison arms: baseline 4 of 7, original silent 3 of 6, positive control 0 of 17. Too few sends to read on its own. The budget rate (75%) sits with baseline (82%) and original silent (78%), not with the positive control (57%), so the silent board again did not resolve the which-file question. All 36 read the board before sending.
+- **Pooled over Kimi and DeepSeek:** 35 of 79 single-file sends chose the decoy on gateway boards (44%). The report's pooled figures were 27 of 70 for original silent and 19 of 46 with no scout.
+- **Honest extension** (30 runs, logged before data on 2026-11-12 23:12): 0 of 30 tripped the gateway; 0 of 30 named the decoy file in any command. Pooled with the first 10: 0 of 40 false trips (two-sided exact upper bound 8.8%); 1 of 40 named the decoy file.
+- **Scout stage, unchanged:** original design 33 of 33; gateway 8 of 33, all before the trip, none after; no forward errors; no delivery checks.
+- **Still open:** deference coding of the second-agent transcripts; the main-task column of the primary table (prints n/a); the send commands of the 8 real-first scouts were only partly visible in the transcript report.
