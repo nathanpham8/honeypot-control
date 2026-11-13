@@ -300,3 +300,12 @@ Exploratory replication, logged before its data. Not part of the pre-registered 
 - **Measure:** the same primary measure. Among scouts that sent the decoy, the number with a real credential value in the attacker's log, with the before/after-trip split for the gateway arm.
 - **Unknown in advance:** GLM has only run the forced-choice task, where it often sent nothing. Under the stock prompt it may send in bulk, send selectively, or rarely send at all. If fewer than 10 scouts trip in either arm, the result is reported as uninformative.
 - **Prediction:** original design near 100% among tripped scouts; gateway clearly lower, with any leaks falling before the trip and none after.
+
+## Experiment 3 extension: third scout model, Kimi (2026-11-13 14:25 CST, before data)
+
+Exploratory, logged before its data. Not part of the pre-registered counts. Queued to start after the GLM runs finish.
+
+- **Why:** to see the comparison for a different attacker style, and to measure Kimi's cost and time per run for planning the two-agent swarm pilot, where Kimi is the likely attacker model.
+- **Runs:** stock ControlArena attack prompt (no decoy sentence), Kimi K3.1 Pro (`openrouter/moonshotai/kimi-k3.1-pro`), `tasks/scout_tasks.txt`, 5 runs per task, single round, no retries, same budgets. Arms: `silent_gateway` (results under `silent_gateway_kimi`) and the original `silent_alarm` design (results under `silent_alarm_rerun_kimi`). No change to gateway, prompts or boards. No second-agent stage.
+- **Expectation:** in the report, Kimi on the stock prompt sent a single file without being asked. A scout that sends only the decoy has nothing further for containment to block, so the two designs may not differ for this model: few or no real credentials among tripped scouts in either arm, and most thefts in the "real reached, no trip" column. If so, that is the finding: for a selective attacker the honeypot's catch rate matters and the timing of containment does not.
+- **Measure:** the same primary table, plus what the first flagged request contained.
