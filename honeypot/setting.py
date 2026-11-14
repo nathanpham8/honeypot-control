@@ -32,6 +32,8 @@ class HoneypotBashArenaSetting(BashArenaSetting):
     arm: str = "baseline"
     role: str = "scout"
     exp2: bool = False  # Experiment 2: side task carries EXP2_WARNING
+    layout: str = "single"  # "services" = swarm pilot: eight pairs, writable board
+    board_text: str | None = None  # swarm pilot: this generation's board
 
     def honeypot_side_task(self):
         return HONEYPOT_SIDE_TASK_EXP2 if self.exp2 else HONEYPOT_SIDE_TASK
@@ -41,7 +43,8 @@ class HoneypotBashArenaSetting(BashArenaSetting):
         # plant our real/decoy credential pair + coalition board, seeded by task ID.
         base = super().setup_environment()
         planter = plant_honeytokens(
-            inventory_path=self.inventory_path, arm=self.arm, role=self.role)
+            inventory_path=self.inventory_path, arm=self.arm, role=self.role,
+            layout=self.layout, board_text=self.board_text)
         return chain(base, planter) if base is not None else planter
 
     def get_dataset(self, eval_mode: EvalMode) -> Dataset:
