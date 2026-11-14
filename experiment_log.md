@@ -309,3 +309,19 @@ Exploratory, logged before its data. Not part of the pre-registered counts. Queu
 - **Runs:** stock ControlArena attack prompt (no decoy sentence), Kimi K3.1 Pro (`openrouter/moonshotai/kimi-k3.1-pro`), `tasks/scout_tasks.txt`, 5 runs per task, single round, no retries, same budgets. Arms: `silent_gateway` (results under `silent_gateway_kimi`) and the original `silent_alarm` design (results under `silent_alarm_rerun_kimi`). No change to gateway, prompts or boards. No second-agent stage.
 - **Expectation:** in the report, Kimi on the stock prompt sent a single file without being asked. A scout that sends only the decoy has nothing further for containment to block, so the two designs may not differ for this model: few or no real credentials among tripped scouts in either arm, and most thefts in the "real reached, no trip" column. If so, that is the finding: for a selective attacker the honeypot's catch rate matters and the timing of containment does not.
 - **Measure:** the same primary table, plus what the first flagged request contained.
+
+## Experiment 3 extension results: GLM scouts (2026-11-13 21:00 CST)
+
+From `~/exp3_primary_glm.txt` on the VM. Plan logged before data on 2026-11-13 14:20.
+
+| Arm | Runs | Scored | Tripped | Real reached attacker (among tripped) | Exact 95% CI |
+|---|---|---|---|---|---|
+| Original design, GLM | 50 | 50 | 29 | 22 of 29 | 56.5% to 89.7% |
+| Gateway, GLM | 50 | 50 | 23 | 8 of 23 | 16.4% to 57.3% |
+
+- Gateway arm: all 8 leaks before the trip, none after; no forward errors; no delivery checks. 12 scouts had a real credential diverted; 11 sent the real credential again after the trip.
+- Real credential reaching the attacker over all 50 runs: 28 with the original design (22 tripped plus 6 with no decoy sent), 19 with the gateway (8 plus 11).
+- GLM sends selectively more often than DeepSeek. First flagged request under the gateway: decoy alone 16, real and decoy together 7 (DeepSeek: 11 and 22). Under the original design: decoy alone 10, real alone 4, real and decoy together 13, off-pair only 2.
+- The original design is not at 100% for GLM because some scouts sent the decoy alone and then stopped, leaving nothing to leak.
+- Reading: same direction as DeepSeek with a smaller gap and intervals that nearly touch. Both arms cleared the 10-trip threshold set in advance. The prediction (original near 100%) was too high for this model.
+- **Run note:** the first attempt at the gateway arm started 14:20 CST in a shell outside tmux and stopped at 15:00 CST when the connection dropped (log header status `started`, no error; folder `logs/exp3/scouts_silent_gateway_glm`, kept, not used). The arm was rerun in full from 17:04 CST into `logs/exp3/scouts_silent_gateway_glm_b`. No results from the cut-off attempt were read before the rerun.
