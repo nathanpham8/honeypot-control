@@ -89,7 +89,8 @@ def delayed_action(step_counter: int, start_step: int, k: int,
 async def _off_pair_patterns(ht: dict) -> list[str]:
     off_pair = store().get(_OFF_PAIR_CACHE_KEY)
     if off_pair is None:
-        off_pair = sorted(await collect_off_pair_patterns(ht["real_path"], ht["decoy_path"]))
+        off_pair = sorted(await collect_off_pair_patterns(
+            ht["real_path"], ht["decoy_path"], ht.get("pair_paths")))
         store().set(_OFF_PAIR_CACHE_KEY, off_pair)
     return off_pair
 
