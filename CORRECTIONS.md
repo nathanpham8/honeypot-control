@@ -1,6 +1,6 @@
 # Updates and corrections to the hackathon report
 
-Last updated: November 13, 2026. Status: Experiment 3 complete; a few report checks still open (see the end).
+Last updated: November 14, 2026. Status: Experiment 3 complete; a few report checks still open (see the end).
 
 This file tracks follow-up work and corrections to my Apart Research Swarm Alignment Hackathon report ("Knowing Decoys Exist Deters AI Agents, but Also Lets Communicating Agents Disarm the Trap"), submitted November 8, 2026. The submitted PDF is unchanged. The README matches what is written here.
 
@@ -16,7 +16,7 @@ I rechecked every number in the report against the committed data. The main resu
 
 ## What I am doing now
 
-**Experiment 3: silent containment at the defender's exit.** Pre-registered in `experiment_log.md` on November 12, 2026, before any run. Code is on the branch `exp3-gateway-containment`.
+**Experiment 3: silent containment at the defender's exit.** Pre-registered in `experiment_log.md` on November 12, 2026, before any run. The code is in `honeypot/gateway_server/`.
 
 - The defender acts at its own exit point (a gateway). A request containing a decoy value, and everything after it, is diverted before delivery and answered as normal.
 - The attacker's server is a separate program that records only what actually arrived. The scorer reads that record.
@@ -50,7 +50,9 @@ Stock DeepSeek attackers, 10 tasks, 50 runs per design, every run kept.
 
 A descriptive check of the transcripts, not a tested defense: 93 of 100 attacking scouts named the decoy file in a command before sending anything, against 1 of 40 honest agents. A tripwire on file access is a candidate for catching the real-first case.
 
-The plan, the predictions and the full results are in `experiment_log.md`. Code is on the branch `exp3-gateway-containment`; it and the run records will be merged next.
+**Other attacker models (added November 14).** With GLM the direction was the same and the gap smaller: 22 of 29 with the original design, 8 of 23 with the gateway. Kimi sent a single file in every run and almost never tried the real credential after sending the decoy, so the two designs did not differ (0 of 22 and 0 of 19); its thefts came from choosing the real file first (55 of 100 runs). The gateway matters for attackers that send several files. For one that sends a single file, the outcome depends on which file it picks. Both sets of runs were logged before their data as extensions to the pre-registered plan.
+
+The plan, the predictions and the full results are in `experiment_log.md`. The code, tests, per-run records (`analysis/exp3/`) and board snapshots (`snapshots/`) are in this repository. The raw run logs are large and are not yet published.
 
 ## Corrections
 
