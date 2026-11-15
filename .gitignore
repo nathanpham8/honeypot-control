@@ -3,3 +3,5 @@ logs/
 .env
 __pycache__/
 analysis/out*/
+.claude/
+private/
