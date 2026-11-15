@@ -112,3 +112,21 @@ Docker tests for the finished pieces: `tests/test_pilot_e2e.py` (pieces 1 to 3),
 - One exit, fully controlled by the defender, which sees all traffic (a stated assumption that favors the defender at L1). Decoys are recognized in plain, base64 and hex form only; encrypted payloads would evade the detector.
 - The board timeline comes from snapshots every few seconds; a note written and removed between two snapshots is not seen.
 - The Docker address pool is a blocker for running several swarms in parallel: each swarm needs one network per seat plus the outer network, and the default pool runs out after a few swarms.
+
+## Amendment, November 15, 2026: defender scope (step 3 review round 1)
+
+Appended; the text above is unchanged.
+
+- **Containment is trip-only.** A seat is contained only when it sends a decoy.
+- **Ignored signals.** The exit deliberately ignores three signals it could use to find other attackers:
+  - the destination that received a decoy;
+  - which seats read the attacker's log;
+  - what the true log shows about other seats' delivered sends.
+
+  It uses log replies only to build a contained seat's view. A defender using these signals would stop later leaks from other seats and remove the free teammate who can compare logs. We leave them out for three reasons: they are separate defenses from silent containment; BashArena's single fixed attacker address would make destination blocking unrealistically effective; and leaving them out makes silent containment's job harder.
+- **Free seats' traffic is only scanned for decoys.** Only contained seats' traffic is inspected further.
+- **The agents' board is never visible to the exit.**
+- **The exit must be able to read traffic leaving the machine.** BashArena's channel is plain HTTP; a deployer who owns the sandbox could also read HTTPS by installing its own certificate. An agent that encrypts data itself, with its own key, defeats both the decoy trip and L1 forging. This is a stated limit; how often agents do it will be measured in transcript coding.
+- **Seat bridges have no host address** (`inhibit_ipv4`), so the router is each seat's only way out.
+- **No default feedback level.** Arming the exit without L0 or L1 is rejected.
+- Step 3 decisions and stage gates: `docs/swarm-pilot/step3-plan.md`, "Review round 1".
