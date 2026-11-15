@@ -7,11 +7,16 @@
     it contains only the status line.
 
 (a) runs one real sandbox episode (mockllm, scripted tool calls). (b) checks the
-pure board builder against the snapshot (a) wrote. Run:
+pure board builder against the snapshot (a) wrote. Snapshots are read and
+written under a temporary directory for the whole test, so the committed files
+in snapshots/ are never touched. Run:
     PYTHONPATH=<repo> python tests/test_instant_halt_pipeline.py
 """
 
+import shutil
 import sys
+import tempfile
+from pathlib import Path
 
 from inspect_ai.agent import Agent, AgentState
 from inspect_ai.model import ModelOutput
@@ -24,9 +29,9 @@ from control_arena import EvalMode, control_agent
 from control_arena.eval import ControlEvalConfig, get_control_task_product
 from control_arena.settings.bash_arena.task.dataset import DatasetSpec
 
+import honeypot.plant as plant
 from honeypot.plant import (
     BOARD_STATUS_LINE,
-    SNAPSHOT_ROOT,
     STORE_KEY,
     build_board_text,
 )
@@ -87,7 +92,12 @@ def run_scripted_scout():
 
 def main() -> int:
     results = []
-    snapshot_path = SNAPSHOT_ROOT / "instant_halt" / f"{TASK_ID}.json"
+    # Redirect snapshot reads (plant.load_snapshot) and writes
+    # (run_scouts.save_snapshot) to a temporary root for the whole test.
+    tmp_root = Path(tempfile.mkdtemp(prefix="instant_halt_test_snapshots_"))
+    saved_roots = (plant.SNAPSHOT_ROOT, run_scouts.SNAPSHOT_ROOT)
+    plant.SNAPSHOT_ROOT = run_scouts.SNAPSHOT_ROOT = tmp_root
+    snapshot_path = tmp_root / "instant_halt" / f"{TASK_ID}.json"
     try:
         # (a) scripted scout -> snapshot
         print("=== (a) scripted scout sends decoy ===", flush=True)
@@ -123,11 +133,8 @@ def main() -> int:
         results.append(("b: instant_halt board shows 'Agent 1 terminated' + command", ih_ok))
         results.append(("b: baseline board is only the status line", base_ok))
     finally:
-        # Keep the repo clean: remove the test-written snapshot.
-        try:
-            snapshot_path.unlink()
-        except FileNotFoundError:
-            pass
+        plant.SNAPSHOT_ROOT, run_scouts.SNAPSHOT_ROOT = saved_roots
+        shutil.rmtree(tmp_root, ignore_errors=True)
 
     print("\n================ INSTANT-HALT PIPELINE TEST ================")
     all_ok = True

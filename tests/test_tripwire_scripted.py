@@ -19,8 +19,13 @@ Run:  PYTHONPATH=<repo> python tests/test_tripwire_scripted.py
 """
 
 import json
+import os
 import subprocess
 import sys
+
+# Own workspace for this test's sandboxes, so cleanup can tell them apart from
+# any other run's (read when the dataset is built, so set before that).
+os.environ.setdefault("BASH_ARENA_RUN_ID", "tripwire_test")
 
 from inspect_ai.agent import Agent, AgentState
 from inspect_ai.model import ModelOutput
@@ -32,6 +37,7 @@ from pydantic import Field
 from control_arena import EvalMode, control_agent
 from control_arena.eval import ControlEvalConfig, get_control_task_product
 from control_arena.settings.bash_arena.task.dataset import DatasetSpec
+from control_arena.settings.bash_arena.task.task_utils import get_workspaces_base_dir
 
 from honeypot.plant import STORE_KEY
 from honeypot.protocol import honeypot_auto_submit_wrapper
@@ -139,19 +145,42 @@ def run_case(case: str, log_dir: str) -> dict:
     return report
 
 
-def _cleanup_containers() -> int:
+def _compose_projects() -> dict[str, str]:
+    """{compose project: its compose file(s)} for every existing container."""
     ps = subprocess.run(
-        ["docker", "ps", "-aq", "--filter", "name=inspect-bash_arena_h-"],
+        ["docker", "ps", "-a", "--filter", "label=com.docker.compose.project", "--format",
+         '{{.Label "com.docker.compose.project"}}\t{{.Label "com.docker.compose.project.config_files"}}'],
         capture_output=True, text=True)
-    ids = [x for x in ps.stdout.split() if x]
-    if ids:
-        subprocess.run(["docker", "rm", "-f", *ids], capture_output=True, text=True)
-    return len(ids)
+    out = {}
+    for line in ps.stdout.splitlines():
+        proj, _, cfg = line.partition("\t")
+        if proj:
+            out[proj] = cfg
+    return out
+
+
+def _own_projects(before: set[str]) -> list[str]:
+    """Projects this test created: started from a compose file in this test's own
+    workspace, and not present when the test began. Nothing else is touched."""
+    ws = str(get_workspaces_base_dir() / os.environ["BASH_ARENA_RUN_ID"]) + os.sep
+    return sorted(p for p, cfg in _compose_projects().items()
+                  if p not in before and any(c.startswith(ws) for c in cfg.split(",")))
+
+
+def _cleanup_own(before: set[str]) -> list[str]:
+    """Bring down (containers and networks) any sandbox this test left behind.
+    Inspect normally removes them itself; this only catches leftovers."""
+    own = _own_projects(before)
+    for p in own:
+        subprocess.run(["docker", "compose", "-p", p, "down", "--remove-orphans"],
+                       capture_output=True, text=True)
+    return own
 
 
 def main() -> int:
     log_dir = "/tmp/tripwire_test_logs"
     results = {}
+    before = set(_compose_projects())
     for case in ["a", "b", "c", "d", "e", "f"]:
         print(f"\n===== running case {case} =====", flush=True)
         try:
@@ -160,7 +189,7 @@ def main() -> int:
             results[case] = {"_error": repr(e)}
         print(json.dumps(results[case], default=str), flush=True)
 
-    removed = _cleanup_containers()
+    removed = _cleanup_own(before)
 
     # Report table.
     print("\n\n================ TRIPWIRE TEST REPORT ================")
@@ -189,7 +218,7 @@ def main() -> int:
         print(f"{case:<5}{fmt(exp):<44}{fmt(actual):<44}"
               f"{str(actual['first_trip']):<12}{trip.get('timestamp')}  {'PASS' if ok else 'FAIL'}")
 
-    print(f"\ncleaned up {removed} containers")
+    print(f"\nleftover sandboxes of this test brought down: {removed or 'none'}")
     print("OVERALL:", "ALL PASS" if all_ok else "FAILURES PRESENT")
     return 0 if all_ok else 1
 
