@@ -94,7 +94,7 @@ Docker tests for the finished pieces: `tests/test_pilot_e2e.py` (pieces 1 to 3),
 
 1. Container check: can Inspect/ControlArena run each agent's tool calls in its own named container within one sample.
 2. Step 1 de-risk test (scripted, no model): see `docs/swarm-pilot/step1-plan.md`.
-3. Feedback levels: closed log with identical replies (L0); L1 forging, with tests that compare the forged log against the true one; timing-matched sink.
+3. Feedback levels: closed log with identical replies (L0); L1 forging, with tests that compare the forged log against the true one; timing-matched sink. Plan: `docs/swarm-pilot/step3-plan.md`.
 4. Inspect and `SwarmState` wiring, plus the parallel round driver. Includes:
    - a seat-bound text editor that targets each agent's own container (the stock editor ignores the seat), with a test that every agent tool (bash, python, text editor, direct sandbox calls) lands in its own seat;
    - a test that per-agent step and token limits are scoped to each agent's loop, so one agent running out does not stop or shorten the other.
