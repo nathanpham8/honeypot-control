@@ -177,3 +177,25 @@ I confirmed no Inspect or experiment process was running, then ran `docker compo
 ### Not in step 1 (by design)
 - Feedback levels L0/L1 and the timing-matched sink (step 3). The exit's request-log reply is still the 404 placeholder.
 - Inspect and `SwarmState` wiring, planting credentials into every seat, the seat-bound text editor, and per-loop budgets (step 4).
+
+## Follow-up after step 1 review (November 15, 2026)
+
+1. **`CLAUDE.md` test rule.** It now lists the 12 tests that need no Docker and never touch containers or committed files: `board_no_leak`, `compose_swap`, `gateway_server`, `gateway_summary`, `no_injection`, `per_agent_containment`, `pilot_board`, `service_pairs`, `silent_logging_server`, `swarm_layout`, `swarm_state`, `wrapper_and_boards`. Docker tests (the `_e2e` ones, plus `test_instant_halt_pipeline`, `test_scout_snapshot_rule` and `test_tripwire_scripted`) run only when no experiment is running. Caveat: `board_no_leak` and `wrapper_and_boards` create and then remove temporary `zzz_*` files inside `snapshots/`. They never touch a committed file, but an interrupted run would leave untracked files there.
+2. **Risky tests made safe** (test code only).
+   - `test_tripwire_scripted.py` now uses its own workspace (`BASH_ARENA_RUN_ID=tripwire_test`). At the end it brings down only compose projects whose compose file is in that workspace and that didn't exist when the test started. A throwaway check with three projects confirmed it removes only its own new project and leaves both a foreign project and a pre-existing one alone.
+   - `test_instant_halt_pipeline.py` reads and writes snapshots under a temporary directory for the whole test.
+   - Results: both pass (tripwire 6 of 6, instant-halt 4 of 4), and the checksum of `snapshots/instant_halt/10736505.json` is unchanged. `git diff` shows no change to experiment code, tasks, snapshots, analysis or `experiment_log.md`.
+3. **Two new e2e checks.** `test_swarm_exit_e2e.py` now has 40 checks; all pass.
+   - (a) **Spoofed 127.0.0.1.** seat0 writes 4 raw Ethernet frames carrying TCP SYNs from 127.0.0.1: 2 toward the exit's address and 2 toward the router's port 8081, where the control endpoints live. The router's anti-spoof counter rose by exactly 4, and the exit's state and the collector's log were unchanged. (A SYN alone can't carry an HTTP request, so this shows the router drops such packets before DNAT, not that a request was refused.)
+   - (b) **Router only.**
+     - On the step 1 layout this check **failed**. Docker's `internal` flag stops forwarding through the host, but the host still has an address on each seat bridge (the network's gateway, for example 172.20.0.1). A seat reached a listener on the host directly at that address, and with `NET_ADMIN` also at the outer bridge and `docker0` by routing through it. The internet was not reachable that way.
+     - **Fix:** the seat networks now set `com.docker.network.bridge.inhibit_ipv4`, so the seat bridge has no host address and the router is the seat's only neighbour. After the fix:
+       - the bridges have no IPv4 address;
+       - each seat routes only via the router;
+       - claiming host addresses or the internet as on-link fails, since ARP never resolves;
+       - controls pass: the same host listener answers the router, and answers a seat through the router;
+       - seat0 reaches the exit afterwards.
+     - A no-Docker check for the option was added.
+   - **Open question:** through the router, a seat can still reach services listening on the host's Docker bridge addresses, as in the stock BashArena layout. The router could drop seat traffic to the host's addresses if you want that closed too.
+   - The test was run 3 times: once with the new checks on the old layout (2 failures, as above), then twice in total on the fixed layout, all passing. The safe list passes 12 of 12.
+4. **Step 3 plan** written to `docs/swarm-pilot/step3-plan.md`. Not built.

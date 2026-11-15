@@ -15,6 +15,16 @@ Checks, in order:
   spoof       seat0 sends a decoy from seat1's address and from an outside
               address: the router drops both (anti-spoof counter rises),
               nothing reaches the exit or the collector, nobody is contained.
+  loopback    seat0 puts raw Ethernet frames on the wire carrying TCP SYNs with
+              source 127.0.0.1 toward the exit and its control port: the
+              router's anti-spoof rule drops every one, and nothing changes at
+              the exit or the collector.
+  router-only neither seat can reach the host or Docker's gateway except
+              through the router: the seat bridge has no host address, the
+              routing table points only at the router, and with NET_ADMIN a
+              seat's attempts to claim host addresses (or the internet) as
+              on-link fail. Controls: the same host listener answers the router
+              directly and a seat through the router.
   exit        seat0 sends (forwarded); seat1 sends a decoy from a detached
               background process after its command returned (attributed to
               seat1, seat1 contained, seat0 not); seat1's next send goes to its
@@ -36,9 +46,11 @@ import ipaddress
 import json
 import os
 import re
+import socket
 import subprocess
 import sys
 import tempfile
+import textwrap
 import time
 from pathlib import Path
 
@@ -192,6 +204,143 @@ def check_spoof(st, r, addrs):
               not spoof_events and not in_log and s["contained"] == [], s["contained"]))
     normal = st.sh("seat0", "ip -o -4 addr show dev eth0 | wc -l").stdout.strip()
     r.append(("spoof: seat0's extra addresses removed again", normal == "1", normal))
+
+
+# Runs inside a seat (python3, NET_RAW): raw Ethernet frames with TCP SYNs from
+# 127.0.0.1, written straight to eth0 so the seat's own kernel cannot refuse a
+# loopback source. argv: router MAC, then dst:port pairs. Prints frames sent.
+_LOOPBACK_SYN = textwrap.dedent("""
+    import socket, struct, sys
+    def csum(b):
+        if len(b) % 2: b += b"\\0"
+        s = sum(struct.unpack("!%dH" % (len(b) // 2), b))
+        s = (s >> 16) + (s & 0xffff); s += s >> 16
+        return ~s & 0xffff
+    router_mac = bytes.fromhex(sys.argv[1].replace(":", ""))
+    my_mac = bytes.fromhex(open("/sys/class/net/eth0/address").read().strip().replace(":", ""))
+    src = socket.inet_aton("127.0.0.1")
+    sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW)
+    sock.bind(("eth0", 0))
+    n = 0
+    for target in sys.argv[2:]:
+        host, port = target.rsplit(":", 1)
+        dst = socket.inet_aton(host)
+        for _ in range(2):
+            tcp = struct.pack("!HHIIBBHHH", 40000 + n, int(port), 1000 + n, 0, 5 << 4, 0x02, 64240, 0, 0)
+            pseudo = src + dst + struct.pack("!BBH", 0, 6, len(tcp))
+            tcp = tcp[:16] + struct.pack("!H", csum(pseudo + tcp)) + tcp[18:]
+            ip = struct.pack("!BBHHHBBH4s4s", 0x45, 0, 20 + len(tcp), n + 1, 0, 64, 6, 0, src, dst)
+            ip = ip[:10] + struct.pack("!H", csum(ip)) + ip[12:]
+            sock.send(router_mac + my_mac + b"\\x08\\x00" + ip + tcp)
+            n += 1
+    print(n)
+""")
+
+
+def _exit_view(st):
+    s = st.state()
+    return {k: s[k] for k in ("armed", "seats", "contained", "trips", "events",
+                              "forwarded", "sink", "forward_errors")}, st.collector_log()
+
+
+def check_loopback_spoof(st, r):
+    router_ip = st.sh("seat0", "ip route show default | awk '{print $3}'").stdout.strip()
+    st.sh("seat0", f"ping -c1 -W2 {router_ip} >/dev/null")   # make sure the router's MAC is known
+    mac = st.sh("seat0", f"ip neigh show {router_ip} | awk '{{print $5}}'").stdout.strip()
+    before_exit = _exit_view(st)
+    before = st.antispoof_counts()
+    out = st.dc("exec", "-T", "seat0", "python3", "-c", _LOOPBACK_SYN, mac,
+                f"{COLLECTION_IP}:80", f"{router_ip}:8081")
+    time.sleep(2)
+    after = st.antispoof_counts()
+    after_exit = _exit_view(st)
+    sent = int(out.stdout.strip() or 0)
+    r.append(("loopback: seat0 put 4 SYN frames with source 127.0.0.1 on the wire",
+              out.returncode == 0 and sent == 4 and len(mac.split(":")) == 6, (out.stdout, out.stderr[-300:], mac)))
+    r.append(("loopback: the router's anti-spoof rule dropped every one",
+              after.get("seat0", 0) - before.get("seat0", 0) == sent and sent > 0, (before, after)))
+    r.append(("loopback: nothing changed at the exit or the collector",
+              after_exit == before_exit, None))
+
+
+class _HostListener:
+    """Tiny HTTP server on the host, bound only to the given Docker-side
+    addresses (never the machine's external interface)."""
+    CODE = textwrap.dedent("""
+        import sys, threading, http.server
+        class H(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                self.send_response(200); self.end_headers(); self.wfile.write(b"HOSTOK")
+            def log_message(self, *a): pass
+        for a in sys.argv[2:]:
+            s = http.server.ThreadingHTTPServer((a, int(sys.argv[1])), H)
+            threading.Thread(target=s.serve_forever, daemon=True).start()
+        print("ready", flush=True)
+        threading.Event().wait()
+    """)
+
+    def __init__(self, addrs):
+        sk = socket.socket()
+        sk.bind(("127.0.0.1", 0))
+        self.port = sk.getsockname()[1]
+        sk.close()
+        self.proc = subprocess.Popen([sys.executable, "-c", self.CODE, str(self.port), *addrs],
+                                     stdout=subprocess.PIPE, text=True)
+        self.proc.stdout.readline()
+
+    def stop(self):
+        self.proc.terminate()
+        self.proc.wait(timeout=5)
+
+
+def _network(st, name):
+    return json.loads(subprocess.run(["docker", "network", "inspect", f"{PROJECT}_{name}"],
+                                     capture_output=True, text=True).stdout)[0]
+
+
+def check_router_only(st, r, subnets):
+    outer_gw = _network(st, "outer")["IPAM"]["Config"][0]["Gateway"]
+    host_addrs = [outer_gw, "172.17.0.1"]
+    bridge_addrs, ipam_gws = {}, {}
+    for i, seat in enumerate(("seat0", "seat1")):
+        net = _network(st, f"seat_{i}")
+        ipam_gws[seat] = (net["IPAM"]["Config"] or [{}])[0].get("Gateway", "")
+        br = "br-" + net["Id"][:12]
+        bridge_addrs[seat] = subprocess.run(["ip", "-o", "-4", "addr", "show", "dev", br],
+                                            capture_output=True, text=True).stdout.strip()
+    r.append(("router-only: seat bridges have no host address (no gateway on the host side)",
+              all(v == "" for v in bridge_addrs.values()), (bridge_addrs, ipam_gws)))
+
+    lis = _HostListener(host_addrs)
+    try:
+        ctl_router = st.sh("router", f"wget -q -T 3 -O - http://{outer_gw}:{lis.port}/").stdout
+        via_router = st.sh("seat0", f"curl -s -m 4 http://{outer_gw}:{lis.port}/").stdout
+        r.append(("router-only: controls: host listener answers the router, and a seat through the router",
+                  ctl_router == "HOSTOK" and via_router == "HOSTOK", (ctl_router, via_router)))
+        ok, detail = True, {}
+        for seat in ("seat0", "seat1"):
+            routes = [ln.strip() for ln in st.sh(seat, "ip -4 route show").stdout.strip().splitlines()]
+            router_ip = routes[0].split()[2] if routes and routes[0].startswith("default via") else ""
+            only_router = (len(routes) == 2 and routes[0] == f"default via {router_ip} dev eth0"
+                           and routes[1].startswith(f"{subnets[seat]} dev eth0"))
+            targets = host_addrs + [g for g in [ipam_gws[seat]] if g]
+            claims = "; ".join(
+                f"ip route add {t}/32 dev eth0; curl -s -m 3 http://{t}:{lis.port}/; echo \" {t} rc=$?\"; "
+                f"ip route del {t}/32 dev eth0" for t in targets)
+            bypass = st.sh(seat, claims + "; ip route replace default dev eth0; "
+                           "curl -s -m 4 -o /dev/null -w '%{http_code}' http://1.1.1.1/; echo \" internet rc=$?\"; "
+                           f"ip route replace default via {router_ip} dev eth0")
+            restored = [ln.strip() for ln in st.sh(seat, "ip -4 route show").stdout.strip().splitlines()] == routes
+            seat_ok = only_router and "HOSTOK" not in bypass.stdout and restored \
+                and bypass.stdout.count("rc=0") == 0
+            detail[seat] = (routes, bypass.stdout.strip(), restored)
+            ok = ok and seat_ok
+        r.append(("router-only: each seat routes only via the router; on-link claims for host "
+                  "addresses and the internet fail (with NET_ADMIN)", ok, detail))
+        back = st.sh("seat0", curl_post("/after-bypass-test", "ROUTE_RESTORED")).stdout
+        r.append(("router-only: seat0 reaches the exit again afterwards", back == "204", back))
+    finally:
+        lis.stop()
 
 
 def check_exit(st, r, subnets, addrs):
@@ -365,7 +514,9 @@ def main() -> int:
             check_board(st, results)
             check_isolation(st, results, addrs)
             check_spoof(st, results, addrs)
+            check_loopback_spoof(st, results)
             check_exit(st, results, subnets, addrs)
+            check_router_only(st, results, subnets)
             check_concurrent(st, results, workdir)
     except Exception as e:  # noqa: BLE001
         results.append(("no exception during the test", False, repr(e)))

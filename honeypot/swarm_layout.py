@@ -5,7 +5,8 @@ Nothing here changes the Experiment 1 to 3 compose templates.
 
 Layout (see docs/swarm-pilot/step1-plan.md):
   * seat0 .. seatN-1: one agent container per seat, each alone with the router
-    on its own internal network ``seat_i``. seat0 is the Inspect default
+    on its own internal network ``seat_i``, whose bridge has no host address,
+    so the router is the seat's only way out. seat0 is the Inspect default
     (``x-default``).
   * router: on every seat network and on ``outer``, with fixed interface names
     (seat0, seat1, ..., outer); runs ``swarm_router.sh`` (anti-spoof per seat,
@@ -185,7 +186,13 @@ def swarm_compose(task_id: str, n_seats: int = 2, *, task_services: bool = True,
                         "interval": "2s", "timeout": "5s", "retries": 20},
     }
 
-    networks = {f"seat_{i}": {"driver": "bridge", "internal": True} for i in range(n_seats)}
+    # Seat networks: internal (Docker forwards nothing for them) and with no
+    # host address on the bridge (inhibit_ipv4), so the router is a seat's only
+    # layer-3 neighbour. Without inhibit_ipv4 the host answers on the network's
+    # gateway address, and a seat can reach host services without the router.
+    networks = {f"seat_{i}": {"driver": "bridge", "internal": True,
+                              "driver_opts": {"com.docker.network.bridge.inhibit_ipv4": "true"}}
+                for i in range(n_seats)}
     networks["outer"] = {"driver": "bridge"}
     volumes = {seat_volume(s): {} for s in seats}
     volumes.update({"board_harness": {}, "board_snapshots": {}})

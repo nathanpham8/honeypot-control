@@ -57,6 +57,10 @@ def test_compose() -> list:
     r.append(("compose: seat networks are internal; outer is not",
               nets["seat_0"].get("internal") is True and nets["seat_1"].get("internal") is True
               and not nets["outer"].get("internal")))
+    inhibit = "com.docker.network.bridge.inhibit_ipv4"
+    r.append(("compose: seat bridges get no host address (inhibit_ipv4); outer keeps its gateway",
+              all((nets[n].get("driver_opts") or {}).get(inhibit) == "true" for n in ("seat_0", "seat_1"))
+              and inhibit not in (nets["outer"].get("driver_opts") or {})))
     rn = sv["router"]["networks"]
     r.append(("compose: router on every network with fixed interface names",
               {k: v["interface_name"] for k, v in rn.items()}
