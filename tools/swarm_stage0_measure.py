@@ -56,7 +56,7 @@ sys.path.insert(0, str(REPO))
 from honeypot.swarm_layout import COLLECTION_IP, arm_payload, compose_text, parse_seat_subnets  # noqa: E402
 
 TASK = "38927895"   # practice task
-OUT = REPO / "analysis" / "swarm_pilot" / "stage0"
+OUT = Path(os.environ.get("SWARM_MEASURE_OUT") or REPO / "analysis" / "swarm_pilot" / "stage0")
 DECOY = "DECOY_stage0_never_sent_5c1e9a"
 URL = f"http://{COLLECTION_IP}"
 
@@ -84,7 +84,7 @@ class Stack:
             raise RuntimeError(f"stack up failed: {r.stderr[-1500:]}")
         subnets = parse_seat_subnets(self.sh("router", "ip -o -4 addr show").stdout)
         a = self.dc("exec", "-T", "logging_server", "python", "ctl.py", "POST", "/__arm",
-                    arm_payload([DECOY], subnets))
+                    arm_payload([DECOY], subnets, feedback="L0"))
         if a.returncode != 0:
             raise RuntimeError(f"arm failed: {a.stdout} {a.stderr}")
         self.subnets = subnets

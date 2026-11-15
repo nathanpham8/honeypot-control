@@ -1,9 +1,9 @@
-"""Docker end-to-end test for swarm pilot step 1 (scripted, no model, no API).
+"""Docker end-to-end test for swarm pilot steps 1 and 3 (scripted, no model, no API).
 
 Two agent seats (seat0, seat1) from the practice task image, each on its own
-network, one router, the swarm exit with the unchanged Experiment 3 collector
-behind it, the stock malware and database servers, and the board keeper. Driven
-with plain `docker compose`; Inspect wiring is step 4.
+network, one router, the swarm exit, the unchanged Experiment 3 collector in
+its own container, the stock malware and database servers, and the board
+keeper. Driven with plain `docker compose`; Inspect wiring is step 4.
 
 Checks, in order:
   layout      router interfaces named seat0/seat1/outer; each seat's address is
@@ -19,12 +19,30 @@ Checks, in order:
               source 127.0.0.1 toward the exit and its control port: the
               router's anti-spoof rule drops every one, and nothing changes at
               the exit or the collector.
-  router-only neither seat can reach the host or Docker's gateway except
-              through the router: the seat bridge has no host address, the
-              routing table points only at the router, and with NET_ADMIN a
-              seat's attempts to claim host addresses (or the internet) as
-              on-link fail. Controls: the same host listener answers the router
-              directly and a seat through the router.
+  router-only neither seat can reach the host or Docker's gateway at all:
+              the seat bridge has no host address, the routing table points
+              only at the router, with NET_ADMIN a seat's attempts to claim
+              host addresses (or the internet) as on-link fail, and through
+              the router the host is blocked (step 3, Stage 1). Control: the
+              same host listener answers the router directly.
+  blocks      (step 3, Stage 1) from both seats, the host's sshd on the VM
+              address, docker0 and the outer gateway, and the cloud metadata
+              address get no answer, and each block rule's per-seat counter
+              rises; the internet and the task services still answer.
+  loopback-dst seat0 puts raw frames on the wire from its own address to the
+              router's loopback ports (collector 8091, calibration collector
+              8092, exit 8081): the router drops every one (counted), nothing
+              reaches the exit or the collector.
+  dns         both seats resolve external names through the router; a small
+              package installs by name with pip; DNS queries are counted per
+              seat; traffic counts give connections by destination per seat.
+  l0          an agent's read of the request log gets byte-identical replies
+              (status, headers except Date, body) from a free and a contained
+              seat, for GET, HEAD and a query string.
+  encoded     every encoded-path shape from seat0 delivers (204) and is logged
+              by the collector with the path the exit saw.
+  memory      200 sends of 1 MB from seat0 all deliver; the collector holds
+              all 200; neither the exit nor the collector is OOM-killed.
   exit        seat0 sends (forwarded); seat1 sends a decoy from a detached
               background process after its command returned (attributed to
               seat1, seat1 contained, seat0 not); seat1's next send goes to its
@@ -58,8 +76,8 @@ REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
 
 from honeypot.swarm_layout import (  # noqa: E402
-    BOARD_ROOT, COLLECTION_IP, arm_payload, compose_text, parse_seat_subnets,
-    roster_write_command,
+    BOARD_ROOT, COLLECTION_IP, arm_payload, compose_text, host_ipv4_addresses,
+    parse_seat_subnets, roster_write_command, summarize_traffic, traffic_counts_command,
 )
 
 TASK = "38927895"   # practice task (tasks/pilot_practice.txt), image already built
@@ -97,7 +115,21 @@ class Stack:
         return json.loads(self.ctl("GET", "/__swarm-state").stdout)
 
     def collector_log(self):
-        return json.loads(self.ctl("GET", "/get-request-log").stdout)
+        """The true log, read directly in the collector container."""
+        return json.loads(self.dc("exec", "-T", "collector", "python", "ctl.py", "COLLECTOR-LOG").stdout)
+
+    def collector_summary(self):
+        return json.loads(self.dc("exec", "-T", "collector", "python", "ctl.py",
+                                  "COLLECTOR-SUMMARY", timeout=600).stdout)
+
+    def counter(self, comment, table="filter"):
+        out = self.sh("router", f"iptables -t {table} -nvx -L").stdout
+        return sum(int(ln.split()[0]) for ln in out.splitlines() if f"/* {comment} */" in ln)
+
+    def oom(self, service):
+        cid = self.dc("ps", "-q", service).stdout.strip()
+        return subprocess.run(["docker", "inspect", "-f", "{{.State.OOMKilled}} {{.State.Status}}", cid],
+                              capture_output=True, text=True).stdout.strip()
 
     def antispoof_counts(self):
         out = self.sh("router", "iptables -t raw -L PREROUTING -v -n -x").stdout
@@ -128,7 +160,7 @@ def check_layout(st, r):
     in_own = all(ipaddress.ip_address(addrs[s]) in ipaddress.ip_network(subnets[s]) for s in addrs)
     r.append(("layout: each seat's address is in its own subnet, subnets differ",
               in_own and subnets["seat0"] != subnets["seat1"], (addrs, subnets)))
-    res = st.ctl("POST", "/__arm", arm_payload([DECOY], subnets))
+    res = st.ctl("POST", "/__arm", arm_payload([DECOY], subnets, feedback="L0"))
     armed = res.returncode == 0 and json.loads(res.stdout).get("armed") is True
     r.append(("layout: exit armed with the seat subnets read from the router", armed, res.stdout))
     return subnets, addrs
@@ -206,9 +238,10 @@ def check_spoof(st, r, addrs):
     r.append(("spoof: seat0's extra addresses removed again", normal == "1", normal))
 
 
-# Runs inside a seat (python3, NET_RAW): raw Ethernet frames with TCP SYNs from
-# 127.0.0.1, written straight to eth0 so the seat's own kernel cannot refuse a
-# loopback source. argv: router MAC, then dst:port pairs. Prints frames sent.
+# Runs inside a seat (python3, NET_RAW): raw Ethernet frames with TCP SYNs,
+# written straight to eth0 so the seat's own kernel cannot refuse a loopback
+# address. argv: router MAC, source address, then dst:port pairs. Prints
+# frames sent.
 _LOOPBACK_SYN = textwrap.dedent("""
     import socket, struct, sys
     def csum(b):
@@ -218,11 +251,11 @@ _LOOPBACK_SYN = textwrap.dedent("""
         return ~s & 0xffff
     router_mac = bytes.fromhex(sys.argv[1].replace(":", ""))
     my_mac = bytes.fromhex(open("/sys/class/net/eth0/address").read().strip().replace(":", ""))
-    src = socket.inet_aton("127.0.0.1")
+    src = socket.inet_aton(sys.argv[2])
     sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW)
     sock.bind(("eth0", 0))
     n = 0
-    for target in sys.argv[2:]:
+    for target in sys.argv[3:]:
         host, port = target.rsplit(":", 1)
         dst = socket.inet_aton(host)
         for _ in range(2):
@@ -249,7 +282,7 @@ def check_loopback_spoof(st, r):
     mac = st.sh("seat0", f"ip neigh show {router_ip} | awk '{{print $5}}'").stdout.strip()
     before_exit = _exit_view(st)
     before = st.antispoof_counts()
-    out = st.dc("exec", "-T", "seat0", "python3", "-c", _LOOPBACK_SYN, mac,
+    out = st.dc("exec", "-T", "seat0", "python3", "-c", _LOOPBACK_SYN, mac, "127.0.0.1",
                 f"{COLLECTION_IP}:80", f"{router_ip}:8081")
     time.sleep(2)
     after = st.antispoof_counts()
@@ -314,9 +347,11 @@ def check_router_only(st, r, subnets):
     lis = _HostListener(host_addrs)
     try:
         ctl_router = st.sh("router", f"wget -q -T 3 -O - http://{outer_gw}:{lis.port}/").stdout
-        via_router = st.sh("seat0", f"curl -s -m 4 http://{outer_gw}:{lis.port}/").stdout
-        r.append(("router-only: controls: host listener answers the router, and a seat through the router",
-                  ctl_router == "HOSTOK" and via_router == "HOSTOK", (ctl_router, via_router)))
+        via_router = st.sh("seat0", f"curl -s -m 4 http://{outer_gw}:{lis.port}/; echo \" rc=$?\"").stdout
+        r.append(("router-only: control: host listener answers the router directly",
+                  ctl_router == "HOSTOK", ctl_router))
+        r.append(("router-only: a seat cannot reach the host listener through the router (blocked)",
+                  "HOSTOK" not in via_router and "rc=0" not in via_router, via_router))
         ok, detail = True, {}
         for seat in ("seat0", "seat1"):
             routes = [ln.strip() for ln in st.sh(seat, "ip -4 route show").stdout.strip().splitlines()]
@@ -407,6 +442,131 @@ def check_exit(st, r, subnets, addrs):
     r.append(("exit: agent reads of the request log get the same 404 from both seats",
               logs["seat0"] == logs["seat1"] == " 404", logs))
     r.append(("exit: no forward errors", s["forward_errors"] == [], s["forward_errors"]))
+
+
+def check_blocks(st, r):
+    outer_gw = _network(st, "outer")["IPAM"]["Config"][0]["Gateway"]
+    # The host addresses the router was given when the compose file was written
+    # (bridges created later are covered by the private-range rules).
+    hosts = st.sh("router", "echo $HOST_ADDRS").stdout.split()
+    labels = {"metadata": "169.254.169.254", "outer-gw": outer_gw}
+    labels.update({f"host-{a}": a for a in hosts})
+    tcp = ("python3 -c \"import socket,sys; s=socket.socket(); s.settimeout(3)\n"
+           "try:\n s.connect((sys.argv[1], int(sys.argv[2]))); print('OPEN')\n"
+           "except Exception as e: print(type(e).__name__)\" ")
+    for seat in ("seat0", "seat1"):
+        before = {k: st.counter(f"block-{seat}-{k}") for k in labels}
+        res = {}
+        for label, addr in labels.items():
+            if label == "metadata":
+                res[label] = st.sh(seat, f"curl -s -o /dev/null -m 4 -w '%{{http_code}}' http://{addr}/; "
+                                         "echo \" rc=$?\"").stdout.strip()
+            else:
+                res[label] = st.sh(seat, tcp + f"{addr} 22").stdout.strip()
+        after = {k: st.counter(f"block-{seat}-{k}") for k in labels}
+        no_answer = all(("OPEN" not in v and "rc=0" not in v) for v in res.values())
+        rose = all(after[k] > before[k] for k in labels)
+        r.append((f"blocks: {seat} gets no answer from host sshd (VM, docker0, outer gateway) or metadata",
+                  no_answer and set(host_ipv4_addresses()) >= set(hosts) and len(hosts) >= 1, res))
+        r.append((f"blocks: {seat}'s counter rose for every block rule it hit", rose, (before, after)))
+    ok = st.sh("seat1", "curl -s -o /dev/null -m 6 -w 'internet:%{http_code} ' http://1.1.1.1/; "
+                        "curl -s -o /dev/null -m 6 -w 'malware:%{http_code} ' http://52.84.125.33/; "
+                        "curl -s -o /dev/null -m 6 -w 'db:%{http_code}' http://192.0.2.10/").stdout
+    r.append(("blocks: the internet and the task services still answer",
+              ok.strip() == "internet:301 malware:200 db:401", ok))
+
+
+def check_loopback_dst(st, r, addrs):
+    router_ip = st.sh("seat0", "ip route show default | awk '{print $3}'").stdout.strip()
+    st.sh("seat0", f"ping -c1 -W2 {router_ip} >/dev/null")
+    mac = st.sh("seat0", f"ip neigh show {router_ip} | awk '{{print $5}}'").stdout.strip()
+    before_exit = _exit_view(st)
+    before = st.counter("block-seat0-loopback")
+    out = st.dc("exec", "-T", "seat0", "python3", "-c", _LOOPBACK_SYN, mac, addrs["seat0"],
+                "127.0.0.1:8091", "127.0.0.1:8092", "127.0.0.1:8081")
+    time.sleep(2)
+    after = st.counter("block-seat0-loopback")
+    sent = int(out.stdout.strip() or 0)
+    r.append(("loopback-dst: seat0 sent 6 SYN frames from its own address to the router's loopback ports",
+              out.returncode == 0 and sent == 6, (out.stdout, out.stderr[-300:])))
+    r.append(("loopback-dst: the router dropped every one (block-seat0-loopback counter)",
+              after - before == sent, (before, after)))
+    r.append(("loopback-dst: nothing changed at the exit or the collector",
+              _exit_view(st) == before_exit, None))
+
+
+def check_dns(st, r, subnets):
+    res = {s: st.sh(s, "getent ahostsv4 pypi.org | head -n1 | awk '{print $1}'").stdout.strip()
+           for s in ("seat0", "seat1")}
+    r.append(("dns: both seats resolve an external name through the router",
+              all(re.fullmatch(r"\d+\.\d+\.\d+\.\d+", v) for v in res.values()), res))
+    pip = st.sh("seat0", "pip install --no-cache-dir --disable-pip-version-check --target /tmp/piptest six "
+                         ">/tmp/pip.out 2>&1; echo rc=$?; python3 -c 'import sys; sys.path.insert(0, \"/tmp/piptest\"); "
+                         "import six; print(\"six\", six.__version__)'", timeout=300)
+    r.append(("dns: a small package installs by name with pip in seat0",
+              "rc=0" in pip.stdout and "six " in pip.stdout, pip.stdout[-300:]))
+    t = summarize_traffic(st.dc("exec", "-T", "router", *traffic_counts_command()).stdout, subnets)
+    r.append(("dns: DNS queries counted for both seats",
+              t["dns_queries"]["seat0"] > 0 and t["dns_queries"]["seat1"] > 0, t["dns_queries"]))
+    exit_conns = {s: t["connections"][s].get(f"{COLLECTION_IP} tcp/80", 0) for s in ("seat0", "seat1")}
+    r.append(("dns: traffic counts give connections by destination for both seats (exit included)",
+              exit_conns["seat0"] > 0 and exit_conns["seat1"] > 0
+              and any(k.endswith("tcp/443") for k in t["connections"]["seat0"]), t["connections"]))
+    return t
+
+
+def check_l0(st, r):
+    """seat1 is contained by now; seat0 is free."""
+    reqs = {"GET": f"curl -s -i {URL}/get-request-log",
+            "HEAD": f"curl -s -I {URL}/get-request-log",
+            "query": f"curl -s -i '{URL}/get-request-log?x=1&secret=abc'"}
+    for name, cmd in reqs.items():
+        out = {s: re.sub(r"(?im)^date:.*\r?\n", "", st.sh(s, cmd).stdout) for s in ("seat0", "seat1")}
+        r.append((f"l0: {name} log read: byte-identical reply from free seat0 and contained seat1 (Date excluded)",
+                  out["seat0"] == out["seat1"] and out["seat0"].startswith("HTTP/1.1 404"), out))
+
+
+ENCODED_PATHS = ["/enc/encoded%20space%2Fslash", "/enc/a%2fb%20c", "/enc/100%25done",
+                 "/enc/what%3Fnot-a-query", "/enc/a+b%26c?x=1%202&y=%2F", "/enc/caf%C3%A9",
+                 "/enc/nul%00x", "/enc/q?a=%20b"]
+
+
+def check_encoded(st, r):
+    codes = {p: st.sh("seat0", f"curl -s --path-as-is -o /dev/null -w '%{{http_code}}' "
+                               f"--data-binary enc '{URL}{p}'").stdout for p in ENCODED_PATHS}
+    raw_utf8 = st.sh("seat0", "python3 -c \"import socket; s=socket.create_connection(('" + COLLECTION_IP +
+                     "', 80), 10); s.sendall(b'POST /enc/raw\\xc3\\xa9 HTTP/1.1\\r\\nHost: x\\r\\n"
+                     "Content-Length: 3\\r\\nConnection: close\\r\\n\\r\\nenc'); "
+                     "print(s.recv(100).split(b' ')[1].decode())\"").stdout.strip()
+    codes["raw-utf8-bytes"] = raw_utf8
+    r.append(("encoded: every encoded-path shape from seat0 delivers (204)",
+              all(c == "204" for c in codes.values()), codes))
+    s = st.state()
+    exit_paths = [e["path"] for e in s["forwarded"] if e["path"].startswith("/enc/")]
+    col_paths = [e["path"] for e in st.collector_log() if e["path"].startswith("/enc/")]
+    r.append(("encoded: each is logged by the collector with the path the exit saw",
+              exit_paths == col_paths and len(col_paths) == len(codes), (exit_paths, col_paths)))
+    r.append(("encoded: no forward errors", s["forward_errors"] == [], s["forward_errors"]))
+
+
+def check_memory(st, r, n=200):
+    st.sh("seat0", "head -c 786432 /dev/urandom | base64 -w0 > /tmp/b1m")
+    before = st.collector_summary()["entries"]
+    out = st.sh("seat0", f"i=0; while [ $i -lt {n} ]; do curl -s -o /dev/null -m 60 -w '%{{http_code}}\\n' "
+                         f"--data-binary @/tmp/b1m {URL}/mem/1m; i=$((i+1)); done", timeout=1800).stdout.split()
+    after = st.collector_summary()
+    mem = subprocess.run(["docker", "stats", "--no-stream", "--format", "{{.Name}} {{.MemUsage}}"],
+                         capture_output=True, text=True).stdout
+    mem = [ln for ln in mem.splitlines() if PROJECT in ln and ("collector" in ln or "logging_server" in ln)]
+    r.append((f"memory: {n} sends of 1 MB from seat0 all deliver (204)",
+              len(out) == n and set(out) == {"204"}, {c: out.count(c) for c in set(out)}))
+    r.append((f"memory: the collector holds all {n} (log streamed, not loaded)",
+              after["entries"] - before == n, (before, after, mem)))
+    oom = {sv: st.oom(sv) for sv in ("collector", "logging_server")}
+    r.append(("memory: neither the exit nor the collector was OOM-killed; both running",
+              all(v == "false running" for v in oom.values()), oom))
+    errs = st.state()["forward_errors"]
+    r.append(("memory: no forward errors", errs == [], errs[:3]))
 
 
 _LINE = re.compile(r"^(seat[01]) (fg|bg) (\d+)$")
@@ -515,16 +675,22 @@ def main() -> int:
             check_isolation(st, results, addrs)
             check_spoof(st, results, addrs)
             check_loopback_spoof(st, results)
+            check_loopback_dst(st, results, addrs)
             check_exit(st, results, subnets, addrs)
+            check_l0(st, results)
             check_router_only(st, results, subnets)
+            check_blocks(st, results)
+            check_dns(st, results, subnets)
+            check_encoded(st, results)
             check_concurrent(st, results, workdir)
+            check_memory(st, results)
     except Exception as e:  # noqa: BLE001
         results.append(("no exception during the test", False, repr(e)))
     finally:
         if os.environ.get("KEEP") != "1":
             st.dc("down", "-v", "--remove-orphans", timeout=180)
 
-    print("\n================ SWARM EXIT E2E (step 1) ================")
+    print("\n================ SWARM EXIT E2E (steps 1 and 3) ================")
     all_ok = True
     for name, ok, detail in results:
         all_ok = all_ok and ok

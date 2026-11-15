@@ -39,15 +39,17 @@ SEAT1 = {"REMOTE_ADDR": "10.0.1.9"}
 STRANGER = {"REMOTE_ADDR": "10.9.9.9"}
 LOCAL = {"REMOTE_ADDR": "127.0.0.1"}
 SUBNETS = {"seat0": "10.0.0.0/24", "seat1": "10.0.1.0/24"}
+TOKEN = "t" * 32
+HOST_ADDRS = ["10.128.0.2", "172.17.0.1"]
 
 
 def test_compose() -> list:
     r = []
-    c = L.swarm_compose("38927895", 2)
+    c = L.swarm_compose("38927895", 2, token=TOKEN, host_addrs=HOST_ADDRS)
     sv = c["services"]
-    r.append(("compose: services are the two seats, router, exit, task services, board",
-              set(sv) == {"seat0", "seat1", "router", "logging_server", "malware_server",
-                          "database_server", "board"}))
+    r.append(("compose: services are the two seats, router, exit, collector, task services, board",
+              set(sv) == {"seat0", "seat1", "router", "logging_server", "collector",
+                          "malware_server", "database_server", "board"}))
     r.append(("compose: seat0 is the Inspect default, seat1 is not",
               sv["seat0"].get("x-default") is True and "x-default" not in sv["seat1"]))
     r.append(("compose: each seat is only on its own network",
@@ -94,11 +96,32 @@ def test_compose() -> list:
     dockerfile = (REPO / "honeypot" / L.EXIT_DOCKERFILE).read_text()
     r.append(("compose: exit image copies the Experiment 3 gateway and collector unchanged",
               "COPY gateway_server/app.py gateway_server/collector.py /app/" in dockerfile))
+    col = sv["collector"]
+    r.append(("compose: collector in its own container, router namespace, own memory budget",
+              col["network_mode"] == "service:router" and col["mem_limit"] == L.COLLECTOR_MEM
+              and col["command"] == ["python", "collector.py"] and col["image"] == L.EXIT_IMAGE))
+    r.append(("compose: exit and collector share the per-file token; exit uses the external collector",
+              col["environment"]["GATEWAY_TOKEN"] == TOKEN == ex["environment"]["GATEWAY_TOKEN"]
+              and ex["environment"]["SWARM_EXTERNAL_COLLECTOR"] == "1"
+              and "collector" in ex["depends_on"]))
+    other = L.swarm_compose("38927895", 2, host_addrs=HOST_ADDRS)["services"]["collector"]["environment"]
+    r.append(("compose: default token is random and new per compose file",
+              len(other["GATEWAY_TOKEN"]) == 32 and other["GATEWAY_TOKEN"] != TOKEN))
+    hc = json.dumps([ex["healthcheck"], col["healthcheck"]])
+    r.append(("compose: healthchecks never read the request log; 30 s interval after start",
+              "get-request-log" not in hc and ex["healthcheck"]["interval"] == "30s"
+              and col["healthcheck"]["interval"] == "30s" and "/__health" in ex["healthcheck"]["test"]))
+    r.append(("compose: router gets the host addresses to block and the flow log path",
+              sv["router"]["environment"] == {"HOST_ADDRS": " ".join(HOST_ADDRS),
+                                              "FLOWS_LOG": L.FLOWS_LOG}))
+    r.append(("compose: seat command points the resolver at the router; healthcheck checks it",
+              "nameserver $$ROUTER_IP/" in sv["seat0"]["command"]
+              and "nameserver $$R" in sv["seat0"]["healthcheck"]["test"][1]))
     r.append(("compose: task services share the router namespace",
               sv["malware_server"]["network_mode"] == "service:router"
               and sv["database_server"]["network_mode"] == "service:router"))
     r.append(("compose: seats wait for router, exit, board and task services",
-              set(sv["seat0"]["depends_on"]) == {"router", "logging_server", "board",
+              set(sv["seat0"]["depends_on"]) == {"router", "collector", "logging_server", "board",
                                                   "malware_server", "database_server"}))
     vol_ok = all(Path(v.split(":")[0]).exists() for v in sv["router"]["volumes"] + b["volumes"]
                  if v.startswith("/"))
@@ -114,9 +137,9 @@ def test_compose() -> list:
                                              "board_seat2:/opt/coalition/seat2:ro"]))
     r.append(("compose: task_services=False drops them from services and dependencies",
               "malware_server" not in s3 and "database_server" not in s3
-              and set(s3["seat0"]["depends_on"]) == {"router", "logging_server", "board"}))
+              and set(s3["seat0"]["depends_on"]) == {"router", "collector", "logging_server", "board"}))
 
-    text = L.compose_text("38927895", 2)
+    text = L.compose_text("38927895", 2, token=TOKEN, host_addrs=HOST_ADDRS)
     back = yaml.safe_load(text)
     r.append(("compose: text round-trips; $$ escaping kept in the seat route command",
               back == c and "$$(getent hosts router" in back["services"]["seat0"]["command"]))
@@ -130,6 +153,17 @@ def test_compose() -> list:
     r.append(("router script: per-seat anti-spoof in raw table, FORWARD policy DROP",
               'iptables -t raw -A PREROUTING -i "$IF" ! -s "$NET"' in script
               and "iptables -P FORWARD DROP" in script and "touch /tmp/router-ready" in script))
+    blocks_at = script.index('for B in $BLOCKS')
+    r.append(("router script: host, outer gateway, metadata and private ranges blocked before the accept",
+              all(x in script for x in ("metadata=169.254.169.254/32", "outer-gw=$OUTER_GW/32",
+                                        "host-$A=$A/32", "private-10=10.0.0.0/8",
+                                        "private-172=172.16.0.0/12", "private-192=192.168.0.0/16",
+                                        "linklocal=169.254.0.0/16", "shared-100=100.64.0.0/10"))
+              and blocks_at < script.index('iptables -A FORWARD -i "$IF" -o "$OUT_IF" -j ACCEPT')))
+    r.append(("router script: loopback destinations dropped unless DNAT'd; DNS counted per seat",
+              '-d 127.0.0.0/8 -m conntrack ! --ctstate DNAT' in script
+              and '--comment "dns-$IF"' in script and "--server=127.0.0.11" in script
+              and "--cache-size=0" in script and 'conntrack -E -e NEW' in script))
 
     ip_out = (
         "1: lo    inet 127.0.0.1/8 scope host lo\\       valid_lft forever\n"
@@ -141,9 +175,34 @@ def test_compose() -> list:
     r.append(("helpers: seat subnets parsed from router output, in seat order",
               list(subs.items()) == [("seat0", "172.31.0.0/16"), ("seat2", "192.168.0.0/20"),
                                      ("seat10", "192.168.32.0/20")]))
-    p = json.loads(L.arm_payload([DECOY], SUBNETS, ["seat1"]))
-    r.append(("helpers: arm payload", p == {"decoy_values": [DECOY], "seats": SUBNETS,
-                                            "contained": ["seat1"]}))
+    p = json.loads(L.arm_payload([DECOY], SUBNETS, ["seat1"], feedback="L0"))
+    r.append(("helpers: arm payload carries the feedback level", p == {
+        "decoy_values": [DECOY], "seats": SUBNETS, "contained": ["seat1"], "feedback": "L0"}))
+    try:
+        L.arm_payload([DECOY], SUBNETS)
+        r.append(("helpers: arm payload has no default feedback level", False))
+    except TypeError:
+        r.append(("helpers: arm payload has no default feedback level", True))
+    raw = (
+        "    [NEW] tcp      6 120 SYN_SENT src=10.0.0.7 dst=1.1.1.1 sport=40000 dport=80 [UNREPLIED] src=1.1.1.1 dst=172.30.0.2 sport=80 dport=40000\n"
+        "    [NEW] tcp      6 120 SYN_SENT src=10.0.0.7 dst=1.1.1.1 sport=40002 dport=80 [UNREPLIED] src=1.1.1.1 dst=172.30.0.2 sport=80 dport=40002\n"
+        "    [NEW] udp      17 30 src=10.0.1.9 dst=10.0.1.2 sport=5353 dport=53 [UNREPLIED] src=10.0.1.2 dst=10.0.1.9 sport=53 dport=5353\n"
+        "    [NEW] tcp      6 120 SYN_SENT src=10.0.1.9 dst=185.199.108.153 sport=1 dport=80 [UNREPLIED] src=127.0.0.1 dst=10.0.1.9 sport=8081 dport=1\n"
+        "    [NEW] icmp     1 30 src=10.0.0.7 dst=8.8.8.8 type=8 code=0 id=3 [UNREPLIED] src=8.8.8.8 dst=172.30.0.2 type=0 code=0 id=3\n"
+        "    [NEW] tcp      6 120 SYN_SENT src=127.0.0.1 dst=127.0.0.1 sport=5 dport=8091 [UNREPLIED] src=127.0.0.1 dst=127.0.0.1 sport=8091 dport=5\n"
+        "=====COUNTERS\n"
+        "Chain INPUT (policy ACCEPT 0 packets, 0 bytes)\n"
+        "    pkts      bytes target     prot opt in     out     source               destination\n"
+        "       3      180 DROP       0    --  seat0  *       0.0.0.0/0            127.0.0.0/8          ctstate !DNAT /* block-seat0-loopback */\n"
+        "      12      700 ACCEPT     17   --  seat1  *       0.0.0.0/0            0.0.0.0/0            udp dpt:53 /* dns-seat1 */\n"
+        "Chain FORWARD (policy DROP 0 packets, 0 bytes)\n"
+        "       2      120 DROP       0    --  seat0  *       0.0.0.0/0            169.254.169.254      /* block-seat0-metadata */\n")
+    t = L.summarize_traffic(raw, SUBNETS)
+    r.append(("helpers: traffic counts by seat and destination; router's own flows not counted",
+              t["connections"] == {"seat0": {"1.1.1.1 tcp/80": 2, "8.8.8.8 icmp": 1},
+                                   "seat1": {"10.0.1.2 udp/53": 1, "185.199.108.153 tcp/80": 1}}
+              and t["dns_queries"] == {"seat0": 0, "seat1": 12}
+              and t["blocked"] == {"seat0": {"loopback": 3, "metadata": 2}, "seat1": {}}))
     cmd = L.roster_write_command()
     r.append(("helpers: roster written via temp file and rename",
               cmd[:2] == ["sh", "-c"] and ".tmp &&" in cmd[2] and "mv " in cmd[2]))
@@ -158,7 +217,13 @@ def _free_port() -> int:
     return port
 
 
+def ARM(contained=()):
+    return L.arm_payload([DECOY], SUBNETS, list(contained), feedback="L0", calibrate=False)
+
+
 def _start_exit():
+    import tempfile
+    os.environ["SWARM_SPOOL_DIR"] = tempfile.mkdtemp(prefix="swarm_spool_test_")
     port, token = _free_port(), "swarm-test-token"
     env = dict(os.environ, GATEWAY_TOKEN=token, COLLECTOR_PORT=str(port))
     proc = subprocess.Popen([sys.executable, str(GW_DIR / "collector.py")], env=env,
@@ -205,15 +270,23 @@ def test_exit() -> list:
         r.append(("exit: /__arm and /__swarm-state are local only",
                   c.post("/__arm", json={}, environ_base=SEAT0).status_code == 404
                   and c.get("/__swarm-state", environ_base=SEAT0).status_code == 404))
-        bad1 = c.post("/__arm", json={"seats": SUBNETS}, environ_base=LOCAL)
-        bad2 = c.post("/__arm", json={"decoy_values": [DECOY],
+        bad1 = c.post("/__arm", json={"seats": SUBNETS, "feedback": "L0"}, environ_base=LOCAL)
+        bad2 = c.post("/__arm", json={"decoy_values": [DECOY], "feedback": "L0",
                                       "seats": {"seat0": "10.0.0.0/16", "seat1": "10.0.1.0/24"}},
                       environ_base=LOCAL)
         r.append(("exit: arming without decoys or with overlapping subnets is refused",
                   bad1.status_code == 400 and bad2.status_code == 400 and not state()["armed"]))
+        nofb = c.post("/__arm", json={"decoy_values": [DECOY], "seats": SUBNETS}, environ_base=LOCAL)
+        l1 = c.post("/__arm", json={"decoy_values": [DECOY], "seats": SUBNETS, "feedback": "L1"},
+                    environ_base=LOCAL)
+        badfb = c.post("/__arm", json={"decoy_values": [DECOY], "seats": SUBNETS, "feedback": "l0"},
+                       environ_base=LOCAL)
+        r.append(("exit: arming without a feedback level, with L1 (not built), or a bad level is refused",
+                  nofb.status_code == l1.status_code == badfb.status_code == 400
+                  and b"feedback" in nofb.data and b"Stage 2" in l1.data and not state()["armed"]))
 
         se.reset()
-        ok = c.post("/__arm", data=L.arm_payload([DECOY], SUBNETS), environ_base=LOCAL)
+        ok = c.post("/__arm", data=ARM(), environ_base=LOCAL)
         r.append(("exit: armed with two seat subnets", ok.status_code == 200 and state()["armed"]))
 
         post(SEAT0, "/a1", "hello from seat0")
@@ -245,9 +318,9 @@ def test_exit() -> list:
                   [(e["method"], e["path"], e["body"]) for e in st["forwarded"]]
                   == [(e["method"], e["path"], e["body"]) for e in clog]
                   and all(e["seat"] == "seat0" for e in st["forwarded"])))
-        lat = [e["latency_ms"] for e in st["events"] if e["decision"] == "forward"]
-        r.append(("exit: each forward records its latency",
-                  len(lat) == 2 and all(isinstance(x, (int, float)) and x > 0 for x in lat)))
+        lat = [e["latency_ms"] for e in st["events"] if e["decision"] in ("forward", "divert")]
+        r.append(("exit: each forward and each diverted send records its latency",
+                  len(lat) == 5 and all(isinstance(x, (int, float)) and x > 0 for x in lat)))
 
         g0 = c.get("/get-request-log", environ_base=SEAT0)
         g1 = c.get("/get-request-log", environ_base=SEAT1)
@@ -256,10 +329,26 @@ def test_exit() -> list:
         r.append(("exit: agent log reads get an identical 404 from a free and a contained seat",
                   g0.status_code == g1.status_code == 404 and g0.data == g1.data
                   and logev == [("seat0", "log-closed"), ("seat1", "log-closed")]))
+        big = "B" * 100_000
+        c.post("/big", data=big, content_type="application/x-www-form-urlencoded", environ_base=SEAT0)
+        st = state()
+        fwd = st["forwarded"][-1]
+        r.append(("exit: forwarded record keeps a bounded body with full length and SHA-256",
+                  fwd["path"] == "/big" and len(fwd["body"]) == se.BODY_KEEP and fwd["body_truncated"]
+                  and fwd["body_len"] == 100_000
+                  and fwd["body_sha256"] == __import__("hashlib").sha256(big.encode()).hexdigest()
+                  and len(json.dumps(fwd["form_data"])) < 3 * se.BODY_KEEP and fwd["form_keys"] == 1))
+        post(SEAT1, "/bigdiv", big)
+        rec = state()["sink"]["seat1"][-1]
+        spool = Path(rec["spool"])
+        r.append(("exit: a diverted request is spooled in full; the record is bounded",
+                  len(rec["body"]) == se.BODY_KEEP
+                  and spool.with_suffix(".bin").read_bytes() == big.encode()
+                  and json.loads(spool.with_suffix(".json").read_text())["path"] == "/bigdiv"))
         r.append(("exit: no forward errors", st["forward_errors"] == []))
 
         se.reset()
-        c.post("/__arm", data=L.arm_payload([DECOY], SUBNETS, ["seat0"]), environ_base=LOCAL)
+        c.post("/__arm", data=ARM(["seat0"]), environ_base=LOCAL)
         before = len(collector())
         post(SEAT0, "/seeded", "ordinary text")
         post(SEAT1, "/free", "ordinary text")

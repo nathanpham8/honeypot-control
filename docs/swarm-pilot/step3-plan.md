@@ -341,3 +341,12 @@ After fixes 1 and 2, the Stage 0 phases those fixes could change are rerun on th
   - **Same-seat counterfactual:** containment is switched by re-arming between blocks of 30 sends (`contained=[]` vs `[seat]`), so seat and boot are the same for both conditions. 3 boots × 100 per condition per path; 300 per condition per path in all.
   - **T4:** 30 boots, alternating a contained and a free first send (15 each). This is below the 300-sample pass line, so it is reported as underpowered.
   - **T8 in Docker:** 30 s idle gaps, 16 per path, also underpowered.
+
+### Refinements found while building, before any Stage 1 data
+- **Calibration runs at arming, not before it.** Every real forward from a free seat is scanned for the armed decoys, and the scan cost grows with body size. Calibration requests therefore go through the same scan, so they need the armed decoy set.
+  - Arming with a new decoy set runs the calibration (about 5 s, 480 forwards) before `/__arm` returns. Re-arming with the same decoys does not recalibrate.
+  - The boot part (sleep overshoot, a warm-up of the exit's own forward, and the 20 cold collectors) runs before the exit reports healthy.
+- **What is cold at the first real forward.** After the warm-up and calibration, the exit process is warm at the first real forward after a boot; only the real collector is cold. A fresh collector process reached through the warm exit models exactly that state, so the cold-excess samples are measured against warm calibration forwards taken at the same time.
+- **Raw non-ASCII bytes in a request line.** werkzeug's dev server decodes the request line as latin-1. The exit, like a stock logging server, therefore sees `/cafÃ©` for raw UTF-8 `café`. The forward passes that string on (percent-encoded), so the collector logs the same path the exit saw.
+- **Experiment 3's forward also changed two encoded paths without failing.** It turned `%25` into `%` and `%3F` into a real query, so the collector logged a different path from the one the exit saw. The swarm forward keeps the raw target, so the logged path matches.
+- **Exit-internal latency** is recorded for diverted sends too (target and actual span), so the sink can be checked inside the exit as well as at the seat.
