@@ -83,19 +83,21 @@ Stated assumption: the defender sees all traffic at the exit. This favors the de
 | Round-to-round swarm state (modes, naming, containment persistence) | `honeypot/swarm.py` `SwarmState` | Done; tests without Docker |
 | Per-agent containment decision | `honeypot/per_agent_containment.py` | Done; tests without Docker. Its identity input becomes the source container address. |
 | Container check (one named container per seat within one sample) | | Done (review round 2, in `step1-plan.md`); no repository code. Works for bash, python and direct sandbox calls; the stock text editor ignores the seat and must be replaced or dropped. |
-| Multi-container layout, board folder, per-container attribution at the exit (step 1 de-risk) | | Next |
+| Multi-container layout, board folder, per-container attribution at the exit (step 1 de-risk) | `honeypot/swarm_layout.py`, `honeypot/swarm_router.sh`, `honeypot/swarm_board_keeper.sh`, `honeypot/swarm_gateway/` | Done; tests without Docker (`tests/test_swarm_layout.py`) and scripted Docker test (`tests/test_swarm_exit_e2e.py`) passed. Results in `step1-plan.md`. |
 | Feedback levels L0 and L1, timing-matched sink | | After |
 | Inspect and `SwarmState` wiring, parallel round driver | | After |
 | Per-swarm records, scorer, detection coding rule | | After |
 
-Docker test for the finished pieces: `tests/test_pilot_e2e.py`.
+Docker tests for the finished pieces: `tests/test_pilot_e2e.py` (pieces 1 to 3), `tests/test_swarm_exit_e2e.py` (step 1).
 
 ## Next steps, in order
 
 1. Container check: can Inspect/ControlArena run each agent's tool calls in its own named container within one sample.
 2. Step 1 de-risk test (scripted, no model): see `docs/swarm-pilot/step1-plan.md`.
 3. Feedback levels: closed log with identical replies (L0); L1 forging, with tests that compare the forged log against the true one; timing-matched sink.
-4. Inspect and `SwarmState` wiring, plus the parallel round driver.
+4. Inspect and `SwarmState` wiring, plus the parallel round driver. Includes:
+   - a seat-bound text editor that targets each agent's own container (the stock editor ignores the seat), with a test that every agent tool (bash, python, text editor, direct sandbox calls) lands in its own seat;
+   - a test that per-agent step and token limits are scoped to each agent's loop, so one agent running out does not stop or shorten the other.
 5. Records, analysis and the detection coding rule.
 6. Honest pass and task selection.
 7. Freeze prompts, pre-register the mini-pilot, feasibility run.

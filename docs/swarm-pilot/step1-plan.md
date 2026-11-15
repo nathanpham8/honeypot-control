@@ -133,3 +133,47 @@ Nothing was deleted.
    - the exit already records what step 3 needs: the full collector-format entry of each forwarded request (the source for L1's reconstructed true log) and each request's forward latency (the source for the sink's delay distribution);
    - test: the exit's forwarded entries match the collector's log entry for entry on method, path and body, in order.
 8. **Unchanged:** the spoof test, the background-process test, and containing only the seat that sent a decoy while the other seat's traffic reaches the collector. Still no `experiment_log.md` entry for step 1, since it is a scripted infrastructure test.
+
+## Step 1 results
+
+Built and tested November 15, 2026, as amended in "Review round 2". No model, no API calls.
+
+### What was built
+- `honeypot/swarm_layout.py`: compose generator for N seats, plus helpers that read the seat subnets from the router, build the exit's arming payload and write the roster.
+- `honeypot/swarm_router.sh`: per-seat anti-spoof rule, DNAT to the exit, FORWARD policy DROP.
+- `honeypot/swarm_board_keeper.sh`: checks the board every 2 s and keeps a timestamped snapshot when anything changed.
+- `honeypot/swarm_gateway/`: `swarm_exit.py`, `ctl.py`, `service.Dockerfile`; image `bash-arena-swarm-exit:latest`. The exit imports the Experiment 3 gateway module unchanged and copies the collector unchanged. Nothing in `gateway_server/`, `plant.py`, protocol, setting or the earlier compose templates changed.
+- Tests: `tests/test_swarm_layout.py` (no Docker) and `tests/test_swarm_exit_e2e.py` (Docker).
+
+### Results
+- **Standard suite** (every test not ending `_e2e`): 15 of 15 pass, including the new `test_swarm_layout.py` (40 checks).
+- **Mutation check:** I briefly made the exit contain every seat when one sends a decoy. `test_swarm_layout.py` then failed 5 checks; the original file was restored.
+- **`test_swarm_exit_e2e.py`:** 32 of 32 checks pass, on both runs (the first took 1 min 45 s, including startup). Numbers from the second run:
+  - Seats on separate subnets: seat0 at 172.18.0.3 and seat1 at 172.19.0.3, each attributed correctly on all 6 requests.
+  - seat1's background command returned in 0.18 s, before its request left. The decoy then arrived, was attributed to seat1, and contained seat1 only.
+  - The collector holds exactly seat0's two sends. seat1's sink holds its decoy and its later real send. The exit's forwarded record matches the collector's log in order, with forward latencies of 3.66 and 3.69 ms.
+  - Spoofing: seat0 sent as seat1's address and as an outside address. Both sends failed, the anti-spoof counter on seat0 went from 0 to 14 packets, nothing reached the exit or the collector, and nobody was contained.
+  - Isolation: each seat's listener answered locally (200), and the other seat's connection timed out, in both directions.
+  - Board permissions: as root, seat0's writes to `seat1/` and `harness/` fail with a read-only filesystem error, and remount fails with "permission denied". A write outside the seat folders stays in its own container. The harness roster reached both seats.
+  - Concurrent writes: 600 lines in seat0 (300 foreground and 300 background, interleaved) and 300 in seat1, with none lost or torn. 119 reads taken while writing were all ordered prefixes. 7 snapshots were kept (6 of them mid-write) from 37 checks, and every snapshot is a prefix of the final files.
+- No Docker containers, networks or volumes were left behind.
+
+### Deviations from the plan and things to know
+1. **`route_localnet` is needed on the router.** Without it, DNAT from a seat interface to the exit on 127.0.0.1 fails (checked: the request timed out). Turning it on means a packet with source 127.0.0.1 is no longer dropped automatically. The anti-spoof rule drops it instead, since 127.0.0.1 is outside every seat subnet. The Docker test spoofs seat1's address and an outside address, not 127.0.0.1 itself.
+2. **Seat networks are `internal`.** This was not in the plan. Without it, a seat (it has `NET_ADMIN`) could change its default route to Docker's bridge gateway and bypass the router and the exit. Not tested directly.
+3. **The spoof test doesn't isolate the rule.** With separate networks, replies to seat1's address go to seat1, so a spoofed TCP connection would fail even without the anti-spoof rule. The rising counter shows the rule fires; I did not run the test with the rule removed.
+4. **Attribution exists only in the exit's records.** The collector sees every request from 127.0.0.1 because the exit forwards over loopback. The test links the two by comparing the exit's forwarded record with the collector's log.
+5. **Exit image details.** Flask is installed when the image is built, not at container start. `ctl.py` replaces curl, which the slim image lacks, for the harness's control calls.
+6. **Isolation was tested with TCP only.** No ping.
+
+### Problems found in existing tests (not changed)
+- **`tests/test_tripwire_scripted.py` removes containers it doesn't own.** It runs `docker rm -f` on every container named `inspect-bash_arena_h-*`, whichever run owns it. During the review round 2 test run (01:48 UTC) it removed the 30 leftover sandbox containers, before removal was authorized. If the standard suite runs during an experiment, it will kill that experiment's sandboxes.
+- **`tests/test_instant_halt_pipeline.py` deletes a committed file.** It overwrites and then deletes `snapshots/instant_halt/10736505.json` on every run. I restored it from HEAD after each run.
+- **Three "no-Docker" tests run Docker evals:** these two and `tests/test_scout_snapshot_rule.py`. That's why the standard suite takes about 17 minutes.
+
+### Leftover Docker projects (item c)
+I confirmed no Inspect or experiment process was running, then ran `docker compose -p <project> down` for each of the 6 projects listed above. Their containers were already gone (see the tripwire test above), so each `down` removed the project's two networks: 12 in all, an `inner_net` and an `outer_net` for each of `irgbnxs`, `iq9pkg7`, `ijkakvf`, `igenybr`, `ierxjgr` and `i47sdne`. Nothing else was removed. Only `bridge`, `host` and `none` remain, so 30 of the 31 default-pool networks are free (a 2-seat swarm needs 3).
+
+### Not in step 1 (by design)
+- Feedback levels L0/L1 and the timing-matched sink (step 3). The exit's request-log reply is still the 404 placeholder.
+- Inspect and `SwarmState` wiring, planting credentials into every seat, the seat-bound text editor, and per-loop budgets (step 4).
