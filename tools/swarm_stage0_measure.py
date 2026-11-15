@@ -537,7 +537,7 @@ def phase_boots(n=20):
     return res
 
 
-def phase_mem(max_sends=80):
+def phase_mem(max_sends=int(os.environ.get("SWARM_MEM_SENDS", "80"))):
     """1 MB sends one after another until the first non-204, recording the exit
     container's memory every 5 sends and whether it was OOM-killed."""
     st = Stack("mem")

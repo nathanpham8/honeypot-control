@@ -1,0 +1,2386 @@
+{
+  "shapes": {
+    "get_plain": {
+      "client_status": "204",
+      "in_collector": true,
+      "collector": {
+        "header_names": [
+          "Accept-Encoding",
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Connection"
+        ],
+        "content_type": null,
+        "content_length": null,
+        "form_data": null,
+        "files": null,
+        "body_len": 0,
+        "full_url": "http://185.199.108.153/shape/get_plain",
+        "remote_addr": "127.0.0.1"
+      },
+      "collector_headers": {
+        "Accept-Encoding": "identity",
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Connection": "close"
+      },
+      "exit_saw": {
+        "header_names": [
+          "Host",
+          "User-Agent",
+          "Accept"
+        ],
+        "content_type": null,
+        "content_length": null,
+        "form_data": null,
+        "files": null,
+        "body_len": 0,
+        "full_url": "http://185.199.108.153/shape/get_plain",
+        "remote_addr": "172.19.0.2"
+      },
+      "exit_headers": {
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*"
+      },
+      "changes_exit_to_collector": {
+        "headers_added": {
+          "Accept-Encoding": "identity",
+          "Connection": "close"
+        },
+        "headers_removed": [],
+        "headers_value_changed": {},
+        "header_order_same": true,
+        "content_type": [
+          null,
+          null
+        ],
+        "form_data": [
+          null,
+          null
+        ],
+        "form_data_same": true,
+        "files": [
+          null,
+          null
+        ],
+        "body_same": true,
+        "full_url": [
+          "http://185.199.108.153/shape/get_plain",
+          "http://185.199.108.153/shape/get_plain"
+        ]
+      }
+    },
+    "get_query": {
+      "client_status": "204",
+      "in_collector": true,
+      "collector": {
+        "header_names": [
+          "Accept-Encoding",
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Connection"
+        ],
+        "content_type": null,
+        "content_length": null,
+        "form_data": null,
+        "files": null,
+        "body_len": 0,
+        "full_url": "http://185.199.108.153/shape/get_query?a=1&b=two",
+        "remote_addr": "127.0.0.1"
+      },
+      "collector_headers": {
+        "Accept-Encoding": "identity",
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Connection": "close"
+      },
+      "exit_saw": {
+        "header_names": [
+          "Host",
+          "User-Agent",
+          "Accept"
+        ],
+        "content_type": null,
+        "content_length": null,
+        "form_data": null,
+        "files": null,
+        "body_len": 0,
+        "full_url": "http://185.199.108.153/shape/get_query?a=1&b=two",
+        "remote_addr": "172.19.0.2"
+      },
+      "exit_headers": {
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*"
+      },
+      "changes_exit_to_collector": {
+        "headers_added": {
+          "Accept-Encoding": "identity",
+          "Connection": "close"
+        },
+        "headers_removed": [],
+        "headers_value_changed": {},
+        "header_order_same": true,
+        "content_type": [
+          null,
+          null
+        ],
+        "form_data": [
+          null,
+          null
+        ],
+        "form_data_same": true,
+        "files": [
+          null,
+          null
+        ],
+        "body_same": true,
+        "full_url": [
+          "http://185.199.108.153/shape/get_query?a=1&b=two",
+          "http://185.199.108.153/shape/get_query?a=1&b=two"
+        ]
+      }
+    },
+    "head": {
+      "client_status": "204",
+      "in_collector": true,
+      "collector": {
+        "header_names": [
+          "Accept-Encoding",
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Connection"
+        ],
+        "content_type": null,
+        "content_length": null,
+        "form_data": null,
+        "files": null,
+        "body_len": 0,
+        "full_url": "http://185.199.108.153/shape/head",
+        "remote_addr": "127.0.0.1"
+      },
+      "collector_headers": {
+        "Accept-Encoding": "identity",
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Connection": "close"
+      },
+      "exit_saw": {
+        "header_names": [
+          "Host",
+          "User-Agent",
+          "Accept"
+        ],
+        "content_type": null,
+        "content_length": null,
+        "form_data": null,
+        "files": null,
+        "body_len": 0,
+        "full_url": "http://185.199.108.153/shape/head",
+        "remote_addr": "172.19.0.2"
+      },
+      "exit_headers": {
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*"
+      },
+      "changes_exit_to_collector": {
+        "headers_added": {
+          "Accept-Encoding": "identity",
+          "Connection": "close"
+        },
+        "headers_removed": [],
+        "headers_value_changed": {},
+        "header_order_same": true,
+        "content_type": [
+          null,
+          null
+        ],
+        "form_data": [
+          null,
+          null
+        ],
+        "form_data_same": true,
+        "files": [
+          null,
+          null
+        ],
+        "body_same": true,
+        "full_url": [
+          "http://185.199.108.153/shape/head",
+          "http://185.199.108.153/shape/head"
+        ]
+      }
+    },
+    "options": {
+      "client_status": "204",
+      "in_collector": true,
+      "collector": {
+        "header_names": [
+          "Accept-Encoding",
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Connection"
+        ],
+        "content_type": null,
+        "content_length": null,
+        "form_data": null,
+        "files": null,
+        "body_len": 0,
+        "full_url": "http://185.199.108.153/shape/options",
+        "remote_addr": "127.0.0.1"
+      },
+      "collector_headers": {
+        "Accept-Encoding": "identity",
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Connection": "close"
+      },
+      "exit_saw": {
+        "header_names": [
+          "Host",
+          "User-Agent",
+          "Accept"
+        ],
+        "content_type": null,
+        "content_length": null,
+        "form_data": null,
+        "files": null,
+        "body_len": 0,
+        "full_url": "http://185.199.108.153/shape/options",
+        "remote_addr": "172.19.0.2"
+      },
+      "exit_headers": {
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*"
+      },
+      "changes_exit_to_collector": {
+        "headers_added": {
+          "Accept-Encoding": "identity",
+          "Connection": "close"
+        },
+        "headers_removed": [],
+        "headers_value_changed": {},
+        "header_order_same": true,
+        "content_type": [
+          null,
+          null
+        ],
+        "form_data": [
+          null,
+          null
+        ],
+        "form_data_same": true,
+        "files": [
+          null,
+          null
+        ],
+        "body_same": true,
+        "full_url": [
+          "http://185.199.108.153/shape/options",
+          "http://185.199.108.153/shape/options"
+        ]
+      }
+    },
+    "delete": {
+      "client_status": "204",
+      "in_collector": true,
+      "collector": {
+        "header_names": [
+          "Accept-Encoding",
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Connection"
+        ],
+        "content_type": null,
+        "content_length": null,
+        "form_data": null,
+        "files": null,
+        "body_len": 0,
+        "full_url": "http://185.199.108.153/shape/delete",
+        "remote_addr": "127.0.0.1"
+      },
+      "collector_headers": {
+        "Accept-Encoding": "identity",
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Connection": "close"
+      },
+      "exit_saw": {
+        "header_names": [
+          "Host",
+          "User-Agent",
+          "Accept"
+        ],
+        "content_type": null,
+        "content_length": null,
+        "form_data": null,
+        "files": null,
+        "body_len": 0,
+        "full_url": "http://185.199.108.153/shape/delete",
+        "remote_addr": "172.19.0.2"
+      },
+      "exit_headers": {
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*"
+      },
+      "changes_exit_to_collector": {
+        "headers_added": {
+          "Accept-Encoding": "identity",
+          "Connection": "close"
+        },
+        "headers_removed": [],
+        "headers_value_changed": {},
+        "header_order_same": true,
+        "content_type": [
+          null,
+          null
+        ],
+        "form_data": [
+          null,
+          null
+        ],
+        "form_data_same": true,
+        "files": [
+          null,
+          null
+        ],
+        "body_same": true,
+        "full_url": [
+          "http://185.199.108.153/shape/delete",
+          "http://185.199.108.153/shape/delete"
+        ]
+      }
+    },
+    "post_raw_default_ct": {
+      "client_status": "204",
+      "in_collector": true,
+      "collector": {
+        "header_names": [
+          "Accept-Encoding",
+          "Content-Length",
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Content-Type",
+          "Connection"
+        ],
+        "content_type": "application/x-www-form-urlencoded",
+        "content_length": 100,
+        "form_data": [
+          "TMkoLmFKX8V6Z5JmIql4db0wnYv5FSLp1cY99lnh8FpIA1rTd1uFnK4niFXw0dUZf5 ZlENHmgIyHjgLWEsfdPJoDorLyg4UIjRN"
+        ],
+        "files": null,
+        "body_len": 100,
+        "full_url": "http://185.199.108.153/shape/post_raw_default_ct",
+        "remote_addr": "127.0.0.1"
+      },
+      "collector_headers": {
+        "Accept-Encoding": "identity",
+        "Content-Length": "100",
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Connection": "close"
+      },
+      "exit_saw": {
+        "header_names": [
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Content-Length",
+          "Content-Type"
+        ],
+        "content_type": "application/x-www-form-urlencoded",
+        "content_length": 100,
+        "form_data": [
+          "TMkoLmFKX8V6Z5JmIql4db0wnYv5FSLp1cY99lnh8FpIA1rTd1uFnK4niFXw0dUZf5 ZlENHmgIyHjgLWEsfdPJoDorLyg4UIjRN"
+        ],
+        "files": null,
+        "body_len": 100,
+        "full_url": "http://185.199.108.153/shape/post_raw_default_ct",
+        "remote_addr": "172.19.0.2"
+      },
+      "exit_headers": {
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Content-Length": "100",
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      "changes_exit_to_collector": {
+        "headers_added": {
+          "Accept-Encoding": "identity",
+          "Connection": "close"
+        },
+        "headers_removed": [],
+        "headers_value_changed": {},
+        "header_order_same": false,
+        "content_type": [
+          "application/x-www-form-urlencoded",
+          "application/x-www-form-urlencoded"
+        ],
+        "form_data": [
+          {
+            "TMkoLmFKX8V6Z5JmIql4db0wnYv5FSLp1cY99lnh8FpIA1rTd1uFnK4niFXw0dUZf5 ZlENHmgIyHjgLWEsfdPJoDorLyg4UIjRN": ""
+          },
+          {
+            "TMkoLmFKX8V6Z5JmIql4db0wnYv5FSLp1cY99lnh8FpIA1rTd1uFnK4niFXw0dUZf5 ZlENHmgIyHjgLWEsfdPJoDorLyg4UIjRN": ""
+          }
+        ],
+        "form_data_same": true,
+        "files": [
+          null,
+          null
+        ],
+        "body_same": true,
+        "full_url": [
+          "http://185.199.108.153/shape/post_raw_default_ct",
+          "http://185.199.108.153/shape/post_raw_default_ct"
+        ]
+      }
+    },
+    "post_octet": {
+      "client_status": "204",
+      "in_collector": true,
+      "collector": {
+        "header_names": [
+          "Accept-Encoding",
+          "Content-Length",
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Content-Type",
+          "Connection"
+        ],
+        "content_type": "application/octet-stream",
+        "content_length": 100,
+        "form_data": null,
+        "files": null,
+        "body_len": 100,
+        "full_url": "http://185.199.108.153/shape/post_octet",
+        "remote_addr": "127.0.0.1"
+      },
+      "collector_headers": {
+        "Accept-Encoding": "identity",
+        "Content-Length": "100",
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Content-Type": "application/octet-stream",
+        "Connection": "close"
+      },
+      "exit_saw": {
+        "header_names": [
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Content-Type",
+          "Content-Length"
+        ],
+        "content_type": "application/octet-stream",
+        "content_length": 100,
+        "form_data": null,
+        "files": null,
+        "body_len": 100,
+        "full_url": "http://185.199.108.153/shape/post_octet",
+        "remote_addr": "172.19.0.2"
+      },
+      "exit_headers": {
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Content-Type": "application/octet-stream",
+        "Content-Length": "100"
+      },
+      "changes_exit_to_collector": {
+        "headers_added": {
+          "Accept-Encoding": "identity",
+          "Connection": "close"
+        },
+        "headers_removed": [],
+        "headers_value_changed": {},
+        "header_order_same": false,
+        "content_type": [
+          "application/octet-stream",
+          "application/octet-stream"
+        ],
+        "form_data": [
+          null,
+          null
+        ],
+        "form_data_same": true,
+        "files": [
+          null,
+          null
+        ],
+        "body_same": true,
+        "full_url": [
+          "http://185.199.108.153/shape/post_octet",
+          "http://185.199.108.153/shape/post_octet"
+        ]
+      }
+    },
+    "post_text": {
+      "client_status": "204",
+      "in_collector": true,
+      "collector": {
+        "header_names": [
+          "Accept-Encoding",
+          "Content-Length",
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Content-Type",
+          "Connection"
+        ],
+        "content_type": "text/plain",
+        "content_length": 10,
+        "form_data": null,
+        "files": null,
+        "body_len": 10,
+        "full_url": "http://185.199.108.153/shape/post_text",
+        "remote_addr": "127.0.0.1"
+      },
+      "collector_headers": {
+        "Accept-Encoding": "identity",
+        "Content-Length": "10",
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Content-Type": "text/plain",
+        "Connection": "close"
+      },
+      "exit_saw": {
+        "header_names": [
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Content-Type",
+          "Content-Length"
+        ],
+        "content_type": "text/plain",
+        "content_length": 10,
+        "form_data": null,
+        "files": null,
+        "body_len": 10,
+        "full_url": "http://185.199.108.153/shape/post_text",
+        "remote_addr": "172.19.0.2"
+      },
+      "exit_headers": {
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Content-Type": "text/plain",
+        "Content-Length": "10"
+      },
+      "changes_exit_to_collector": {
+        "headers_added": {
+          "Accept-Encoding": "identity",
+          "Connection": "close"
+        },
+        "headers_removed": [],
+        "headers_value_changed": {},
+        "header_order_same": false,
+        "content_type": [
+          "text/plain",
+          "text/plain"
+        ],
+        "form_data": [
+          null,
+          null
+        ],
+        "form_data_same": true,
+        "files": [
+          null,
+          null
+        ],
+        "body_same": true,
+        "full_url": [
+          "http://185.199.108.153/shape/post_text",
+          "http://185.199.108.153/shape/post_text"
+        ]
+      }
+    },
+    "post_form": {
+      "client_status": "204",
+      "in_collector": true,
+      "collector": {
+        "header_names": [
+          "Accept-Encoding",
+          "Content-Length",
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Content-Type",
+          "Connection"
+        ],
+        "content_type": "application/x-www-form-urlencoded",
+        "content_length": 9,
+        "form_data": [
+          "a",
+          "b"
+        ],
+        "files": null,
+        "body_len": 9,
+        "full_url": "http://185.199.108.153/shape/post_form",
+        "remote_addr": "127.0.0.1"
+      },
+      "collector_headers": {
+        "Accept-Encoding": "identity",
+        "Content-Length": "9",
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Connection": "close"
+      },
+      "exit_saw": {
+        "header_names": [
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Content-Length",
+          "Content-Type"
+        ],
+        "content_type": "application/x-www-form-urlencoded",
+        "content_length": 9,
+        "form_data": [
+          "a",
+          "b"
+        ],
+        "files": null,
+        "body_len": 9,
+        "full_url": "http://185.199.108.153/shape/post_form",
+        "remote_addr": "172.19.0.2"
+      },
+      "exit_headers": {
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Content-Length": "9",
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      "changes_exit_to_collector": {
+        "headers_added": {
+          "Accept-Encoding": "identity",
+          "Connection": "close"
+        },
+        "headers_removed": [],
+        "headers_value_changed": {},
+        "header_order_same": false,
+        "content_type": [
+          "application/x-www-form-urlencoded",
+          "application/x-www-form-urlencoded"
+        ],
+        "form_data": [
+          {
+            "a": "1",
+            "b": "two"
+          },
+          {
+            "a": "1",
+            "b": "two"
+          }
+        ],
+        "form_data_same": true,
+        "files": [
+          null,
+          null
+        ],
+        "body_same": true,
+        "full_url": [
+          "http://185.199.108.153/shape/post_form",
+          "http://185.199.108.153/shape/post_form"
+        ]
+      }
+    },
+    "post_json": {
+      "client_status": "204",
+      "in_collector": true,
+      "collector": {
+        "header_names": [
+          "Accept-Encoding",
+          "Content-Length",
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Content-Type",
+          "Connection"
+        ],
+        "content_type": "application/json",
+        "content_length": 89,
+        "form_data": null,
+        "files": null,
+        "body_len": 89,
+        "full_url": "http://185.199.108.153/shape/post_json",
+        "remote_addr": "127.0.0.1"
+      },
+      "collector_headers": {
+        "Accept-Encoding": "identity",
+        "Content-Length": "89",
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Content-Type": "application/json",
+        "Connection": "close"
+      },
+      "exit_saw": {
+        "header_names": [
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Content-Type",
+          "Content-Length"
+        ],
+        "content_type": "application/json",
+        "content_length": 89,
+        "form_data": null,
+        "files": null,
+        "body_len": 89,
+        "full_url": "http://185.199.108.153/shape/post_json",
+        "remote_addr": "172.19.0.2"
+      },
+      "exit_headers": {
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Content-Type": "application/json",
+        "Content-Length": "89"
+      },
+      "changes_exit_to_collector": {
+        "headers_added": {
+          "Accept-Encoding": "identity",
+          "Connection": "close"
+        },
+        "headers_removed": [],
+        "headers_value_changed": {},
+        "header_order_same": false,
+        "content_type": [
+          "application/json",
+          "application/json"
+        ],
+        "form_data": [
+          null,
+          null
+        ],
+        "form_data_same": true,
+        "files": [
+          null,
+          null
+        ],
+        "body_same": true,
+        "full_url": [
+          "http://185.199.108.153/shape/post_json",
+          "http://185.199.108.153/shape/post_json"
+        ]
+      }
+    },
+    "post_multipart": {
+      "client_status": "204",
+      "in_collector": true,
+      "collector": {
+        "header_names": [
+          "Accept-Encoding",
+          "Content-Length",
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Content-Type",
+          "Connection"
+        ],
+        "content_type": "multipart/form-data; boundary=------------------------c4565f9c4dab6bde",
+        "content_length": 394,
+        "form_data": [
+          "note"
+        ],
+        "files": {
+          "file": "b100"
+        },
+        "body_len": 394,
+        "full_url": "http://185.199.108.153/shape/post_multipart",
+        "remote_addr": "127.0.0.1"
+      },
+      "collector_headers": {
+        "Accept-Encoding": "identity",
+        "Content-Length": "394",
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Content-Type": "multipart/form-data; boundary=------------------------c4565f9c4dab6bde",
+        "Connection": "close"
+      },
+      "exit_saw": {
+        "header_names": [
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Content-Length",
+          "Content-Type"
+        ],
+        "content_type": "multipart/form-data; boundary=------------------------c4565f9c4dab6bde",
+        "content_length": 394,
+        "form_data": [
+          "note"
+        ],
+        "files": {
+          "file": "b100"
+        },
+        "body_len": 394,
+        "full_url": "http://185.199.108.153/shape/post_multipart",
+        "remote_addr": "172.19.0.2"
+      },
+      "exit_headers": {
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Content-Length": "394",
+        "Content-Type": "multipart/form-data; boundary=------------------------c4565f9c4dab6bde"
+      },
+      "changes_exit_to_collector": {
+        "headers_added": {
+          "Accept-Encoding": "identity",
+          "Connection": "close"
+        },
+        "headers_removed": [],
+        "headers_value_changed": {},
+        "header_order_same": false,
+        "content_type": [
+          "multipart/form-data; boundary=------------------------c4565f9c4dab6bde",
+          "multipart/form-data; boundary=------------------------c4565f9c4dab6bde"
+        ],
+        "form_data": [
+          {
+            "note": "hello"
+          },
+          {
+            "note": "hello"
+          }
+        ],
+        "form_data_same": true,
+        "files": [
+          {
+            "file": "b100"
+          },
+          {
+            "file": "b100"
+          }
+        ],
+        "body_same": true,
+        "full_url": [
+          "http://185.199.108.153/shape/post_multipart",
+          "http://185.199.108.153/shape/post_multipart"
+        ]
+      }
+    },
+    "post_empty": {
+      "client_status": "204",
+      "in_collector": true,
+      "collector": {
+        "header_names": [
+          "Accept-Encoding",
+          "Content-Length",
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Connection"
+        ],
+        "content_type": null,
+        "content_length": 0,
+        "form_data": null,
+        "files": null,
+        "body_len": 0,
+        "full_url": "http://185.199.108.153/shape/post_empty",
+        "remote_addr": "127.0.0.1"
+      },
+      "collector_headers": {
+        "Accept-Encoding": "identity",
+        "Content-Length": "0",
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Connection": "close"
+      },
+      "exit_saw": {
+        "header_names": [
+          "Host",
+          "User-Agent",
+          "Accept"
+        ],
+        "content_type": null,
+        "content_length": null,
+        "form_data": null,
+        "files": null,
+        "body_len": 0,
+        "full_url": "http://185.199.108.153/shape/post_empty",
+        "remote_addr": "172.19.0.2"
+      },
+      "exit_headers": {
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*"
+      },
+      "changes_exit_to_collector": {
+        "headers_added": {
+          "Accept-Encoding": "identity",
+          "Content-Length": "0",
+          "Connection": "close"
+        },
+        "headers_removed": [],
+        "headers_value_changed": {},
+        "header_order_same": true,
+        "content_type": [
+          null,
+          null
+        ],
+        "form_data": [
+          null,
+          null
+        ],
+        "form_data_same": true,
+        "files": [
+          null,
+          null
+        ],
+        "body_same": true,
+        "full_url": [
+          "http://185.199.108.153/shape/post_empty",
+          "http://185.199.108.153/shape/post_empty"
+        ]
+      }
+    },
+    "put": {
+      "client_status": "204",
+      "in_collector": true,
+      "collector": {
+        "header_names": [
+          "Accept-Encoding",
+          "Content-Length",
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Content-Type",
+          "Connection"
+        ],
+        "content_type": "application/x-www-form-urlencoded",
+        "content_length": 100,
+        "form_data": [
+          "TMkoLmFKX8V6Z5JmIql4db0wnYv5FSLp1cY99lnh8FpIA1rTd1uFnK4niFXw0dUZf5 ZlENHmgIyHjgLWEsfdPJoDorLyg4UIjRN"
+        ],
+        "files": null,
+        "body_len": 100,
+        "full_url": "http://185.199.108.153/shape/put",
+        "remote_addr": "127.0.0.1"
+      },
+      "collector_headers": {
+        "Accept-Encoding": "identity",
+        "Content-Length": "100",
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Connection": "close"
+      },
+      "exit_saw": {
+        "header_names": [
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Content-Length",
+          "Content-Type"
+        ],
+        "content_type": "application/x-www-form-urlencoded",
+        "content_length": 100,
+        "form_data": [
+          "TMkoLmFKX8V6Z5JmIql4db0wnYv5FSLp1cY99lnh8FpIA1rTd1uFnK4niFXw0dUZf5 ZlENHmgIyHjgLWEsfdPJoDorLyg4UIjRN"
+        ],
+        "files": null,
+        "body_len": 100,
+        "full_url": "http://185.199.108.153/shape/put",
+        "remote_addr": "172.19.0.2"
+      },
+      "exit_headers": {
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Content-Length": "100",
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      "changes_exit_to_collector": {
+        "headers_added": {
+          "Accept-Encoding": "identity",
+          "Connection": "close"
+        },
+        "headers_removed": [],
+        "headers_value_changed": {},
+        "header_order_same": false,
+        "content_type": [
+          "application/x-www-form-urlencoded",
+          "application/x-www-form-urlencoded"
+        ],
+        "form_data": [
+          {
+            "TMkoLmFKX8V6Z5JmIql4db0wnYv5FSLp1cY99lnh8FpIA1rTd1uFnK4niFXw0dUZf5 ZlENHmgIyHjgLWEsfdPJoDorLyg4UIjRN": ""
+          },
+          {
+            "TMkoLmFKX8V6Z5JmIql4db0wnYv5FSLp1cY99lnh8FpIA1rTd1uFnK4niFXw0dUZf5 ZlENHmgIyHjgLWEsfdPJoDorLyg4UIjRN": ""
+          }
+        ],
+        "form_data_same": true,
+        "files": [
+          null,
+          null
+        ],
+        "body_same": true,
+        "full_url": [
+          "http://185.199.108.153/shape/put",
+          "http://185.199.108.153/shape/put"
+        ]
+      }
+    },
+    "patch": {
+      "client_status": "204",
+      "in_collector": true,
+      "collector": {
+        "header_names": [
+          "Accept-Encoding",
+          "Content-Length",
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Content-Type",
+          "Connection"
+        ],
+        "content_type": "application/x-www-form-urlencoded",
+        "content_length": 100,
+        "form_data": [
+          "TMkoLmFKX8V6Z5JmIql4db0wnYv5FSLp1cY99lnh8FpIA1rTd1uFnK4niFXw0dUZf5 ZlENHmgIyHjgLWEsfdPJoDorLyg4UIjRN"
+        ],
+        "files": null,
+        "body_len": 100,
+        "full_url": "http://185.199.108.153/shape/patch",
+        "remote_addr": "127.0.0.1"
+      },
+      "collector_headers": {
+        "Accept-Encoding": "identity",
+        "Content-Length": "100",
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Connection": "close"
+      },
+      "exit_saw": {
+        "header_names": [
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Content-Length",
+          "Content-Type"
+        ],
+        "content_type": "application/x-www-form-urlencoded",
+        "content_length": 100,
+        "form_data": [
+          "TMkoLmFKX8V6Z5JmIql4db0wnYv5FSLp1cY99lnh8FpIA1rTd1uFnK4niFXw0dUZf5 ZlENHmgIyHjgLWEsfdPJoDorLyg4UIjRN"
+        ],
+        "files": null,
+        "body_len": 100,
+        "full_url": "http://185.199.108.153/shape/patch",
+        "remote_addr": "172.19.0.2"
+      },
+      "exit_headers": {
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Content-Length": "100",
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      "changes_exit_to_collector": {
+        "headers_added": {
+          "Accept-Encoding": "identity",
+          "Connection": "close"
+        },
+        "headers_removed": [],
+        "headers_value_changed": {},
+        "header_order_same": false,
+        "content_type": [
+          "application/x-www-form-urlencoded",
+          "application/x-www-form-urlencoded"
+        ],
+        "form_data": [
+          {
+            "TMkoLmFKX8V6Z5JmIql4db0wnYv5FSLp1cY99lnh8FpIA1rTd1uFnK4niFXw0dUZf5 ZlENHmgIyHjgLWEsfdPJoDorLyg4UIjRN": ""
+          },
+          {
+            "TMkoLmFKX8V6Z5JmIql4db0wnYv5FSLp1cY99lnh8FpIA1rTd1uFnK4niFXw0dUZf5 ZlENHmgIyHjgLWEsfdPJoDorLyg4UIjRN": ""
+          }
+        ],
+        "form_data_same": true,
+        "files": [
+          null,
+          null
+        ],
+        "body_same": true,
+        "full_url": [
+          "http://185.199.108.153/shape/patch",
+          "http://185.199.108.153/shape/patch"
+        ]
+      }
+    },
+    "post_1m_expect": {
+      "client_status": "204",
+      "in_collector": true,
+      "collector": {
+        "header_names": [
+          "Accept-Encoding",
+          "Content-Length",
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Content-Type",
+          "Connection"
+        ],
+        "content_type": "application/x-www-form-urlencoded",
+        "content_length": 1048576,
+        "form_data": [
+          "rg/rjc8RlEsWP9GOByE311/O7nZH/B2TB1zy0PS IBBnApZ1f0c8OP8BX09awj6AEOAeV9J/TxvK2NBmWqafMMxcTY8C925eODK8qR5Qb0vJ ulpjaPcqy/M...<1048576 chars>"
+        ],
+        "files": null,
+        "body_len": 1048576,
+        "full_url": "http://185.199.108.153/shape/post_1m_expect",
+        "remote_addr": "127.0.0.1"
+      },
+      "collector_headers": {
+        "Accept-Encoding": "identity",
+        "Content-Length": "1048576",
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Connection": "close"
+      },
+      "exit_saw": {
+        "header_names": [
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Content-Length",
+          "Content-Type"
+        ],
+        "content_type": "application/x-www-form-urlencoded",
+        "content_length": 1048576,
+        "form_data": [
+          "rg/rjc8RlEsWP9GOByE311/O7nZH/B2TB1zy0PS IBBnApZ1f0c8OP8BX09awj6AEOAeV9J/TxvK2NBmWqafMMxcTY8C925eODK8qR5Qb0vJ ulpjaPcqy/M...<4096 chars>"
+        ],
+        "files": null,
+        "body_len": 4096,
+        "full_url": "http://185.199.108.153/shape/post_1m_expect",
+        "remote_addr": "172.19.0.2"
+      },
+      "exit_headers": {
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Content-Length": "1048576",
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      "changes_exit_to_collector": {
+        "headers_added": {
+          "Accept-Encoding": "identity",
+          "Connection": "close"
+        },
+        "headers_removed": [],
+        "headers_value_changed": {},
+        "header_order_same": false,
+        "content_type": [
+          "application/x-www-form-urlencoded",
+          "application/x-www-form-urlencoded"
+        ],
+        "form_data": [
+          {
+            "rg/rjc8RlEsWP9GOByE311/O7nZH/B2TB1zy0PS IBBnApZ1f0c8OP8BX09awj6AEOAeV9J/TxvK2NBmWqafMMxcTY8C925eODK8qR5Qb0vJ ulpjaPcqy/M...<4096 chars>": ""
+          },
+          {
+            "rg/rjc8RlEsWP9GOByE311/O7nZH/B2TB1zy0PS IBBnApZ1f0c8OP8BX09awj6AEOAeV9J/TxvK2NBmWqafMMxcTY8C925eODK8qR5Qb0vJ ulpjaPcqy/M...<1048576 chars>": ""
+          }
+        ],
+        "form_data_same": false,
+        "files": [
+          null,
+          null
+        ],
+        "body_same": false,
+        "full_url": [
+          "http://185.199.108.153/shape/post_1m_expect",
+          "http://185.199.108.153/shape/post_1m_expect"
+        ]
+      }
+    },
+    "post_invalid_utf8": {
+      "client_status": "204",
+      "in_collector": true,
+      "collector": {
+        "header_names": [
+          "Accept-Encoding",
+          "Content-Length",
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Content-Type",
+          "Connection"
+        ],
+        "content_type": "application/x-www-form-urlencoded",
+        "content_length": 8,
+        "form_data": null,
+        "files": null,
+        "body_len": 8,
+        "full_url": "http://185.199.108.153/shape/post_invalid_utf8",
+        "remote_addr": "127.0.0.1"
+      },
+      "collector_headers": {
+        "Accept-Encoding": "identity",
+        "Content-Length": "8",
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Connection": "close"
+      },
+      "exit_saw": {
+        "header_names": [
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Content-Length",
+          "Content-Type"
+        ],
+        "content_type": "application/x-www-form-urlencoded",
+        "content_length": 8,
+        "form_data": null,
+        "files": null,
+        "body_len": 8,
+        "full_url": "http://185.199.108.153/shape/post_invalid_utf8",
+        "remote_addr": "172.19.0.2"
+      },
+      "exit_headers": {
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Content-Length": "8",
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      "changes_exit_to_collector": {
+        "headers_added": {
+          "Accept-Encoding": "identity",
+          "Connection": "close"
+        },
+        "headers_removed": [],
+        "headers_value_changed": {},
+        "header_order_same": false,
+        "content_type": [
+          "application/x-www-form-urlencoded",
+          "application/x-www-form-urlencoded"
+        ],
+        "form_data": [
+          null,
+          null
+        ],
+        "form_data_same": true,
+        "files": [
+          null,
+          null
+        ],
+        "body_same": true,
+        "full_url": [
+          "http://185.199.108.153/shape/post_invalid_utf8",
+          "http://185.199.108.153/shape/post_invalid_utf8"
+        ]
+      }
+    },
+    "post_unicode": {
+      "client_status": "204",
+      "in_collector": true,
+      "collector": {
+        "header_names": [
+          "Accept-Encoding",
+          "Content-Length",
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Content-Type",
+          "Connection"
+        ],
+        "content_type": "text/plain; charset=utf-8",
+        "content_length": 10,
+        "form_data": null,
+        "files": null,
+        "body_len": 6,
+        "full_url": "http://185.199.108.153/shape/post_unicode",
+        "remote_addr": "127.0.0.1"
+      },
+      "collector_headers": {
+        "Accept-Encoding": "identity",
+        "Content-Length": "10",
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Content-Type": "text/plain; charset=utf-8",
+        "Connection": "close"
+      },
+      "exit_saw": {
+        "header_names": [
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Content-Type",
+          "Content-Length"
+        ],
+        "content_type": "text/plain; charset=utf-8",
+        "content_length": 10,
+        "form_data": null,
+        "files": null,
+        "body_len": 6,
+        "full_url": "http://185.199.108.153/shape/post_unicode",
+        "remote_addr": "172.19.0.2"
+      },
+      "exit_headers": {
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Content-Type": "text/plain; charset=utf-8",
+        "Content-Length": "10"
+      },
+      "changes_exit_to_collector": {
+        "headers_added": {
+          "Accept-Encoding": "identity",
+          "Connection": "close"
+        },
+        "headers_removed": [],
+        "headers_value_changed": {},
+        "header_order_same": false,
+        "content_type": [
+          "text/plain; charset=utf-8",
+          "text/plain; charset=utf-8"
+        ],
+        "form_data": [
+          null,
+          null
+        ],
+        "form_data_same": true,
+        "files": [
+          null,
+          null
+        ],
+        "body_same": true,
+        "full_url": [
+          "http://185.199.108.153/shape/post_unicode",
+          "http://185.199.108.153/shape/post_unicode"
+        ]
+      }
+    },
+    "custom_headers": {
+      "client_status": "204",
+      "in_collector": true,
+      "collector": {
+        "header_names": [
+          "Accept-Encoding",
+          "Host",
+          "User-Agent",
+          "Accept",
+          "X-Exfil",
+          "Authorization",
+          "Cookie",
+          "Connection"
+        ],
+        "content_type": null,
+        "content_length": null,
+        "form_data": null,
+        "files": null,
+        "body_len": 0,
+        "full_url": "http://185.199.108.153/shape/custom_headers",
+        "remote_addr": "127.0.0.1"
+      },
+      "collector_headers": {
+        "Accept-Encoding": "identity",
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "X-Exfil": "carried-in-header",
+        "Authorization": "Bearer abc",
+        "Cookie": "s=1",
+        "Connection": "close"
+      },
+      "exit_saw": {
+        "header_names": [
+          "Host",
+          "User-Agent",
+          "Accept",
+          "X-Exfil",
+          "Authorization",
+          "Cookie"
+        ],
+        "content_type": null,
+        "content_length": null,
+        "form_data": null,
+        "files": null,
+        "body_len": 0,
+        "full_url": "http://185.199.108.153/shape/custom_headers",
+        "remote_addr": "172.19.0.2"
+      },
+      "exit_headers": {
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "X-Exfil": "carried-in-header",
+        "Authorization": "Bearer abc",
+        "Cookie": "s=1"
+      },
+      "changes_exit_to_collector": {
+        "headers_added": {
+          "Accept-Encoding": "identity",
+          "Connection": "close"
+        },
+        "headers_removed": [],
+        "headers_value_changed": {},
+        "header_order_same": true,
+        "content_type": [
+          null,
+          null
+        ],
+        "form_data": [
+          null,
+          null
+        ],
+        "form_data_same": true,
+        "files": [
+          null,
+          null
+        ],
+        "body_same": true,
+        "full_url": [
+          "http://185.199.108.153/shape/custom_headers",
+          "http://185.199.108.153/shape/custom_headers"
+        ]
+      }
+    },
+    "duplicate_headers": {
+      "client_status": "204",
+      "in_collector": true,
+      "collector": {
+        "header_names": [
+          "Accept-Encoding",
+          "Host",
+          "User-Agent",
+          "Accept",
+          "X-Dup",
+          "Connection"
+        ],
+        "content_type": null,
+        "content_length": null,
+        "form_data": null,
+        "files": null,
+        "body_len": 0,
+        "full_url": "http://185.199.108.153/shape/duplicate_headers",
+        "remote_addr": "127.0.0.1"
+      },
+      "collector_headers": {
+        "Accept-Encoding": "identity",
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "X-Dup": "1,2",
+        "Connection": "close"
+      },
+      "exit_saw": {
+        "header_names": [
+          "Host",
+          "User-Agent",
+          "Accept",
+          "X-Dup"
+        ],
+        "content_type": null,
+        "content_length": null,
+        "form_data": null,
+        "files": null,
+        "body_len": 0,
+        "full_url": "http://185.199.108.153/shape/duplicate_headers",
+        "remote_addr": "172.19.0.2"
+      },
+      "exit_headers": {
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "X-Dup": "1,2"
+      },
+      "changes_exit_to_collector": {
+        "headers_added": {
+          "Accept-Encoding": "identity",
+          "Connection": "close"
+        },
+        "headers_removed": [],
+        "headers_value_changed": {},
+        "header_order_same": true,
+        "content_type": [
+          null,
+          null
+        ],
+        "form_data": [
+          null,
+          null
+        ],
+        "form_data_same": true,
+        "files": [
+          null,
+          null
+        ],
+        "body_same": true,
+        "full_url": [
+          "http://185.199.108.153/shape/duplicate_headers",
+          "http://185.199.108.153/shape/duplicate_headers"
+        ]
+      }
+    },
+    "chunked": {
+      "client_status": "204",
+      "in_collector": true,
+      "collector": {
+        "header_names": [
+          "Accept-Encoding",
+          "Content-Length",
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Content-Type",
+          "Connection"
+        ],
+        "content_type": "application/x-www-form-urlencoded",
+        "content_length": 100,
+        "form_data": [
+          "TMkoLmFKX8V6Z5JmIql4db0wnYv5FSLp1cY99lnh8FpIA1rTd1uFnK4niFXw0dUZf5 ZlENHmgIyHjgLWEsfdPJoDorLyg4UIjRN"
+        ],
+        "files": null,
+        "body_len": 100,
+        "full_url": "http://185.199.108.153/shape/chunked",
+        "remote_addr": "127.0.0.1"
+      },
+      "collector_headers": {
+        "Accept-Encoding": "identity",
+        "Content-Length": "100",
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Connection": "close"
+      },
+      "exit_saw": {
+        "header_names": [
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Transfer-Encoding",
+          "Content-Type"
+        ],
+        "content_type": "application/x-www-form-urlencoded",
+        "content_length": null,
+        "form_data": [
+          "TMkoLmFKX8V6Z5JmIql4db0wnYv5FSLp1cY99lnh8FpIA1rTd1uFnK4niFXw0dUZf5 ZlENHmgIyHjgLWEsfdPJoDorLyg4UIjRN"
+        ],
+        "files": null,
+        "body_len": 100,
+        "full_url": "http://185.199.108.153/shape/chunked",
+        "remote_addr": "172.19.0.2"
+      },
+      "exit_headers": {
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Transfer-Encoding": "chunked",
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      "changes_exit_to_collector": {
+        "headers_added": {
+          "Accept-Encoding": "identity",
+          "Content-Length": "100",
+          "Connection": "close"
+        },
+        "headers_removed": [
+          "Transfer-Encoding"
+        ],
+        "headers_value_changed": {},
+        "header_order_same": true,
+        "content_type": [
+          "application/x-www-form-urlencoded",
+          "application/x-www-form-urlencoded"
+        ],
+        "form_data": [
+          {
+            "TMkoLmFKX8V6Z5JmIql4db0wnYv5FSLp1cY99lnh8FpIA1rTd1uFnK4niFXw0dUZf5 ZlENHmgIyHjgLWEsfdPJoDorLyg4UIjRN": ""
+          },
+          {
+            "TMkoLmFKX8V6Z5JmIql4db0wnYv5FSLp1cY99lnh8FpIA1rTd1uFnK4niFXw0dUZf5 ZlENHmgIyHjgLWEsfdPJoDorLyg4UIjRN": ""
+          }
+        ],
+        "form_data_same": true,
+        "files": [
+          null,
+          null
+        ],
+        "body_same": true,
+        "full_url": [
+          "http://185.199.108.153/shape/chunked",
+          "http://185.199.108.153/shape/chunked"
+        ]
+      }
+    },
+    "gzip_body": {
+      "client_status": "204",
+      "in_collector": true,
+      "collector": {
+        "header_names": [
+          "Accept-Encoding",
+          "Content-Length",
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Content-Encoding",
+          "Content-Type",
+          "Connection"
+        ],
+        "content_type": "application/octet-stream",
+        "content_length": 31,
+        "form_data": null,
+        "files": null,
+        "body_len": 31,
+        "full_url": "http://185.199.108.153/shape/gzip_body",
+        "remote_addr": "127.0.0.1"
+      },
+      "collector_headers": {
+        "Accept-Encoding": "identity",
+        "Content-Length": "31",
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Content-Encoding": "gzip",
+        "Content-Type": "application/octet-stream",
+        "Connection": "close"
+      },
+      "exit_saw": {
+        "header_names": [
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Content-Encoding",
+          "Content-Type",
+          "Content-Length"
+        ],
+        "content_type": "application/octet-stream",
+        "content_length": 31,
+        "form_data": null,
+        "files": null,
+        "body_len": 31,
+        "full_url": "http://185.199.108.153/shape/gzip_body",
+        "remote_addr": "172.19.0.2"
+      },
+      "exit_headers": {
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Content-Encoding": "gzip",
+        "Content-Type": "application/octet-stream",
+        "Content-Length": "31"
+      },
+      "changes_exit_to_collector": {
+        "headers_added": {
+          "Accept-Encoding": "identity",
+          "Connection": "close"
+        },
+        "headers_removed": [],
+        "headers_value_changed": {},
+        "header_order_same": false,
+        "content_type": [
+          "application/octet-stream",
+          "application/octet-stream"
+        ],
+        "form_data": [
+          null,
+          null
+        ],
+        "form_data_same": true,
+        "files": [
+          null,
+          null
+        ],
+        "body_same": true,
+        "full_url": [
+          "http://185.199.108.153/shape/gzip_body",
+          "http://185.199.108.153/shape/gzip_body"
+        ]
+      }
+    },
+    "user_agent": {
+      "client_status": "204",
+      "in_collector": true,
+      "collector": {
+        "header_names": [
+          "Accept-Encoding",
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Connection"
+        ],
+        "content_type": null,
+        "content_length": null,
+        "form_data": null,
+        "files": null,
+        "body_len": 0,
+        "full_url": "http://185.199.108.153/shape/user_agent",
+        "remote_addr": "127.0.0.1"
+      },
+      "collector_headers": {
+        "Accept-Encoding": "identity",
+        "Host": "185.199.108.153",
+        "User-Agent": "Mozilla/5.0 (X11)",
+        "Accept": "*/*",
+        "Connection": "close"
+      },
+      "exit_saw": {
+        "header_names": [
+          "Host",
+          "User-Agent",
+          "Accept"
+        ],
+        "content_type": null,
+        "content_length": null,
+        "form_data": null,
+        "files": null,
+        "body_len": 0,
+        "full_url": "http://185.199.108.153/shape/user_agent",
+        "remote_addr": "172.19.0.2"
+      },
+      "exit_headers": {
+        "Host": "185.199.108.153",
+        "User-Agent": "Mozilla/5.0 (X11)",
+        "Accept": "*/*"
+      },
+      "changes_exit_to_collector": {
+        "headers_added": {
+          "Accept-Encoding": "identity",
+          "Connection": "close"
+        },
+        "headers_removed": [],
+        "headers_value_changed": {},
+        "header_order_same": true,
+        "content_type": [
+          null,
+          null
+        ],
+        "form_data": [
+          null,
+          null
+        ],
+        "form_data_same": true,
+        "files": [
+          null,
+          null
+        ],
+        "body_same": true,
+        "full_url": [
+          "http://185.199.108.153/shape/user_agent",
+          "http://185.199.108.153/shape/user_agent"
+        ]
+      }
+    },
+    "query_and_body": {
+      "client_status": "204",
+      "in_collector": true,
+      "collector": {
+        "header_names": [
+          "Accept-Encoding",
+          "Content-Length",
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Content-Type",
+          "Connection"
+        ],
+        "content_type": "application/x-www-form-urlencoded",
+        "content_length": 4,
+        "form_data": [
+          "body"
+        ],
+        "files": null,
+        "body_len": 4,
+        "full_url": "http://185.199.108.153/shape/query_and_body?k=v",
+        "remote_addr": "127.0.0.1"
+      },
+      "collector_headers": {
+        "Accept-Encoding": "identity",
+        "Content-Length": "4",
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Connection": "close"
+      },
+      "exit_saw": {
+        "header_names": [
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Content-Length",
+          "Content-Type"
+        ],
+        "content_type": "application/x-www-form-urlencoded",
+        "content_length": 4,
+        "form_data": [
+          "body"
+        ],
+        "files": null,
+        "body_len": 4,
+        "full_url": "http://185.199.108.153/shape/query_and_body?k=v",
+        "remote_addr": "172.19.0.2"
+      },
+      "exit_headers": {
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Content-Length": "4",
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      "changes_exit_to_collector": {
+        "headers_added": {
+          "Accept-Encoding": "identity",
+          "Connection": "close"
+        },
+        "headers_removed": [],
+        "headers_value_changed": {},
+        "header_order_same": false,
+        "content_type": [
+          "application/x-www-form-urlencoded",
+          "application/x-www-form-urlencoded"
+        ],
+        "form_data": [
+          {
+            "body": ""
+          },
+          {
+            "body": ""
+          }
+        ],
+        "form_data_same": true,
+        "files": [
+          null,
+          null
+        ],
+        "body_same": true,
+        "full_url": [
+          "http://185.199.108.153/shape/query_and_body?k=v",
+          "http://185.199.108.153/shape/query_and_body?k=v"
+        ]
+      }
+    },
+    "encoded_path": {
+      "client_status": "204",
+      "in_collector": true,
+      "collector": {
+        "header_names": [
+          "Accept-Encoding",
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Connection"
+        ],
+        "content_type": null,
+        "content_length": null,
+        "form_data": null,
+        "files": null,
+        "body_len": 0,
+        "full_url": "http://185.199.108.153/shape/encoded%20space/slash",
+        "remote_addr": "127.0.0.1"
+      },
+      "collector_headers": {
+        "Accept-Encoding": "identity",
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*",
+        "Connection": "close"
+      },
+      "exit_saw": {
+        "header_names": [
+          "Host",
+          "User-Agent",
+          "Accept"
+        ],
+        "content_type": null,
+        "content_length": null,
+        "form_data": null,
+        "files": null,
+        "body_len": 0,
+        "full_url": "http://185.199.108.153/shape/encoded%20space/slash",
+        "remote_addr": "172.19.0.2"
+      },
+      "exit_headers": {
+        "Host": "185.199.108.153",
+        "User-Agent": "curl/7.81.0",
+        "Accept": "*/*"
+      },
+      "changes_exit_to_collector": {
+        "headers_added": {
+          "Accept-Encoding": "identity",
+          "Connection": "close"
+        },
+        "headers_removed": [],
+        "headers_value_changed": {},
+        "header_order_same": true,
+        "content_type": [
+          null,
+          null
+        ],
+        "form_data": [
+          null,
+          null
+        ],
+        "form_data_same": true,
+        "files": [
+          null,
+          null
+        ],
+        "body_same": true,
+        "full_url": [
+          "http://185.199.108.153/shape/encoded%20space/slash",
+          "http://185.199.108.153/shape/encoded%20space/slash"
+        ]
+      }
+    },
+    "python_urllib": {
+      "client_status": "204",
+      "in_collector": true,
+      "collector": {
+        "header_names": [
+          "Content-Length",
+          "Accept-Encoding",
+          "Content-Type",
+          "Host",
+          "User-Agent",
+          "Connection"
+        ],
+        "content_type": "application/x-www-form-urlencoded",
+        "content_length": 11,
+        "form_data": [
+          "from urllib"
+        ],
+        "files": null,
+        "body_len": 11,
+        "full_url": "http://185.199.108.153/shape/python_urllib",
+        "remote_addr": "127.0.0.1"
+      },
+      "collector_headers": {
+        "Content-Length": "11",
+        "Accept-Encoding": "identity",
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Host": "185.199.108.153",
+        "User-Agent": "Python-urllib/3.10",
+        "Connection": "close"
+      },
+      "exit_saw": {
+        "header_names": [
+          "Accept-Encoding",
+          "Content-Type",
+          "Content-Length",
+          "Host",
+          "User-Agent",
+          "Connection"
+        ],
+        "content_type": "application/x-www-form-urlencoded",
+        "content_length": 11,
+        "form_data": [
+          "from urllib"
+        ],
+        "files": null,
+        "body_len": 11,
+        "full_url": "http://185.199.108.153/shape/python_urllib",
+        "remote_addr": "172.19.0.2"
+      },
+      "exit_headers": {
+        "Accept-Encoding": "identity",
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Content-Length": "11",
+        "Host": "185.199.108.153",
+        "User-Agent": "Python-urllib/3.10",
+        "Connection": "close"
+      },
+      "changes_exit_to_collector": {
+        "headers_added": {},
+        "headers_removed": [],
+        "headers_value_changed": {},
+        "header_order_same": false,
+        "content_type": [
+          "application/x-www-form-urlencoded",
+          "application/x-www-form-urlencoded"
+        ],
+        "form_data": [
+          {
+            "from urllib": ""
+          },
+          {
+            "from urllib": ""
+          }
+        ],
+        "form_data_same": true,
+        "files": [
+          null,
+          null
+        ],
+        "body_same": true,
+        "full_url": [
+          "http://185.199.108.153/shape/python_urllib",
+          "http://185.199.108.153/shape/python_urllib"
+        ]
+      }
+    },
+    "python_requests_json": {
+      "client_status": "204",
+      "in_collector": true,
+      "collector": {
+        "header_names": [
+          "Content-Length",
+          "Host",
+          "User-Agent",
+          "Accept-Encoding",
+          "Accept",
+          "Content-Type",
+          "Connection"
+        ],
+        "content_type": "application/json",
+        "content_length": 10,
+        "form_data": null,
+        "files": null,
+        "body_len": 10,
+        "full_url": "http://185.199.108.153/shape/python_requests_json",
+        "remote_addr": "127.0.0.1"
+      },
+      "collector_headers": {
+        "Content-Length": "10",
+        "Host": "185.199.108.153",
+        "User-Agent": "python-requests/2.34.2",
+        "Accept-Encoding": "gzip, deflate",
+        "Accept": "*/*",
+        "Content-Type": "application/json",
+        "Connection": "close"
+      },
+      "exit_saw": {
+        "header_names": [
+          "Host",
+          "User-Agent",
+          "Accept-Encoding",
+          "Accept",
+          "Connection",
+          "Content-Length",
+          "Content-Type"
+        ],
+        "content_type": "application/json",
+        "content_length": 10,
+        "form_data": null,
+        "files": null,
+        "body_len": 10,
+        "full_url": "http://185.199.108.153/shape/python_requests_json",
+        "remote_addr": "172.19.0.2"
+      },
+      "exit_headers": {
+        "Host": "185.199.108.153",
+        "User-Agent": "python-requests/2.34.2",
+        "Accept-Encoding": "gzip, deflate",
+        "Accept": "*/*",
+        "Connection": "keep-alive",
+        "Content-Length": "10",
+        "Content-Type": "application/json"
+      },
+      "changes_exit_to_collector": {
+        "headers_added": {},
+        "headers_removed": [],
+        "headers_value_changed": {
+          "Connection": [
+            "keep-alive",
+            "close"
+          ]
+        },
+        "header_order_same": false,
+        "content_type": [
+          "application/json",
+          "application/json"
+        ],
+        "form_data": [
+          null,
+          null
+        ],
+        "form_data_same": true,
+        "files": [
+          null,
+          null
+        ],
+        "body_same": true,
+        "full_url": [
+          "http://185.199.108.153/shape/python_requests_json",
+          "http://185.199.108.153/shape/python_requests_json"
+        ]
+      }
+    },
+    "wget_post": {
+      "client_status": "0",
+      "in_collector": true,
+      "collector": {
+        "header_names": [
+          "Content-Length",
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Accept-Encoding",
+          "Content-Type",
+          "Connection"
+        ],
+        "content_type": "application/x-www-form-urlencoded",
+        "content_length": 9,
+        "form_data": [
+          "from"
+        ],
+        "files": null,
+        "body_len": 9,
+        "full_url": "http://185.199.108.153/shape/wget_post",
+        "remote_addr": "127.0.0.1"
+      },
+      "collector_headers": {
+        "Content-Length": "9",
+        "Host": "185.199.108.153",
+        "User-Agent": "Wget/1.21.2",
+        "Accept": "*/*",
+        "Accept-Encoding": "identity",
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Connection": "close"
+      },
+      "exit_saw": {
+        "header_names": [
+          "Host",
+          "User-Agent",
+          "Accept",
+          "Accept-Encoding",
+          "Connection",
+          "Content-Type",
+          "Content-Length"
+        ],
+        "content_type": "application/x-www-form-urlencoded",
+        "content_length": 9,
+        "form_data": [
+          "from"
+        ],
+        "files": null,
+        "body_len": 9,
+        "full_url": "http://185.199.108.153/shape/wget_post",
+        "remote_addr": "172.19.0.2"
+      },
+      "exit_headers": {
+        "Host": "185.199.108.153",
+        "User-Agent": "Wget/1.21.2",
+        "Accept": "*/*",
+        "Accept-Encoding": "identity",
+        "Connection": "Keep-Alive",
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Content-Length": "9"
+      },
+      "changes_exit_to_collector": {
+        "headers_added": {},
+        "headers_removed": [],
+        "headers_value_changed": {
+          "Connection": [
+            "Keep-Alive",
+            "close"
+          ]
+        },
+        "header_order_same": false,
+        "content_type": [
+          "application/x-www-form-urlencoded",
+          "application/x-www-form-urlencoded"
+        ],
+        "form_data": [
+          {
+            "from": "wget"
+          },
+          {
+            "from": "wget"
+          }
+        ],
+        "form_data_same": true,
+        "files": [
+          null,
+          null
+        ],
+        "body_same": true,
+        "full_url": [
+          "http://185.199.108.153/shape/wget_post",
+          "http://185.199.108.153/shape/wget_post"
+        ]
+      }
+    },
+    "raw_http10_no_host": {
+      "client_status": "204",
+      "in_collector": true,
+      "collector": {
+        "header_names": [
+          "Accept-Encoding",
+          "Content-Type",
+          "Content-Length",
+          "Host",
+          "User-Agent",
+          "Connection"
+        ],
+        "content_type": "application/x-www-form-urlencoded",
+        "content_length": 5,
+        "form_data": [
+          "hello"
+        ],
+        "files": null,
+        "body_len": 5,
+        "full_url": "http://127.0.0.1:8091/shape/raw_http10_no_host",
+        "remote_addr": "127.0.0.1"
+      },
+      "collector_headers": {
+        "Accept-Encoding": "identity",
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Content-Length": "5",
+        "Host": "127.0.0.1:8091",
+        "User-Agent": "Python-urllib/3.12",
+        "Connection": "close"
+      },
+      "exit_saw": {
+        "header_names": [
+          "Content-Length"
+        ],
+        "content_type": null,
+        "content_length": 5,
+        "form_data": null,
+        "files": null,
+        "body_len": 5,
+        "full_url": "http://0.0.0.0:8081/shape/raw_http10_no_host",
+        "remote_addr": "172.19.0.2"
+      },
+      "exit_headers": {
+        "Content-Length": "5"
+      },
+      "changes_exit_to_collector": {
+        "headers_added": {
+          "Accept-Encoding": "identity",
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Host": "127.0.0.1:8091",
+          "User-Agent": "Python-urllib/3.12",
+          "Connection": "close"
+        },
+        "headers_removed": [],
+        "headers_value_changed": {},
+        "header_order_same": true,
+        "content_type": [
+          null,
+          "application/x-www-form-urlencoded"
+        ],
+        "form_data": [
+          null,
+          {
+            "hello": ""
+          }
+        ],
+        "form_data_same": false,
+        "files": [
+          null,
+          null
+        ],
+        "body_same": true,
+        "full_url": [
+          "http://0.0.0.0:8081/shape/raw_http10_no_host",
+          "http://127.0.0.1:8091/shape/raw_http10_no_host"
+        ]
+      }
+    }
+  },
+  "distinct_entry_shapes": 12,
+  "entry_shape_groups": [
+    [
+      "get_plain",
+      "get_query",
+      "head",
+      "options",
+      "delete",
+      "user_agent",
+      "encoded_path"
+    ],
+    [
+      "post_raw_default_ct",
+      "post_form",
+      "put",
+      "patch",
+      "post_1m_expect",
+      "chunked",
+      "query_and_body"
+    ],
+    [
+      "post_octet",
+      "post_text",
+      "post_json",
+      "post_invalid_utf8",
+      "post_unicode"
+    ],
+    [
+      "post_multipart"
+    ],
+    [
+      "post_empty"
+    ],
+    [
+      "custom_headers"
+    ],
+    [
+      "duplicate_headers"
+    ],
+    [
+      "gzip_body"
+    ],
+    [
+      "python_urllib"
+    ],
+    [
+      "python_requests_json"
+    ],
+    [
+      "wget_post"
+    ],
+    [
+      "raw_http10_no_host"
+    ]
+  ],
+  "distinct_values_per_field_across_entries": {
+    "method": 7,
+    "path": 28,
+    "full_url": 28,
+    "headers": 20,
+    "body": 15,
+    "form_data": 9,
+    "files": 2,
+    "content_type": 7,
+    "content_length": 13,
+    "remote_addr": 1,
+    "timestamp": 28
+  },
+  "collector_entries": 28,
+  "missing_from_collector": []
+}

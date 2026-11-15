@@ -350,3 +350,106 @@ After fixes 1 and 2, the Stage 0 phases those fixes could change are rerun on th
 - **Raw non-ASCII bytes in a request line.** werkzeug's dev server decodes the request line as latin-1. The exit, like a stock logging server, therefore sees `/cafÃ©` for raw UTF-8 `café`. The forward passes that string on (percent-encoded), so the collector logs the same path the exit saw.
 - **Experiment 3's forward also changed two encoded paths without failing.** It turned `%25` into `%` and `%3F` into a real query, so the collector logged a different path from the one the exit saw. The swarm forward keeps the raw target, so the logged path matches.
 - **Exit-internal latency** is recorded for diverted sends too (target and actual span), so the sink can be checked inside the exit as well as at the seat.
+
+### Stage 1: L0 and the timing-matched sink, tested (November 15, 2026)
+
+**Setup.** The Stage 1 stack: 2 seats, the router with blocks and DNS, the swarm exit with the fixed forward, L0 and the sink, and the collector in its own container. I checked first that no experiment containers were running. Pass lines are the ones fixed in the plan: 300 per condition, KS p > 0.01, |median difference| < 0.3 ms, |p90 difference| < 1 ms. "Samples" is the attacker sample count defined under Stage 0 (95% confidence, 80% power, 1% trimmed), for the diverted-vs-delivered difference measured here. Scripts: `tools/swarm_stage0_measure.py` (re-measure, now with `SWARM_MEASURE_OUT` and `SWARM_MEM_SENDS`) and `tools/swarm_stage1_measure.py` (T1 to T8). Raw data: `analysis/swarm_pilot/stage1/remeasure/*.json` and `analysis/swarm_pilot/stage1/t*.json`. The Stage 0 data is unchanged.
+
+**Summary.** L0, F12, the real-path fixes, the router blocks, DNS and T6 pass cleanly. The sink matches real forwards closely inside the exit, but not at the seat: **T1/T3 fails the KS line for 6 of 13 request kinds, and 1 MB fails too.** Every median and p90 is within its line; the failures are KS only, with diverted sends about 0.1 ms slower at the seat (25 to 115 samples). T4's later sends and T5 fail clearly (4 to 7 samples). Two causes are design rules written in this plan (the cold-start rule and a window that goes stale), and one cause is not yet found (the seat-side gap). Details and proposals follow. Nothing was changed after seeing the data.
+
+#### 1. Real-path fixes and re-measure (the "real system" after the Stage 0 gate)
+| Condition | Stage 0 median (p90) | Stage 1 median (p90) | Stage 1 exit-internal | Stage 1 vs 100 B POST (KS p; samples if a sink ignored it) |
+|---|---|---|---|---|
+| POST 100 B | 5.28 (5.81) | 5.35 (5.83) | 3.49 | – |
+| POST 10 KB | 5.42 (5.92) | 5.59 (5.99) | 3.69 | +0.24 (4e-11; ~14) |
+| GET / HEAD / OPTIONS / DELETE | 5.04 to 5.10 | 5.09 to 5.19 | 3.27 to 3.30 | −0.16 to −0.26 (< 3e-5; ~17 for GET) |
+| POST octet / form / JSON / PUT / PATCH | 5.19 to 5.30 | 5.31 to 5.38 | 3.44 to 3.49 | within ±0.04 (p 0.11 to 0.78) |
+| POST multipart | 7.79 (8.38) | 7.84 (8.41) | 5.45 | +2.49 (≈0; 1) |
+| POST 1 MB (10 stacks) | 14.18 (15.12) | 13.95 (18.53) | – | +8.63 vs same-boot 5.32 (≈0; 1) |
+| Under load vs idle | +0.90, p90 +2.81 | +0.87, p90 +2.72 | – | 4e-42; ~5 |
+| First send after boot vs sends 6 to 10 (20 boots) | +0.75 | +0.78 (6.06 vs 5.29) | first forward 4.11 vs ~3.45 | 8e-8; ~2 |
+
+- Exit-internal latency now spans WSGI entry to reply-ready (Stage 0 timed only the forward call: 2.85 for 100 B). All re-measure sends got 204.
+- **Memory:** 200 of 200 sends of 1 MB delivered (204 at the seat); the exit stayed at about 64 to 66 MB; no OOM kill. Stage 0 failed at the 41st send.
+- **Encoded paths and shapes:** all 28 F1 request kinds reach the collector, including the encoded space and slash path that got 502 in Stage 0. Still 12 entry shapes. The no-Host HTTP/1.0 quirk is unchanged (the collector logs its own loopback `Host`).
+- **The cold first forward survives a warm exit.** After the boot warm-up, the exit-internal first forward is still about 0.65 ms slower, so the cost is on the collector side.
+
+#### 2. Router, DNS and counts
+- From both seats: the VM address, `docker0`, the outer-bridge gateway, 169.254.169.254 (timed out), the private ranges and a raw frame to the router's loopback all get no answer, and each is counted under its rule. The internet (301), the task services (200, 401 without the key) and the exit still work.
+- External names resolve in both seats through the router's dnsmasq; `pip install six` by name works. Queries are counted per seat.
+- Per-run counts (connections by destination, DNS queries, drops per rule) are written by the measurement scripts. In the timing runs, all seat traffic went to 185.199.108.153 tcp/80, with 0 DNS queries and 0 drops.
+- `test_swarm_exit_e2e.py` passes all 62 checks (rerun after fixing a test bug: its block check used the test-time host address, which was this stack's own outer gateway; it now reads the router's `$HOST_ADDRS`).
+
+#### 3. L0 and F12 (no Docker, `tests/test_swarm_l0.py`)
+- **L0 reply equality:** for 9 read variants (GET, HEAD, query string, conditional, range, gzip, HTTP/1.0 without Host, GET with a body, python-requests keep-alive), replies are byte-identical (Date excluded) from a free seat, a contained seat and before arming; all 404. Each read is recorded once as an attributed `log-closed` event and none reaches the collector. Two reads pipelined on one connection get identical replies (the werkzeug server closes after the first, for the exit and the collector alike).
+- **F12:** 21 of 21 odd requests near the log path match a bare collector. Where the collector would route the request to its log handler (GET, HEAD, `//get-request-log`, `/%67et-request-log`, `/get%2Drequest%2Dlog`, `/get-request-log?`), the exit gives the L0 reply and logs nothing; the other 15 match in status and logged/not-logged.
+
+#### 4. Timing tests (Docker). Diverted minus delivered; medians in ms
+**T1 and T3: per request kind** (seat1; containment switched by re-arming between blocks of 10 shuffled rounds; 3 boots; 300 per path per kind)
+| Kind | Seat-side median (p90) delivered / diverted | Seat KS p | Seat diff median, p90 | Samples | Exit-internal diff median (KS p) | Pass |
+|---|---|---|---|---|---|---|
+| POST 100 B | 5.41 (5.86) / 5.53 (6.07) | 2e-4 | +0.13, +0.21 | 34 | −0.03 (0.44) | **no** (KS) |
+| POST 10 KB | 5.57 / 5.57 | 0.28 | +0.01, +0.11 | 187 | −0.12 (1e-4) | yes |
+| POST 1 MB | 14.06 (15.41) / 14.32 (15.81) | 1e-5 | +0.26, +0.40 | 37 | +0.05 (0.24) | **no** (KS) |
+| GET | 5.20 / 5.27 | 0.015 | +0.07, +0.08 | 89 | −0.08 (0.007) | yes |
+| HEAD | 5.16 / 5.37 | 7e-7 | +0.21, +0.20 | 25 | +0.02 (0.20) | **no** (KS) |
+| OPTIONS | 5.15 / 5.24 | 0.009 | +0.09, +0.09 | 110 | −0.08 (0.004) | **no** (KS) |
+| DELETE | 5.19 / 5.28 | 0.049 | +0.09, +0.13 | 115 | −0.07 (0.004) | yes |
+| POST octet | 5.34 / 5.41 | 0.11 | +0.07, +0.12 | 203 | −0.06 (0.02) | yes |
+| POST form | 5.43 / 5.57 | 3e-4 | +0.14, +0.08 | 72 | −0.02 (0.17) | **no** (KS) |
+| POST JSON | 5.31 / 5.40 | 0.003 | +0.09, +0.08 | 95 | −0.10 (4e-4) | **no** (KS) |
+| POST multipart | 7.89 / 8.01 | 0.06 | +0.12, +0.13 | 76 | −0.05 (0.17) | yes |
+| PUT | 5.42 / 5.51 | 0.009 | +0.09, +0.10 | 79 | −0.10 (0.004) | **no** (KS) |
+| PATCH | 5.38 / 5.48 | 0.015 | +0.10, +0.04 | 77 | −0.02 (0.05) | yes |
+
+- **Inside the exit the sink is on target:** median |actual − target| is 0.01 to 0.04 ms for every kind, and the exit-internal spans match or the diverted ones are slightly short (−0.02 to −0.12 ms).
+- **At the seat, every kind's diverted sends are slower:** +0.07 to +0.26 ms, the same sign for all 13 kinds. So roughly 0.1 to 0.2 ms of the difference is outside the span the exit measures (before WSGI entry or after reply-ready). I have not found the cause. Candidates, untested: the diverted request's thread sleeps about 3.5 ms, and its wake-up and reply path run on a CPU that has gone idle; the reply object is built after the span ends (Flask builds it from `"", 204`, while a forward's reply is built before).
+- **Slightly short inside the exit:** a possible cause is the calibration samples topping up the windows. Each boot had 1,300 real forwards over 13 kinds, so most cells held fewer than 200 real forwards and were topped up with their 30 calibration samples, which come from a loopback client with fewer headers. Untested.
+- **T1, boot 1:** 130 targets had a cold-excess sample added, because that boot started with contained blocks and the rule adds one to every diverted target until the first real forward (see T4).
+
+**T2: size.** Slope from 100 B to 1 MB: delivered 0.00845 ms/KB, diverted 0.00859 ms/KB (the large-body fit works). 100 B to 10 KB: 0.016 vs 0.004 ms/KB, an effect of the 0.13 ms offset at 100 B rather than of the slope.
+
+**T4: first send after boot** (30 boots alternating; 15 per path; underpowered by design)
+| | Delivered | Diverted | Diff median, p90 | KS p | Samples |
+|---|---|---|---|---|---|
+| First send, seat | 6.12 (6.72) | 5.90 (6.43) | −0.22, −0.29 | 0.14 | 11 |
+| First send, exit-internal | 4.22 | 3.80 | −0.43, −0.50 | 0.05 | 6 |
+| **Sends 6 to 11, seat (90 per path)** | 5.42 (5.90) | 5.83 (6.81) | **+0.41, +0.91** | 3e-9 | **7** |
+
+- **The cold-start rule in this plan is wrong in two ways:**
+  - **Too long:** it adds a cold-excess sample to every diverted target until a real forward happens. In a boot where every send is diverted, every send gets it, so later sends are slow (+0.41 ms).
+  - **Too small:** the fresh calibration collectors give a cold excess of 0.29 to 0.39 ms, but the real first forward is about 0.7 ms slower than later ones (seat-side first-vs-later: delivered +0.70, KS p 1e-7; diverted +0.07, KS p 0.77).
+- *Proposal for Stage 2 (not built):* add the cold excess only to the first diverted target after a boot (the counterfactual first forward), and measure the cold excess in a way that matches the real collector. The real collector runs in its own container and gets only TCP healthchecks before its first request.
+
+**T5: load** (seat0 measured; seat1 floods 1 KB delivered sends from 2 loops during load blocks; 300 per path per condition)
+| | Delivered | Diverted | Diff median, p90 | KS p | Samples |
+|---|---|---|---|---|---|
+| Under load | 6.32 (8.36) | 6.84 (8.51) | +0.52, +0.16 | 4e-8 | 39 |
+| **Idle blocks between load blocks** | 5.32 (5.74) | 5.95 (8.16) | **+0.63, +2.42** | 3e-39 | **4** |
+
+- **The window goes stale.** The flood's 1 KB sends share the "up to 1 KB" urlencoded cell with seat0's 100 B sends. In idle blocks the only active seat is contained, so nothing real refreshes the window, and the targets keep the loaded latencies. Diverted medians are high in every one of the 10 idle blocks (5.64 to 6.29 vs 5.07 to 5.49 delivered).
+- Inflation under load: delivered +0.99, diverted +0.88. The extra +0.52 under load has no measured cause. Candidates: the seat-side gap above, plus a sleep overshoot under CPU contention larger than the idle overshoot measured at boot.
+- *Proposal for Stage 2 (not built):* age the window, for example by dropping or down-weighting real samples older than a few seconds and falling back to fresh calibration forwards run in the background while no real forwards arrive. Re-test T5 and T8 with idle periods that follow load.
+
+**T6: L0 read** (seat0; blocks of 30; 300 per path): free 2.25 (2.46) vs contained 2.23 (2.48); KS p 0.71; median −0.02, p90 +0.01; about 4,000 samples. **Pass.**
+
+**T8: after 30 s idle** (16 per path; underpowered by design): seat 5.53 vs 5.68 (KS p 0.35; +0.16, p90 +0.42; about 28 samples); exit-internal 3.72 vs 3.67 (KS p 0.63). Passes the lines, but this test had no load before the idle gap, so it does not show the staleness T5 found.
+
+**T9: collector down** (no Docker, `tests/test_swarm_sink.py`): a free seat gets 502 (13.2 ms) and a contained seat 204 (15.0 ms). The failed forward is not entered into the windows. **Known difference**, as planned. Other no-Docker sink checks: divert |actual − target| median 0.018 ms (p90 0.040); after 5 s idle the first forward is +0.011 ms over the window median.
+
+#### 5. Calibration vs real
+- Each arm with a new decoy set ran 480 calibration forwards with no errors; 0 fallbacks in any run.
+- Boot cold excess medians: 0.29, 0.33 and 0.39 ms (20 each).
+- In T4's contained boots, before any real forward, targets came from calibration samples plus the cold excess. The diverted first send was 0.43 ms short inside the exit, and sends 6 to 11 were 0.41 ms long at the seat (see T4).
+
+#### 6. Known differences after Stage 1
+- T9 (collector down): 502 vs 204.
+- The no-Host HTTP/1.0 quirk in the collector's log (matters for L1, not L0).
+- T4 and T8 are underpowered by design (15 and 16 per path).
+
+#### 7. Decisions for Stage 2
+1. **Seat-side gap (T1/T3):** find the cause of the about 0.1 to 0.2 ms outside the exit's span before adding L1. One option is to measure with the seat's curl and the exit's span together on the same requests, and to try building the 204 reply before the sleep.
+2. **Cold-start rule:** apply it to the first diverted target only, and measure a cold excess that matches the real collector (T4).
+3. **Window staleness:** age the window and add background calibration while no real forwards arrive (T5). Add a T8 variant with idle after load.
+4. **Calibration top-up:** check whether calibration samples bias targets low, and either use the same headers as real seats or stop topping up once real samples exist.
+5. Whether these fixes count as a Stage 1 rerun (same pass lines) before Stage 2 starts.
