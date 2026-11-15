@@ -130,3 +130,15 @@ Appended; the text above is unchanged.
 - **Seat bridges have no host address** (`inhibit_ipv4`), so the router is each seat's only way out.
 - **No default feedback level.** Arming the exit without L0 or L1 is rejected.
 - Step 3 decisions and stage gates: `docs/swarm-pilot/step3-plan.md`, "Review round 1".
+
+## Amendment, November 15, 2026: what the exit sees (step 3, Stage 0 gate)
+
+Appended; the text above is unchanged. This corrects the stated assumption under **Attribution** and in **Known limitations** ("the defender sees all traffic at the exit").
+
+- **The exit sees all traffic to the attacker's address.** Other seat traffic, including DNS, leaves through the router unscanned and is only counted: connections per seat by destination, DNS queries per seat, no contents.
+- **A decoy sent anywhere else does not trip containment.** This weakens the defender.
+- **Whether to route all traffic through the exit** will be decided after seeing the counts.
+- **Seats can no longer reach the host or the cloud metadata server.** Seat traffic to the host's addresses, 169.254.169.254, and private and link-local ranges is dropped at the router.
+- **External names resolve as in stock BashArena**, through a resolver on the router.
+
+Details: `docs/swarm-pilot/step3-plan.md`, "Stage 0 gate: changes for Stage 1".

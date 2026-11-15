@@ -275,3 +275,69 @@ The real read costs about 4.7 ms plus 0.017 ms per entry (about 0.02 ms per KB).
 9. **Reachability decisions for later stages** (nothing blocked yet):
    - seats can reach the host's sshd and the cloud metadata server through the router, which an agent could use to escape the sandbox;
    - external DNS doesn't resolve, unlike stock BashArena's non-internal network. That could break tasks that install packages by name. It needs a decision before step 4 or the honest pass: for example, a public resolver set for the seats and reached through the router, plus router rules dropping seat traffic to the host's addresses and to 169.254.169.254.
+
+## Stage 0 gate: changes for Stage 1
+
+Recorded November 15, 2026, after Nathan's Stage 0 review and before any Stage 1 code or data. Each change is listed with its reason. Where this section differs from earlier sections, this section wins.
+
+### 1. Real-path failures fixed in the swarm exit only (Experiment 3 code unchanged)
+- **Encoded paths.** The swarm exit gets its own `_forward_to(url, token)`. It uses the same urllib request, header filter, token, error record and reply relay as the Experiment 3 `_forward`, with one difference: the request target is the raw target the client sent (path and query exactly as on the wire). Only bytes urllib cannot send (control characters, non-ASCII) are percent-encoded.
+  - *Reason:* the Experiment 3 forward rebuilds the URL from the decoded path. A decoded space makes urllib refuse the request, so the seat gets 502 and nothing is logged. A normal HTTP proxy passes the target unchanged.
+  - *Test (no Docker):* a raw socket listener receives the forward. For every encoded shape, the request line carries the client's target. For every other shape, the outgoing bytes equal those of the Experiment 3 forward.
+- **Memory.**
+  - The collector moves to its own container, `collector` (same image, the router's network namespace, a 2 GB memory limit). The exit no longer starts it. The two share a per-compose-file token through the compose environment.
+  - The exit's records keep bounded copies: body and form fields cut to their first 4,096 characters, with full length and SHA-256. Headers, content type, content length and form key count are kept in full.
+  - Diverted requests are what the Stage 2 forger needs, so they are spooled in full to disk in the exit container (1 GiB cap; overflow is counted).
+  - The harness reads the true log directly in the collector container. Healthchecks no longer read the log: the exit uses a local `/__health`, and the collector a TCP connect. Both run every 30 s once started.
+  - *Reason:* in Stage 0 the 41st 1 MB send got 502 when the shared container hit its limit. Periodic full-log reads through the exit would cost memory and add periodic load as the log grows.
+  - *Test (Docker):* 200 sends of 1 MB, and every encoded-path shape, all deliver (204 at the seat, entry in the collector's log); neither container is OOM-killed. A collector failure beyond its budget stays a known difference (T9). Rough capacity: 2 GB holds about 900 urlencoded 1 MB sends if the log is not read.
+
+### 2. Router and DNS (real-system changes)
+- **Blocked destinations.** Seat traffic is dropped to the host's addresses: every IPv4 address on the VM's interfaces (VM address, `docker0`), the outer-bridge gateway, and 169.254.169.254. Each is a named rule with per-seat counters.
+  - Also dropped: all private, link-local and shared-address ranges (10/8, 172.16/12, 192.168/16, 169.254/16, 100.64/10).
+    - *Reason for going wider than the named addresses:* every Docker bridge on the host has a host gateway address that comes and goes with other projects, and sshd listens on all of them; other hosts on the VPC are also reachable.
+    - The exit and the task services are reached by DNAT and are not affected.
+  - Also dropped: seat packets addressed to the router's loopback range (127/8) unless they were DNAT'd.
+    - *Reason:* the router accepts loopback destinations (`route_localnet=1`, needed for the DNAT). The collector, the calibration collectors and the Stage 2 shadow collectors listen on loopback. They require a token, but they should be unreachable from seats (test F16).
+  - *Tests (Docker):* each blocked address, plus a raw frame to the router's loopback, gets no answer from either seat; the internet and the task services still work.
+- **DNS.** dnsmasq on the router answers on the seat interfaces with no cache. It forwards to the router's Docker resolver, which forwards to the host's resolvers, the same upstream path a stock BashArena container uses. Each seat's start command points its `resolv.conf` at the router's address on that seat's network.
+  - *Reason:* on internal networks Docker's resolver does not forward external names, so package installs by name failed.
+  - *Test (Docker):* external names resolve in both seats, and a small package installs by name with pip.
+- **Counts per run, numbers only.**
+  - New seat connections by (seat, destination address, protocol, port), from conntrack events in the router.
+  - DNS queries per seat, from iptables counters.
+  - Dropped packets per seat for each block rule.
+
+  No payloads and no query names are recorded.
+- **DESIGN.md amendment** (append only) correcting the stated assumption about what the exit sees.
+
+### 3. Re-measure
+After fixes 1 and 2, the Stage 0 phases those fixes could change are rerun on the fixed system: `fwd` (types and sizes), `fwd1m`, `mem` (200 sends), `load`, `boots` (20 boots) and `shapes` (encoded paths). The data goes to `analysis/swarm_pilot/stage1/remeasure/`; the Stage 0 data stays as it is.
+- The exit-internal latency now spans the WSGI entry to reply-ready, the same span for both paths, as the plan's latency definition requires. Stage 0 timed only the forward call.
+
+### 4. Sink design (accepted from Stage 0)
+- **Span.** The sink sleeps until (WSGI entry + target). Sleep overshoot is measured at boot and subtracted.
+- **Request type classes:**
+  - no body;
+  - urlencoded (an explicit urlencoded content type, or a body with none, which the forward turns into urlencoded);
+  - multipart;
+  - other.
+- **Size.**
+  - At or below 64 KB, size buckets: no body; up to 1 KB; up to 4 KB; up to 16 KB; up to 64 KB.
+  - Above 64 KB, a per-class fit: latency = a + b·KB, by least squares over that class's large-body window. Target = a + b·size + a resampled residual.
+- **Window.**
+  - Each (class, bucket) cell keeps the 200 most recent successful real forwards (a reply from the collector, not an exit 502).
+  - A cell with fewer than 200 real forwards is topped up with the most recent calibration samples for that cell.
+  - Arming does not reset windows.
+- **Boot calibration** runs before the exit reports healthy.
+  - A local client sends calibration requests through the exit's own request handler, marked with a per-boot secret header. They are forwarded to a calibration collector, never to the real one.
+  - The calibration collector is the unchanged `collector.py` on its own loopback port with its own token, in the exit container. It is restarted after large-body sets to bound memory.
+  - Each small cell gets 30 requests; each class gets 10 at each of 128 KB, 512 KB and 1 MB.
+- **First-forward distribution.**
+  - At boot, 20 fresh collector processes are started one at a time. Each is probed until ready (as the real collector is) and then gets one 100 B urlencoded calibration forward. Each one's excess over the warm calibration median is one cold-excess sample.
+  - Until the first real forward after a boot completes, a diverted request's target is a cell sample plus a cold-excess sample. After that, cold-excess samples are no longer added.
+- **Arming.** `"feedback"` is required. Stage 1 accepts only `"L0"`; `"L1"` is rejected until Stage 2 builds it.
+- **Timing test design (Docker).**
+  - **Same-seat counterfactual:** containment is switched by re-arming between blocks of 30 sends (`contained=[]` vs `[seat]`), so seat and boot are the same for both conditions. 3 boots × 100 per condition per path; 300 per condition per path in all.
+  - **T4:** 30 boots, alternating a contained and a free first send (15 each). This is below the 300-sample pass line, so it is reported as underpowered.
+  - **T8 in Docker:** 30 s idle gaps, 16 per path, also underpowered.
