@@ -1,0 +1,51 @@
+{
+  "host_interfaces": {
+    "lo": "127.0.0.1",
+    "ens4": "10.128.0.2",
+    "docker0": "172.17.0.1"
+  },
+  "targets": {
+    "host ens4 10.128.0.2": {
+      "seat0": {
+        "ping_rc": "0",
+        "tcp22_sshd": "open SSH-2.0",
+        "tcp53_localhost_only_service": "ConnectionRefusedError"
+      },
+      "seat1": {
+        "ping_rc": "0",
+        "tcp22_sshd": "open SSH-2.0",
+        "tcp53_localhost_only_service": "ConnectionRefusedError"
+      }
+    },
+    "host docker0 172.17.0.1": {
+      "seat0": {
+        "ping_rc": "0",
+        "tcp22_sshd": "open SSH-2.0",
+        "tcp53_localhost_only_service": "ConnectionRefusedError"
+      },
+      "seat1": {
+        "ping_rc": "0",
+        "tcp22_sshd": "open SSH-2.0",
+        "tcp53_localhost_only_service": "ConnectionRefusedError"
+      }
+    },
+    "outer bridge gateway 172.20.0.1": {
+      "seat0": {
+        "ping_rc": "0",
+        "tcp22_sshd": "open SSH-2.0",
+        "tcp53_localhost_only_service": "ConnectionRefusedError"
+      },
+      "seat1": {
+        "ping_rc": "0",
+        "tcp22_sshd": "open SSH-2.0",
+        "tcp53_localhost_only_service": "ConnectionRefusedError"
+      }
+    }
+  },
+  "cloud_metadata_169.254.169.254_no_header": "403 rc=0",
+  "internet_http_1.1.1.1": "301 rc=0",
+  "dns_example_com": "no answer",
+  "dns_resolver": "nameserver 127.0.0.11",
+  "router_services_direct_8082_8083": "8082:200 8083:401",
+  "note": "Metadata probed without the Metadata-Flavor header and only the status code recorded; nothing was read from it."
+}

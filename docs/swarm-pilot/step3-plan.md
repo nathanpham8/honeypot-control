@@ -185,3 +185,93 @@ Push results under "Step 3 results / Stage 0", with a reading of what they mean 
 | F16 | Shadow and calibration collectors are unreachable from seats |
 
 Stage 2 timing test: T7 (read latency, free vs contained).
+
+## Step 3 results
+
+### Stage 0: the real system, measured (November 15, 2026)
+
+**Setup.** The step 1 stack unchanged: 2 seats, router, step 1 exit, unchanged collector, stock task services. I checked first that no experiment containers or processes were running. The exit was armed with the seat subnets and one synthetic decoy that was never sent, except in the `divert` reference phase. Everything is reproducible with `tools/swarm_stage0_measure.py`. Raw data: `analysis/swarm_pilot/stage0/*.json`. Latencies are seat-side `curl -w %{time_total}` in ms, unless marked "exit-internal" (the exit's own timing of its forward call). Medians, with p90 in brackets.
+
+**How the attacker sample counts were estimated.** "Samples" is the number of sends per condition a one-sided test needs, at 95% confidence and 80% power, to see a mean difference. The formula is n = ((1.645 + 0.842)·sd / diff)², with the top and bottom 1% trimmed. Each count is a lower bound: it assumes the attacker can measure both conditions, for example its own sends before and after a trip, or two sizes of its own sends.
+
+#### 1. Forward latency (300 samples per condition, interleaved in shuffled rounds over 5 fresh stacks; 1 MB over 10 stacks)
+| Condition | Median (p90) | vs 100 B POST | KS p | If a sink ignored it: samples |
+|---|---|---|---|---|
+| POST 100 B (curl default, urlencoded) | 5.28 (5.81) | – | – | – |
+| POST 10 KB | 5.42 (5.92) | +0.15 | 2e-5 | ~46 |
+| POST 1 MB | 14.18 (15.12) | +8.98 (same-boot reference 5.21) | ≈0 | 1 |
+| GET / HEAD / OPTIONS / DELETE | 5.04 to 5.10 | −0.18 to −0.24 | < 1e-8 | ~11 (GET) |
+| POST octet-stream / JSON | 5.19 / 5.24 | −0.09 / −0.04 | 0.004 / 0.05 | – |
+| POST form / PUT / PATCH | 5.30 / 5.24 / 5.26 | ±0.04 | 0.84 / 0.17 / 0.64 | – |
+| POST multipart (with file) | 7.79 (8.38) | +2.51 | ≈0 | 1 |
+| Seat0 under load (seat1 flooding about 200 req/s of 1 KB) | 6.25 (8.74) vs idle 5.35 (5.93) | +0.90, p90 +2.81 | 4e-31 | ~32 |
+| First send after a fresh boot (20 boots) | 6.17 (6.70) vs sends 6 to 10: 5.42 | +0.75 | 8e-8 | ~2 |
+| Second send after boot | 5.57 | +0.15 | | |
+| seat1's first send (seat0 had already sent 10) | 5.50 | normal | | |
+
+- **The exit's share:** its internal forward is 2.85 ms for small bodies (multipart 4.08), and 3.28 ms for the first forward after a boot. So about 2.3 ms of each send is seat, router and curl overhead, and about 2.9 ms is the exit's forward.
+- **Boot-to-boot spread** of the 100 B median: 5.12 to 5.46 ms. Stack start-up took about 28 s.
+
+#### Reference: step 1's existing sink (immediate 204)
+- A contained seat's diverted sends: 2.30 ms (2.53). A free seat's delivered sends: 5.13 ms (5.59).
+- Difference −2.83 ms, KS D = 1.0. **An attacker needs about 1 sample** (for example, one send before its trip and one after).
+
+#### Memory limit (a real-system failure)
+- With the exit container at its 384 MB limit, the **41st 1 MB send gets 502**, and every send after it does too. Docker's OOM killer killed the collector process; the exit stayed up and reports that it can't reach the collector.
+- In a debug run, fetching the exit's state afterwards got the whole exit container OOM-killed.
+- **Cause:** each large urlencoded body is held several times: the collector's log, the exit's forwarded record (added in step 1), and form-parsed copies in both processes. curl's default content type is urlencoded, so both parse a 1 MB body as a form.
+- After 30 sends of 1 MB the container used 243 to 320 MB.
+
+#### 2. Log read latency (300 reads per size, 100 B entries)
+| Entries (log bytes) | Real read inside the exit (local, as an L1 relay would do it) | Seat-side read today (404 placeholder) |
+|---|---|---|
+| 10 (8 KB) | 4.93 (5.48) | 2.25 (2.49) |
+| 100 (81 KB) | 7.28 (7.84) | 2.25 (2.48) |
+| 1,000 (809 KB) | 21.97 (23.31) | 2.15 (2.38) |
+
+The real read costs about 4.7 ms plus 0.017 ms per entry (about 0.02 ms per KB). A seat-side L1 read would add the about 2.3 ms seat overhead.
+
+#### 3. What the collector logs (F1 matrix, 28 request kinds)
+- **12 distinct entry shapes** (header names, plus whether content type, form data and files are present) across the 27 kinds that arrived.
+- **Fields that vary across entries:** method (7 values), path, full_url, headers (20 distinct), body, form_data (9), files (2), content_type (7), content_length (13), timestamp. `remote_addr` is always 127.0.0.1.
+- **What changes between the exit and the collector:** the body is always unchanged, and form data and files are unchanged except in one case. The header changes follow fixed rules from urllib:
+  - `Accept-Encoding: identity` is added first, unless the client sent its own;
+  - `Content-Length` moves to the front, right after it;
+  - the other headers keep their order;
+  - `Connection: close` comes last, replacing the client's value (requests and wget send keep-alive);
+  - a chunked body arrives with `Content-Length` instead of `Transfer-Encoding`;
+  - an empty POST gets `Content-Length: 0`.
+- **HTTP/1.0 request without `Host`:** the collector logs `Host: 127.0.0.1:8091` (its own loopback port), `User-Agent: Python-urllib/3.12` and a default urlencoded content type. It therefore parses the body as form data (`{"hello": ""}`) where the exit saw none.
+- **Encoded path:** a path with an encoded space and slash (`/shape/encoded%20space%2Fslash`) gets **502** at the seat and never reaches the collector. The Experiment 3 forward can't build a URL from the decoded path.
+- Duplicate headers are merged (`1,2`) before the exit sees them, so the same value is logged.
+
+#### 4. What a seat can reach through the router (report only, nothing blocked)
+| Target | seat0 and seat1 |
+|---|---|
+| VM's address 10.128.0.2 | ping works; **TCP 22 open (sshd banner)**; a localhost-only port is refused |
+| Host `docker0` 172.17.0.1 | ping works; **TCP 22 open** |
+| Host outer-bridge gateway | ping works; **TCP 22 open** |
+| Cloud metadata 169.254.169.254 | **reachable**: 403 without the `Metadata-Flavor` header. Only the status code was recorded; with the header it would serve instance metadata |
+| Internet (http://1.1.1.1) | reachable (301) |
+| DNS for external names | **does not resolve.** The seats' resolver is Docker's embedded DNS (127.0.0.11), which doesn't forward external names on internal networks |
+| Router's own task services (8082, 8083) | reachable (200; 401 without the API key), as in stock BashArena |
+
+#### My reading: what this means for the sink and forger designs
+1. **The timing-matched sink is necessary.** Today's immediate 204 is spotted in about 1 sample. The sink has to add about the exit's forward time (about 2.9 ms), measured inside the exit; the about 2.3 ms seat overhead is the same for both paths.
+2. **The planned size buckets are too coarse for large bodies.** Latency grows about 9 µs per KB, so 64 KB and 1 MB would share a bucket while differing by about 8 ms. Proposal: below 64 KB, buckets by size; above 64 KB, a per-KB slope fitted from real forwards, or finer log-size buckets.
+3. **Request type has to be a bucket dimension.** Multipart costs +2.5 ms (1 sample); requests without a body are −0.2 ms (about 11 samples). Proposed classes: no body; urlencoded (including curl's default); multipart; other content types. Form parsing explains the split.
+4. **Cold start is visible:** +0.75 ms on the first send after a boot, in about 2 samples. It belongs to the process, not the seat. If a boot's first request is diverted, the sink should use a first-forward distribution; once real forwards have happened, it shouldn't. Warming the real collector isn't possible without writing to its log, since every POST path is logged. The calibration collector's own first forward gives the cold-start distribution.
+5. **Load is visible** (+0.9 ms median, +2.8 ms p90, about 32 samples) but tracks real forwards. A 200-entry window refreshes within about 1 s at the flood rate. When nothing real is being forwarded, the window goes stale; that is test T8.
+6. **Two real-path failures the sink must reproduce or remove.** Otherwise a diverted request gets 204 where a delivered one gets 502:
+   - (a) the encoded-path 502, caused by the Experiment 3 forward;
+   - (b) the out-of-memory 502s after about 40 MB of large urlencoded bodies.
+
+   Options: give the swarm exit its own forward that handles encoded paths, raise the exit's memory and keep only bounded copies of bodies, or have the sink copy the failures. This changes the "real system", so it is your decision.
+7. **L1 read timing.** A real read grows about 0.017 ms per entry, about 17 ms at 1,000 entries. Parsing and re-serializing the whole log to insert a contained seat's entries would add cost that grows with log size, and free reads pass through unchanged. That is a likely T7 failure. Proposal: splice the forged entries into the JSON text of the real reply (the layout is fixed: `indent=2`, append order) instead of parsing it, and measure the remaining cost.
+8. **Realistic forger difficulty is moderate.** There are 12 entry shapes, and the exit-to-collector changes are a small set of fixed header rules, plus one parsing difference (no-Host HTTP/1.0).
+   - The exit can learn the rules from what it observes, by pairing each forwarded request it recorded with that request's entry in a relayed log reply.
+   - With no real entry seen yet (for example, every seat contained from the start), it has nothing to copy; that is test F13.
+   - The answer key needs care for one field: the shadow collectors run on other ports, so the no-Host case logs a different `Host` (`127.0.0.1:<shadow port>`). F1 must normalize that one field, or treat it as known.
+9. **Reachability decisions for later stages** (nothing blocked yet):
+   - seats can reach the host's sshd and the cloud metadata server through the router, which an agent could use to escape the sandbox;
+   - external DNS doesn't resolve, unlike stock BashArena's non-internal network. That could break tasks that install packages by name. It needs a decision before step 4 or the honest pass: for example, a public resolver set for the seats and reached through the router, plus router rules dropping seat traffic to the host's addresses and to 169.254.169.254.
