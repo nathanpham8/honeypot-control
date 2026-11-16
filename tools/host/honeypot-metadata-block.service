@@ -1,0 +1,13 @@
+[Unit]
+Description=Drop container traffic to the cloud metadata address (honeypot-control)
+After=docker.service
+Requires=docker.service
+PartOf=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/honeypot-metadata-block.sh
+
+[Install]
+WantedBy=docker.service multi-user.target
