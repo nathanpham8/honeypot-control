@@ -23,6 +23,16 @@ Phases (raw results to analysis/swarm_pilot/stage1/):
          alternating; 300 per condition.
   t8     T8: 30 s with no traffic, then one 100 B send from seat0, alternating
          free and contained; 16 per path.
+  t8b    T8b (Stage 1 rerun): seat1 floods delivered 1 KB sends for 10 s, then
+         10 s idle, then one 100 B send from seat0; alternating free and
+         contained; 16 per path.
+  diag   Seat-side gap investigation (Stage 1 rerun, one round; not
+         pass/fail): seat1 sends the 13 kinds as in t1t3, 100 rounds per path
+         on one fresh stack per variant, recording curl's time_connect,
+         time_starttransfer and time_total, the exit's span and the time the
+         server finished writing the reply (SWARM_DIAG=1). Variant A: reply
+         built after the sleep (Stage 1); variant B: reply and event before
+         the sleep (SWARM_REPLY_EARLY=1).
 
 Pass lines (fixed in review round 1, before any data): KS p > 0.01, median
 difference < 0.3 ms, p90 difference < 1 ms, with 300 samples per condition.
@@ -313,7 +323,137 @@ def phase_t8(cycles=32, idle_s=30):
     return res
 
 
-PHASES = {"t1t3": phase_t1t3, "t4": phase_t4, "t5": phase_t5, "t6": phase_t6, "t8": phase_t8}
+def phase_t8b(cycles=32, load_s=10, idle_s=10):
+    st = M.Stack("s1t8b")
+    rows = []
+    try:
+        st.up()
+        st.sh("seat0", M._PAYLOADS)
+        st.sh("seat1", M._PAYLOADS)
+        flood = (f"while true; do if [ -e /tmp/flood ]; then curl -s -o /dev/null --data-binary @/tmp/b1k "
+                 f"{URL}/m/flood; else sleep 0.05; fi; done")
+        for _ in range(2):
+            st.sh("seat1", f"setsid nohup sh -c '{flood}' >/dev/null 2>&1 </dev/null &")
+        st.sh("seat0", " ".join(f"{M.FWD_CONDITIONS['post_100']} >/dev/null;" for _ in range(50)))
+        for c in range(cycles):
+            contained = c % 2 == 1
+            arm(st, ["seat0"] if contained else [])
+            st.sh("seat1", "touch /tmp/flood")
+            time.sleep(load_s)
+            st.sh("seat1", "rm -f /tmp/flood")
+            time.sleep(idle_s)
+            out = M._parse_timing(st.sh("seat0", f"echo p $({M.FWD_CONDITIONS['post_100'].replace('/m/size100', f'/t8b/{c}')})").stdout)
+            ev = [e for e in st.state()["events"] if e["path"] == f"/t8b/{c}"]
+            rows.append({"cycle": c, "contained": contained, "seat_ms": out[0][1] if out else None,
+                         "exit_ms": ev[0].get("latency_ms") if ev else None,
+                         "target_ms": ev[0].get("target_ms") if ev else None})
+            print(f"t8b cycle {c} contained={contained}: {rows[-1]['seat_ms']}", flush=True)
+        sm = st.state()["sink_model"]
+    finally:
+        st.down()
+    sel = lambda p, k: [r[k] for r in rows if r["contained"] == (p == "diverted") and r[k] is not None]
+    res = {"design": f"seat1 floods {load_s} s, then {idle_s} s idle, then one 100 B send from seat0; "
+                     "alternating free/contained",
+           "pass_lines": PASS, "note": "16 per path: below the 300-sample pass line, underpowered",
+           "T8b_idle_after_load_seat_side": judge(sel("delivered", "seat_ms"), sel("diverted", "seat_ms"),
+                                                  "idle after load"),
+           "T8b_idle_after_load_exit_span": judge(sel("delivered", "exit_ms"), sel("diverted", "exit_ms"),
+                                                  "idle after load, exit"),
+           "sink_counts": sm["counts"], "cycles": rows}
+    write("t8b", res)
+    return res
+
+
+_WD = "-s -o /dev/null -w '%{time_connect} %{time_starttransfer} %{time_total} %{http_code}'"
+
+
+def _diag_variant(variant, rounds_per_path=100, rounds_per_block=10):
+    env = {"SWARM_DIAG": "1", **({"SWARM_REPLY_EARLY": "1"} if variant == "B" else {})}
+    seat = "seat1"
+    keys = ("connect", "starttransfer", "total", "span", "written")
+    data = {p: {k: {x: [] for x in keys} for k in T13} for p in ("delivered", "diverted")}
+    st = M.Stack(f"s1diag{variant}", exit_env=env)
+    try:
+        st.up()
+        st.sh(seat, M._PAYLOADS)
+        order = []
+        for i in range(rounds_per_path // rounds_per_block):
+            order += ["delivered", "diverted"] if i % 2 == 0 else ["diverted", "delivered"]
+        ev_mark = dg_mark = 0
+        for bi, path in enumerate(order):
+            arm(st, [seat] if path == "diverted" else [])
+            lines = []
+            for r in range(rounds_per_block):
+                conds = T13[:]
+                random.Random(5000 * (variant == "B") + 1000 * bi + r).shuffle(conds)
+                lines += [f"echo {n} $({M.FWD_CONDITIONS[n].replace(M._W, _WD).replace('/m/', f'/dg/{bi}/')})"
+                          for n in conds]
+            out = st.sh(seat, "; ".join(lines), timeout=1800).stdout
+            seat_rows = {k: [] for k in T13}
+            for line in out.splitlines():
+                parts = line.split()
+                if len(parts) == 5 and parts[0] in seat_rows:
+                    seat_rows[parts[0]].append([float(x) * 1000 for x in parts[1:4]])
+            sv = st.state()
+            ev = sv["events"][ev_mark:]
+            ev_mark += len(ev)
+            dg = sv.get("diag", [])[dg_mark:]
+            dg_mark += len(dg)
+            ev_rows = {k: [] for k in T13}
+            for e in ev:
+                if e["path"].startswith(f"/dg/{bi}/"):
+                    name = SEG.get(e["path"].split("/")[-1])
+                    if name:
+                        ev_rows[name].append(e.get("latency_ms"))
+            dg_rows = {k: [] for k in T13}
+            for d in dg:
+                if (d.get("path") or "").startswith(f"/dg/{bi}/"):
+                    name = SEG.get(d["path"].split("/")[-1])
+                    if name:
+                        dg_rows[name].append(d.get("written_ms"))
+            for k in T13:
+                n = min(len(seat_rows[k]), len(ev_rows[k]), len(dg_rows[k]))
+                for i in range(n):
+                    c, s_, t = seat_rows[k][i]
+                    data[path][k]["connect"].append(c)
+                    data[path][k]["starttransfer"].append(s_)
+                    data[path][k]["total"].append(t)
+                    data[path][k]["span"].append(ev_rows[k][i])
+                    data[path][k]["written"].append(dg_rows[k][i])
+    finally:
+        st.down()
+    med = lambda xs: statistics.median(xs) if xs else None
+    per_kind = {}
+    for k in T13:
+        d, v = data["delivered"][k], data["diverted"][k]
+        row = {"n": [len(d["total"]), len(v["total"])]}
+        for x in keys:
+            row[f"{x}_diff_median_ms"] = round(med(v[x]) - med(d[x]), 4) if d[x] and v[x] else None
+        outside = lambda q: [t - sp for t, sp in zip(q["total"], q["span"]) if sp is not None]
+        after_span = lambda q: [w - sp for w, sp in zip(q["written"], q["span"]) if sp is not None and w is not None]
+        row["seat_minus_span_diff_median_ms"] = round(med(outside(v)) - med(outside(d)), 4)
+        row["written_minus_span_diff_median_ms"] = round(med(after_span(v)) - med(after_span(d)), 4)
+        row["seat_total"] = judge(d["total"], v["total"], k)
+        per_kind[k] = row
+    gap = statistics.median([per_kind[k]["total_diff_median_ms"] for k in T13])
+    return {"variant": variant, "exit_env": env, "per_kind": per_kind,
+            "seat_gap_median_over_kinds_ms": round(gap, 4), "raw": data}
+
+
+def phase_diag():
+    res = {"design": "13 kinds from seat1, 100 rounds per path in blocks of 10, one fresh stack per variant; "
+                     "A = reply built after the sleep, B = reply and event built before the sleep",
+           "rule": "B is used for the rerun if its seat gap (median over kinds of diverted - delivered "
+                   "seat median) is at least 0.03 ms smaller than A's; otherwise A",
+           "A": _diag_variant("A"), "B": _diag_variant("B")}
+    ga, gb = res["A"]["seat_gap_median_over_kinds_ms"], res["B"]["seat_gap_median_over_kinds_ms"]
+    res["decision"] = {"gap_A_ms": ga, "gap_B_ms": gb, "use": "B" if ga - gb >= 0.03 else "A"}
+    write("diag", res)
+    return res
+
+
+PHASES = {"t1t3": phase_t1t3, "t4": phase_t4, "t5": phase_t5, "t6": phase_t6, "t8": phase_t8,
+          "t8b": phase_t8b, "diag": phase_diag}
 
 
 def main():
@@ -325,6 +465,10 @@ def main():
         print(f"== phase {ph}", flush=True)
         res = PHASES[ph]()
         brief = {k: v for k, v in res.items() if not k.startswith("raw") and k not in ("boots", "cycles")}
+        if ph == "diag":
+            brief = {"decision": res["decision"],
+                     **{v: {k: {x: y for x, y in row.items() if x != "seat_total"}
+                            for k, row in res[v]["per_kind"].items()} for v in ("A", "B")}}
         print(json.dumps(brief, indent=1, default=str)[:6000], flush=True)
         print(f"== phase {ph} done in {time.time() - t0:.0f}s", flush=True)
 

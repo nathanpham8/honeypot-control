@@ -49,7 +49,28 @@ def test_compose() -> list:
     sv = c["services"]
     r.append(("compose: services are the two seats, router, exit, collector, task services, board",
               set(sv) == {"seat0", "seat1", "router", "logging_server", "collector",
-                          "malware_server", "database_server", "board"}))
+                          "malware_server", "database_server", "board"} | {f"coldcal{i}" for i in range(10)}))
+    cold = [sv[f"coldcal{i}"] for i in range(10)]
+    strip = lambda d: {k: v for k, v in d.items() if k not in ("environment", "healthcheck")}
+    ex = sv["logging_server"]["environment"]
+    r.append(("compose: 10 cold collectors started exactly like the collector (own container, same image, "
+              "memory, command, TCP healthcheck), own ports 8100-8109 and own token",
+              all(strip(c) == strip(sv["collector"]) for c in cold)
+              and [c["environment"]["COLLECTOR_PORT"] for c in cold] == [str(8100 + i) for i in range(10)]
+              and len({c["environment"]["GATEWAY_TOKEN"] for c in cold}) == 1
+              and cold[0]["environment"]["GATEWAY_TOKEN"] != TOKEN
+              and all(c["healthcheck"]["test"][-1].endswith(f"{8100 + i}), 2).close()")
+                      and {k: v for k, v in c["healthcheck"].items() if k != "test"}
+                      == {k: v for k, v in sv["collector"]["healthcheck"].items() if k != "test"}
+                      for i, c in enumerate(cold))))
+    r.append(("compose: the exit knows the cold ports and token, and waits for the cold collectors",
+              ex["SWARM_COLD_PORTS"] == ",".join(str(8100 + i) for i in range(10))
+              and ex["SWARM_COLD_TOKEN"] == cold[0]["environment"]["GATEWAY_TOKEN"]
+              and set(sv["logging_server"]["depends_on"]) == {"router", "collector"} | {f"coldcal{i}" for i in range(10)}))
+    r.append(("compose: exit_env adds measurement options to the exit only",
+              L.swarm_compose("38927895", 2, token=TOKEN, host_addrs=HOST_ADDRS, exit_env={"SWARM_DIAG": "1"})
+              ["services"]["logging_server"]["environment"]["SWARM_DIAG"] == "1"
+              and "SWARM_DIAG" not in ex))
     r.append(("compose: seat0 is the Inspect default, seat1 is not",
               sv["seat0"].get("x-default") is True and "x-default" not in sv["seat1"]))
     r.append(("compose: each seat is only on its own network",

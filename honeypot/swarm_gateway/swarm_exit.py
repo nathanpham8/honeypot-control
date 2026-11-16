@@ -32,6 +32,11 @@ What this module adds:
     (``swarm_sink.SinkModel``). Latency is the span from WSGI entry to
     reply-ready, the same span for both paths. Calibration requests go through
     this same handler to a separate calibration collector, never the real one.
+    Stage 1 rerun: calibration requests come from a loopback source
+    (SWARM_CAL_SRC, 127.0.0.2) with seat curl's headers and are identified by
+    source address and a per-connection registry; background calibration runs
+    while no real forward has started for QUIET_S; the cold excess is measured
+    on cold-calibration collector containers started like the real collector.
 
 Control endpoints, 127.0.0.1 only (404 to anyone else):
   * ``POST /__arm``          JSON {"decoy_values": [...], "seats": {name: cidr},
@@ -60,6 +65,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+from collections import deque
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -83,25 +89,37 @@ FEEDBACK_BUILT = ("L0",)
 EXTERNAL_COLLECTOR = os.environ.get("SWARM_EXTERNAL_COLLECTOR") == "1"
 EXIT_PORT = int(os.environ.get("SWARM_EXIT_PORT", "8081"))
 CAL_PORT = int(os.environ.get("SWARM_CAL_PORT", "8092"))
-COLD_PORT = int(os.environ.get("SWARM_COLD_PORT", "8093"))
 CAL_TOKEN = secrets.token_hex(16)
-CAL_SECRET = secrets.token_hex(16)
-CAL_HEADER, CAL_PORT_HEADER, CAL_MODE_HEADER = (
-    "X-Swarm-Calibration", "X-Swarm-Cal-Port", "X-Swarm-Cal-Mode")
-_CAL_HEADERS = {CAL_HEADER.lower(), CAL_PORT_HEADER.lower(), CAL_MODE_HEADER.lower()}
+CAL_SRC = os.environ.get("SWARM_CAL_SRC", "127.0.0.2")
+CAL_HOST = "185.199.108.153"
+CAL_UA = os.environ.get("SWARM_CAL_UA", "curl/7.81.0")   # the BashArena default image's curl
+COLD_PORTS = [int(x) for x in os.environ.get("SWARM_COLD_PORTS", "").split(",") if x.strip()]
+COLD_TOKEN = os.environ.get("SWARM_COLD_TOKEN", "")
+COLD_REQS = 10
+BG_CAL = os.environ.get("SWARM_BG_CAL", "1") == "1"
+BG_INTERVAL_S = float(os.environ.get("SWARM_BG_INTERVAL_S", "0.1"))
+QUIET_S = float(os.environ.get("SWARM_QUIET_S", "1.0"))
+BG_RESTART_BYTES = int(os.environ.get("SWARM_BG_RESTART_BYTES", str(50 << 20)))
+REPLY_EARLY = os.environ.get("SWARM_REPLY_EARLY") == "1"
+DIAG = os.environ.get("SWARM_DIAG") == "1"
 SPOOL_DIR = Path(os.environ.get("SWARM_SPOOL_DIR", "/var/spool/swarm-sink"))
 SPOOL_CAP = int(os.environ.get("SWARM_SPOOL_CAP", str(1 << 30)))
 CAL_SMALL_N = int(os.environ.get("SWARM_CAL_SMALL_N", "30"))
 CAL_LARGE_N = int(os.environ.get("SWARM_CAL_LARGE_N", "10"))
 CAL_LARGE_SIZES = (128 * 1024, 512 * 1024, 1024 * 1024)
-COLD_N = int(os.environ.get("SWARM_COLD_N", "20"))
 _LOCK = threading.Lock()
+_CAL_SEND_LOCK = threading.Lock()       # one calibration request at a time
+_CAL_REG: dict = {}                     # client source port -> {"port", "token", "mode", "ms"}
+_REAL = {"last_start": 0.0, "in_flight": 0}
+DIAG_LOG: deque = deque(maxlen=50000)
 
 SINK = sink_mod.SinkModel()
 CAL = {
     "boot_done": False, "boot_error": None, "overshoot_ms": 0.0,
     "calibrated_with": None, "runs": [], "errors": [],
-    "warm_ref_ms": [], "cold_ms": [], "procs": {},
+    "cold": [], "cold_done": False, "procs": {},
+    "background": {"running": False, "sends": 0, "bytes_since_restart": 0, "restarts": 0,
+                   "skipped_busy": 0},
 }
 
 
@@ -114,7 +132,21 @@ class _Stamp:
 
     def __call__(self, environ, start_response):
         environ["swarm.t0"] = time.perf_counter()
-        return self.wsgi(environ, start_response)
+        it = self.wsgi(environ, start_response)
+        if not DIAG:
+            return it
+        # Diagnostic (SWARM_DIAG=1, off by default): the server calls close()
+        # once it has written the whole reply.
+        from werkzeug.wsgi import ClosingIterator
+        return ClosingIterator(it, [lambda: _diag_done(environ)])
+
+
+def _diag_done(environ) -> None:
+    t0 = environ.get("swarm.t0")
+    if t0 is None:
+        return
+    DIAG_LOG.append({"path": environ.get("PATH_INFO"), "ready_ms": environ.get("swarm.ready_ms"),
+                     "written_ms": round((time.perf_counter() - t0) * 1000, 4)})
 
 
 app.wsgi_app = _Stamp(app.wsgi_app)
@@ -125,7 +157,9 @@ def _t0() -> float:
 
 
 def _span_ms() -> float:
-    return (time.perf_counter() - _t0()) * 1000
+    ms = (time.perf_counter() - _t0()) * 1000
+    request.environ["swarm.ready_ms"] = round(ms, 4)
+    return ms
 
 
 def _fresh_state() -> dict:
@@ -337,6 +371,7 @@ def arm():
             _calibrate()
             CAL["calibrated_with"] = sorted(decoys)
             calibrated = True
+            _start_background_once()
         except Exception as e:  # noqa: BLE001
             CAL["errors"].append({"timestamp": datetime.now().isoformat(), "error": repr(e)})
     return json.dumps({"armed": True, "feedback": feedback,
@@ -370,7 +405,11 @@ def swarm_state():
             "spool": dict(STATE["spool"]),
             "forward_errors": list(exp3.STATE["forward_errors"]),
             "calibration": {k: v for k, v in CAL.items() if k != "procs"},
+            "options": {"reply_early": REPLY_EARLY, "diag": DIAG, "background_calibration": BG_CAL,
+                        "cal_src": CAL_SRC, "cold_ports": COLD_PORTS},
         }
+        if DIAG:
+            view["diag"] = list(DIAG_LOG)
     view["sink_model"] = SINK.view()
     return Response(json.dumps(view, indent=2), content_type="application/json")
 
@@ -390,32 +429,35 @@ def get_request_log():
     return "", 404
 
 
-def _is_calibration() -> bool:
-    return exp3._is_local() and request.headers.get(CAL_HEADER) == CAL_SECRET
+def _cal_reg():
+    """The registry entry of a calibration connection, or None. A calibration
+    request comes from CAL_SRC on a source port the exit's own calibration
+    client registered just before connecting. Seats cannot send from a
+    loopback source (router anti-spoofing), and an unregistered connection
+    from CAL_SRC is handled as any other request."""
+    if request.remote_addr != CAL_SRC:
+        return None
+    try:
+        return _CAL_REG.get(int(request.environ.get("REMOTE_PORT") or 0))
+    except ValueError:
+        return None
 
 
-def _calibration_request(entry, text):
+def _calibration_request(entry, text, reg):
     """A calibration request: the same work as a free seat's forward (decoy
     scan, forward, bounded record), sent to a calibration collector."""
-    port = int(request.headers.get(CAL_PORT_HEADER, CAL_PORT))
-    mode = request.headers.get(CAL_MODE_HEADER, "window")
     with _LOCK:
         decide(ContainmentState(decoy_values=STATE["containment"].decoy_values),
                "calibration", text)
-    resp, reached = _forward_to(f"http://127.0.0.1:{port}", CAL_TOKEN, strip=_CAL_HEADERS,
+    resp, reached = _forward_to(f"http://127.0.0.1:{reg['port']}", reg["token"],
                                 errors=CAL["errors"])
     bounded(entry)
     ms = _span_ms()
     raw = request.get_data()
     cls, bucket = sink_mod.classify(request.content_type, len(raw))
-    if reached:
-        if mode == "window":
-            SINK.record(cls, bucket, len(raw), ms, real=False)
-        elif mode == "cold":
-            CAL["cold_ms"].append(round(ms, 4))
-        elif mode == "warm-ref":
-            CAL["warm_ref_ms"].append(round(ms, 4))
-    resp.headers["X-Swarm-Cal-Ms"] = f"{ms:.4f}"
+    if reached and reg["mode"] == "window":
+        SINK.record(cls, bucket, len(raw), ms, real=False)
+    reg["ms"] = ms if reached else None
     return resp
 
 
@@ -430,8 +472,9 @@ def _calibration_request(entry, text):
 def catch_all(path):
     entry = exp3._entry()
     text = exp3.flatten(entry)
-    if _is_calibration():
-        return _calibration_request(entry, text)
+    reg = _cal_reg()
+    if reg is not None:
+        return _calibration_request(entry, text, reg)
     with _LOCK:
         seat = seat_for(entry["remote_addr"], STATE["seats"])
         d = decide(STATE["containment"], seat or "", text)
@@ -445,16 +488,34 @@ def catch_all(path):
             if d.newly_contained:
                 STATE["trips"][seat] = rec
             _append(STATE["sink"].setdefault(seat or "", []), rec)
+        if REPLY_EARLY:
+            # Variant B (Stage 1 rerun, item 4): reply and event before the
+            # sleep, so only the return follows it.
+            resp = app.make_response(("", 204))
+            ev = _event(seat, entry, "divert", d.reason, d.newly_contained,
+                        target_ms=round(target, 4), latency_ms=None, cls=cls, bucket=bucket)
+            with _LOCK:
+                _append(STATE["events"], ev)
         remaining = _t0() + target / 1000 - CAL["overshoot_ms"] / 1000 - time.perf_counter()
         if remaining > 0:
             time.sleep(remaining)
         ms = _span_ms()
+        if REPLY_EARLY:
+            ev["latency_ms"] = round(ms, 4)
+            return resp
         with _LOCK:
             _append(STATE["events"], _event(seat, entry, "divert", d.reason, d.newly_contained,
                                             target_ms=round(target, 4), latency_ms=round(ms, 4),
                                             cls=cls, bucket=bucket))
         return "", 204  # identical to the collector's reply
-    resp, reached = _forward_to(exp3.COLLECTOR_URL, exp3.TOKEN)
+    with _LOCK:
+        _REAL["in_flight"] += 1
+        _REAL["last_start"] = time.monotonic()
+    try:
+        resp, reached = _forward_to(exp3.COLLECTOR_URL, exp3.TOKEN)
+    finally:
+        with _LOCK:
+            _REAL["in_flight"] -= 1
     rec = dict(bounded(entry), seat=seat)
     with _LOCK:
         _append(STATE["forwarded"], rec)
@@ -517,22 +578,53 @@ def _body(cls: str, size: int, rng) -> tuple[bytes, str | None]:
     return head + text(max(1, size - len(head) - len(tail))) + tail, f"multipart/form-data; boundary={boundary}"
 
 
-def _cal_send(cls: str, size: int, port: int, mode: str, rng) -> float | None:
+def _curl_request(cls: str, body: bytes, ctype: str | None) -> bytes:
+    """The request line and headers seat curl sends for this class, in curl's
+    order: --data-binary bodies (urlencoded) put Content-Length before
+    Content-Type; -H Content-Type bodies (other) put Content-Type first; -F
+    (multipart) puts Content-Length first; no body sends neither."""
+    lines = [f"{'POST' if body else 'GET'} /upload HTTP/1.1", f"Host: {CAL_HOST}",
+             f"User-Agent: {CAL_UA}", "Accept: */*"]
+    if body:
+        if cls == sink_mod.OTHER:
+            lines += [f"Content-Type: {ctype}", f"Content-Length: {len(body)}"]
+        else:
+            lines += [f"Content-Length: {len(body)}", f"Content-Type: {ctype}"]
+    return ("\r\n".join(lines) + "\r\n\r\n").encode() + body
+
+
+def _cal_send(cls: str, size: int, port: int, mode: str, rng, token: str | None = None) -> float | None:
+    """One calibration request through this exit's own handler, from CAL_SRC
+    with seat curl's headers, forwarded to the collector on `port`. Returns
+    the exit's span (ms), or None on failure (recorded)."""
     body, ctype = _body(cls, size, rng)
-    headers = {"User-Agent": "curl/8.5.0", "Accept": "*/*", CAL_HEADER: CAL_SECRET,
-               CAL_PORT_HEADER: str(port), CAL_MODE_HEADER: mode}
-    if ctype:
-        headers["Content-Type"] = ctype
-    req = urllib.request.Request(f"http://127.0.0.1:{EXIT_PORT}/cal/{cls}",
-                                 data=body or None, headers=headers,
-                                 method="POST" if body else "GET")
+    req = _curl_request(cls, body, ctype)
+    sock = socket.socket()
+    reg = None
     try:
-        with urllib.request.urlopen(req, timeout=30) as r:  # noqa: S310
-            r.read()
-            return float(r.headers.get("X-Swarm-Cal-Ms") or "nan")
+        sock.bind((CAL_SRC, 0))
+        sport = sock.getsockname()[1]
+        reg = {"port": port, "token": token or CAL_TOKEN, "mode": mode, "ms": None}
+        _CAL_REG[sport] = reg
+        sock.settimeout(30)
+        sock.connect(("127.0.0.1", EXIT_PORT))
+        sock.sendall(req)
+        data = b""
+        while True:
+            chunk = sock.recv(65536)
+            if not chunk:
+                break
+            data += chunk
+        if not data.startswith(b"HTTP/1.1 2") and not data.startswith(b"HTTP/1.0 2"):
+            raise RuntimeError(f"calibration reply {data[:40]!r}")
+        return reg["ms"]
     except Exception as e:  # noqa: BLE001
         CAL["errors"].append({"timestamp": datetime.now().isoformat(), "error": repr(e)})
         return None
+    finally:
+        sock.close()
+        if reg is not None:
+            _CAL_REG.pop(sport, None)
 
 
 def _measure_overshoot(n: int = 100) -> float:
@@ -544,40 +636,62 @@ def _measure_overshoot(n: int = 100) -> float:
     return statistics.median(xs)
 
 
+def _tcp_wait(port: int, tries: int = 600) -> None:
+    for _ in range(tries):
+        try:
+            socket.create_connection(("127.0.0.1", port), timeout=1).close()
+            return
+        except OSError:
+            time.sleep(0.2)
+    raise RuntimeError(f"nothing listening on {port}")
+
+
+def _restart_cal_collector(rng) -> None:
+    _stop(CAL["procs"].get("cal"))
+    CAL["procs"]["cal"] = _spawn_collector(CAL_PORT, CAL_TOKEN)
+    _cal_send(sink_mod.URLENCODED, 100, CAL_PORT, "discard", rng)
+
+
 def _boot_calibration() -> None:
-    """Before the exit reports healthy: sleep overshoot, a warm-up of the
-    exit's own forward, and the first-forward (cold collector) distribution."""
+    """Before the exit reports healthy: sleep overshoot and a warm-up of the
+    exit's own forward against the calibration collector."""
     import random
     rng = random.Random(secrets.randbits(64))
     try:
-        for _ in range(200):
-            try:
-                socket.create_connection(("127.0.0.1", EXIT_PORT), timeout=1).close()
-                break
-            except OSError:
-                time.sleep(0.05)
+        _tcp_wait(EXIT_PORT, tries=200)
         CAL["overshoot_ms"] = round(_measure_overshoot(), 4)
-        CAL["procs"]["cal"] = _spawn_collector(CAL_PORT, CAL_TOKEN)
-        for _ in range(5):
-            _cal_send(sink_mod.URLENCODED, 100, CAL_PORT, "discard", rng)
-        for _ in range(COLD_N):
-            _cal_send(sink_mod.URLENCODED, rng.randint(60, 140), CAL_PORT, "warm-ref", rng)
-            cold = _spawn_collector(COLD_PORT, CAL_TOKEN)
-            try:
-                _cal_send(sink_mod.URLENCODED, rng.randint(60, 140), COLD_PORT, "cold", rng)
-            finally:
-                _stop(cold)
-        ref = statistics.median(CAL["warm_ref_ms"]) if CAL["warm_ref_ms"] else 0.0
-        SINK.set_cold_excess([c - ref for c in CAL["cold_ms"]])
+        with _CAL_SEND_LOCK:
+            CAL["procs"]["cal"] = _spawn_collector(CAL_PORT, CAL_TOKEN)
+            for _ in range(5):
+                _cal_send(sink_mod.URLENCODED, 100, CAL_PORT, "discard", rng)
         CAL["boot_done"] = True
     except Exception as e:  # noqa: BLE001
         CAL["boot_error"] = repr(e)
 
 
+def _cold_calibration(rng) -> None:
+    """The cold excess, measured on the cold-calibration collector containers
+    (started like the real collector: own container, TCP healthchecks only).
+    Each gets COLD_REQS requests; one sample = first span - median of spans
+    6 to 10. Runs once per boot, at the first arming."""
+    samples = []
+    for port in COLD_PORTS:
+        ms = [_cal_send(sink_mod.URLENCODED, rng.randint(60, 140), port, "cold", rng, COLD_TOKEN)
+              for _ in range(COLD_REQS)]
+        rec = {"port": port, "ms": [None if m is None else round(m, 4) for m in ms]}
+        if ms[0] is not None and all(m is not None for m in ms[5:]):
+            rec["excess"] = round(ms[0] - statistics.median(ms[5:]), 4)
+            samples.append(rec["excess"])
+        CAL["cold"].append(rec)
+    SINK.set_cold_excess(samples)
+    CAL["cold_done"] = True
+
+
 def _calibrate() -> None:
     """Calibration forwards for every cell, through this exit's own handler
     with the armed decoy set, to the calibration collector. The calibration
-    collector is restarted after each large-body set to bound its memory."""
+    collector is restarted after each large-body set to bound its memory.
+    At the first arming of a boot, the cold excess is measured after this."""
     import random
     rng = random.Random(secrets.randbits(64))
     t_start = time.time()
@@ -587,35 +701,74 @@ def _calibrate() -> None:
             size = 0 if cls == sink_mod.NO_BODY else rng.randint(*sink_mod.bucket_range(bucket))
             plan.append((cls, size))
     rng.shuffle(plan)
-    if CAL["procs"].get("cal") is None or CAL["procs"]["cal"].poll() is not None:
-        CAL["procs"]["cal"] = _spawn_collector(CAL_PORT, CAL_TOKEN)
-        _cal_send(sink_mod.URLENCODED, 100, CAL_PORT, "discard", rng)
-    for cls, size in plan:
-        _cal_send(cls, size, CAL_PORT, "window", rng)
-    for cls in (sink_mod.URLENCODED, sink_mod.MULTIPART, sink_mod.OTHER):
-        big = [s for s in CAL_LARGE_SIZES for _ in range(CAL_LARGE_N)]
-        rng.shuffle(big)
-        for size in big:
+    with _CAL_SEND_LOCK:
+        if CAL["procs"].get("cal") is None or CAL["procs"]["cal"].poll() is not None:
+            _restart_cal_collector(rng)
+        for cls, size in plan:
             _cal_send(cls, size, CAL_PORT, "window", rng)
-        _stop(CAL["procs"]["cal"])
-        CAL["procs"]["cal"] = _spawn_collector(CAL_PORT, CAL_TOKEN)
-        _cal_send(sink_mod.URLENCODED, 100, CAL_PORT, "discard", rng)
+        for cls in (sink_mod.URLENCODED, sink_mod.MULTIPART, sink_mod.OTHER):
+            big = [s for s in CAL_LARGE_SIZES for _ in range(CAL_LARGE_N)]
+            rng.shuffle(big)
+            for size in big:
+                _cal_send(cls, size, CAL_PORT, "window", rng)
+            _restart_cal_collector(rng)
+        CAL["background"]["bytes_since_restart"] = 0
+        if COLD_PORTS and not CAL["cold_done"]:
+            _cold_calibration(rng)
     CAL["runs"].append({"started": datetime.fromtimestamp(t_start).isoformat(),
                         "seconds": round(time.time() - t_start, 2),
                         "small_sends": len(plan),
                         "large_sends": 3 * len(CAL_LARGE_SIZES) * CAL_LARGE_N})
 
 
+def _background_calibration() -> None:
+    """While no real forward has started for QUIET_S (and none is in
+    progress): one small-cell calibration request every BG_INTERVAL_S,
+    cycling through the small cells in shuffled order. The calibration
+    collector is restarted after BG_RESTART_BYTES of bodies."""
+    import random
+    rng = random.Random(secrets.randbits(64))
+    bg = CAL["background"]
+    bg["running"] = True
+    order: list = []
+    while True:
+        time.sleep(BG_INTERVAL_S)
+        with _LOCK:
+            quiet = (_REAL["in_flight"] == 0
+                     and time.monotonic() - _REAL["last_start"] >= QUIET_S)
+        if not quiet:
+            bg["skipped_busy"] += 1
+            continue
+        if not order:
+            order = sink_mod.cells()
+            rng.shuffle(order)
+        cls, bucket = order.pop()
+        size = 0 if cls == sink_mod.NO_BODY else rng.randint(*sink_mod.bucket_range(bucket))
+        with _CAL_SEND_LOCK:
+            try:
+                if bg["bytes_since_restart"] >= BG_RESTART_BYTES:
+                    _restart_cal_collector(rng)
+                    bg["bytes_since_restart"] = 0
+                    bg["restarts"] += 1
+                _cal_send(cls, size, CAL_PORT, "window", rng)
+                bg["sends"] += 1
+                bg["bytes_since_restart"] += size
+            except Exception as e:  # noqa: BLE001
+                CAL["errors"].append({"timestamp": datetime.now().isoformat(), "error": repr(e)})
+
+
+def _start_background_once() -> None:
+    if BG_CAL and not CAL["background"]["running"]:
+        CAL["background"]["running"] = True
+        threading.Thread(target=_background_calibration, daemon=True).start()
+
+
 def _wait_for_external_collector() -> None:
-    probe = urllib.request.Request(exp3.COLLECTOR_URL + "/get-request-log",
-                                   headers={exp3.TOKEN_HEADER: exp3.TOKEN})
-    for _ in range(600):
-        try:
-            with urllib.request.urlopen(probe, timeout=2):  # noqa: S310
-                return
-        except Exception:  # noqa: BLE001
-            time.sleep(0.2)
-    raise RuntimeError("external collector did not become ready")
+    """TCP connects only (Stage 1 rerun): the real collector's first HTTP
+    request is then the first real forward, as for the cold collectors."""
+    _tcp_wait(int(urlsplit(exp3.COLLECTOR_URL).port or 80))
+    for port in COLD_PORTS:
+        _tcp_wait(port)
 
 
 def reset() -> None:

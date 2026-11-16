@@ -31,8 +31,12 @@ Checks, in order:
               rises; the internet and the task services still answer.
   loopback-dst seat0 puts raw frames on the wire from its own address to the
               router's loopback ports (collector 8091, calibration collector
-              8092, exit 8081): the router drops every one (counted), nothing
-              reaches the exit or the collector.
+              8092, exit 8081, cold collector 8100): the router drops every
+              one (counted), nothing reaches the exit or the collector.
+  calibration (step 3, Stage 1 rerun) after the first arming: each of the 10
+              cold collectors got exactly 10 requests (one cold-excess sample
+              each), background calibration is running, no calibration
+              errors, and no calibration request reached the real collector.
   dns         both seats resolve external names through the router; a small
               package installs by name with pip; DNS queries are counted per
               seat; traffic counts give connections by destination per seat.
@@ -284,12 +288,16 @@ def check_loopback_spoof(st, r):
     before = st.antispoof_counts()
     out = st.dc("exec", "-T", "seat0", "python3", "-c", _LOOPBACK_SYN, mac, "127.0.0.1",
                 f"{COLLECTION_IP}:80", f"{router_ip}:8081")
+    # also as the exit's calibration source (127.0.0.2, Stage 1 rerun)
+    out2 = st.dc("exec", "-T", "seat0", "python3", "-c", _LOOPBACK_SYN, mac, "127.0.0.2",
+                 f"{COLLECTION_IP}:80", f"{router_ip}:8081")
     time.sleep(2)
     after = st.antispoof_counts()
     after_exit = _exit_view(st)
-    sent = int(out.stdout.strip() or 0)
-    r.append(("loopback: seat0 put 4 SYN frames with source 127.0.0.1 on the wire",
-              out.returncode == 0 and sent == 4 and len(mac.split(":")) == 6, (out.stdout, out.stderr[-300:], mac)))
+    sent = int(out.stdout.strip() or 0) + int(out2.stdout.strip() or 0)
+    r.append(("loopback: seat0 put 8 SYN frames with source 127.0.0.1 or 127.0.0.2 (calibration source) on the wire",
+              out.returncode == 0 and out2.returncode == 0 and sent == 8 and len(mac.split(":")) == 6,
+              (out.stdout, out.stderr[-300:], out2.stdout, mac)))
     r.append(("loopback: the router's anti-spoof rule dropped every one",
               after.get("seat0", 0) - before.get("seat0", 0) == sent and sent > 0, (before, after)))
     r.append(("loopback: nothing changed at the exit or the collector",
@@ -483,16 +491,36 @@ def check_loopback_dst(st, r, addrs):
     before_exit = _exit_view(st)
     before = st.counter("block-seat0-loopback")
     out = st.dc("exec", "-T", "seat0", "python3", "-c", _LOOPBACK_SYN, mac, addrs["seat0"],
-                "127.0.0.1:8091", "127.0.0.1:8092", "127.0.0.1:8081")
+                "127.0.0.1:8091", "127.0.0.1:8092", "127.0.0.1:8081", "127.0.0.1:8100")
     time.sleep(2)
     after = st.counter("block-seat0-loopback")
     sent = int(out.stdout.strip() or 0)
-    r.append(("loopback-dst: seat0 sent 6 SYN frames from its own address to the router's loopback ports",
-              out.returncode == 0 and sent == 6, (out.stdout, out.stderr[-300:])))
+    r.append(("loopback-dst: seat0 sent 8 SYN frames from its own address to the router's loopback ports",
+              out.returncode == 0 and sent == 8, (out.stdout, out.stderr[-300:])))
     r.append(("loopback-dst: the router dropped every one (block-seat0-loopback counter)",
               after - before == sent, (before, after)))
     r.append(("loopback-dst: nothing changed at the exit or the collector",
               _exit_view(st) == before_exit, None))
+
+
+def check_calibration(st, r):
+    s = st.state()
+    cal = s["calibration"]
+    cold_counts = []
+    for i in range(10):
+        out = st.dc("exec", "-T", f"coldcal{i}", "python", "ctl.py", "COLLECTOR-SUMMARY").stdout
+        cold_counts.append(json.loads(out or "{}").get("entries"))
+    r.append(("calibration: each of the 10 cold collectors got exactly 10 requests; 10 cold-excess samples",
+              cal["cold_done"] and cold_counts == [10] * 10
+              and s["sink_model"]["cold_excess"]["n"] == 10, (cold_counts, cal["cold"][:2])))
+    time.sleep(3)
+    bg = st.state()["calibration"]["background"]
+    r.append(("calibration: background calibration running; no calibration errors",
+              bg["running"] and bg["sends"] > 0 and st.state()["calibration"]["errors"] == [], bg))
+    paths = {e["path"] for e in st.collector_log()}
+    r.append(("calibration: no calibration request reached the real collector",
+              "/upload" not in paths, sorted(paths)[:10]))
+    return cal
 
 
 def check_dns(st, r, subnets):
@@ -671,6 +699,7 @@ def main() -> int:
         results.append(("stack up and healthy", up.returncode == 0, up.stderr[-800:]))
         if up.returncode == 0:
             subnets, addrs = check_layout(st, results)
+            check_calibration(st, results)
             check_board(st, results)
             check_isolation(st, results, addrs)
             check_spoof(st, results, addrs)

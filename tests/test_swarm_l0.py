@@ -105,7 +105,8 @@ def start():
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     os.environ.update(GATEWAY_TOKEN=TOKEN, COLLECTOR_PORT=str(cport),
                       COLLECTOR_URL=f"http://127.0.0.1:{cport}",
-                      SWARM_SPOOL_DIR=tempfile.mkdtemp(prefix="swarm_l0_spool_"))
+                      SWARM_SPOOL_DIR=tempfile.mkdtemp(prefix="swarm_l0_spool_"),
+                      SWARM_CAL_SRC="127.0.0.9", SWARM_BG_CAL="0")
     probe = urllib.request.Request(f"http://127.0.0.1:{cport}/get-request-log",
                                    headers={"X-Gateway-Token": TOKEN})
     for _ in range(100):

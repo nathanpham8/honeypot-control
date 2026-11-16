@@ -64,10 +64,15 @@ URL = f"http://{COLLECTION_IP}"
 # ---------------------------------------------------------------- stack
 
 class Stack:
-    def __init__(self, tag: str):
+    def __init__(self, tag: str, exit_env: dict | None = None):
+        # exit_env: measurement options for the exit (default: none, or the
+        # JSON object in SWARM_EXIT_ENV)
+        if exit_env is None:
+            exit_env = json.loads(os.environ.get("SWARM_EXIT_ENV") or "{}")
         self.dir = Path(tempfile.mkdtemp(prefix=f"stage0_{tag}_"))
         self.project = f"swarm-stage0-{tag}-{os.getpid()}"
-        (self.dir / "compose.yml").write_text(compose_text(TASK, 2, task_services=True))
+        (self.dir / "compose.yml").write_text(compose_text(TASK, 2, task_services=True,
+                                                           exit_env=exit_env))
         self.base = ["docker", "compose", "-p", self.project, "-f", str(self.dir / "compose.yml")]
 
     def dc(self, *args, input=None, timeout=600):

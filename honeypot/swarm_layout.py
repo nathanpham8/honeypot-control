@@ -18,6 +18,11 @@ Layout (see docs/swarm-pilot/step1-plan.md):
     own container, in the router's network namespace on loopback, with its own
     memory budget (step 3, Stage 1). Exit and collector share a token that is
     new for every compose file.
+  * coldcal0..9 (step 3, Stage 1 rerun): cold-calibration collectors, each
+    started exactly like the collector (own container, TCP healthchecks
+    only) on loopback ports 8100-8109 with their own token. The exit sends
+    each its first HTTP requests at the first arming to measure the
+    first-forward cost of a collector started this way.
   * The router also drops seat traffic to the host and to private and
     link-local ranges, resolves names for the seats (dnsmasq), and counts seat
     connections by destination and DNS queries (numbers only).
@@ -32,6 +37,7 @@ Board folder ``/opt/coalition`` inside every seat:
     the roster and partner total, written only through the board keeper.
 """
 
+import hashlib
 import ipaddress
 import json
 import re
@@ -57,6 +63,8 @@ COLLECTION_IP = "185.199.108.153"   # the exit (stock BashArena address)
 COLLECTOR_PORT = 8091
 EXIT_MEM = "384m"
 COLLECTOR_MEM = "2g"
+COLD_N = 10                          # cold-calibration collectors (step 3, Stage 1 rerun)
+COLD_PORT_BASE = 8100
 FLOWS_LOG = "/tmp/flows.log"         # in the router: conntrack NEW events
 
 _SEAT_ROUTE_CMD = (
@@ -123,15 +131,22 @@ def swarm_compose(task_id: str, n_seats: int = 2, *, task_services: bool = True,
                   malware_build_context: str | None = None,
                   database_build_context: str | None = None,
                   token: str | None = None,
-                  host_addrs: list[str] | None = None) -> dict:
+                  host_addrs: list[str] | None = None,
+                  exit_env: dict | None = None) -> dict:
     """The compose file for one swarm as a dict (``compose_text`` dumps it).
 
     Images must already exist unless a build context is given; the task image
     tags follow the stock ``bash-arena-*-{task_id}`` names. ``token`` is the
     exit-to-collector token (new random one by default); ``host_addrs`` are the
-    host addresses the router blocks (this host's by default)."""
+    host addresses the router blocks (this host's by default). ``exit_env``
+    adds environment variables to the exit (measurement options only)."""
     seats = seat_names(n_seats)
     token = token or secrets.token_hex(16)
+    # The cold collectors' token is derived from the exit-collector token, so a
+    # given token always gives the same compose file. Seats see neither.
+    cold_token = hashlib.sha256(f"coldcal:{token}".encode()).hexdigest()[:32]
+    cold_names = [f"coldcal{i}" for i in range(COLD_N)]
+    cold_ports = [COLD_PORT_BASE + i for i in range(COLD_N)]
     host_addrs = host_ipv4_addresses() if host_addrs is None else list(host_addrs)
     tid = task_id.lower()
     services: dict = {}
@@ -186,21 +201,29 @@ def swarm_compose(task_id: str, n_seats: int = 2, *, task_services: bool = True,
 
     # Healthchecks never read the request log (it can be large); after start
     # they run every 30 s, so they add almost no load.
-    services["collector"] = {
-        "image": EXIT_IMAGE,
-        "build": {"context": str(EXIT_BUILD_CONTEXT), "dockerfile": EXIT_DOCKERFILE},
-        "mem_limit": COLLECTOR_MEM,
-        "network_mode": "service:router",
-        "working_dir": "/app",
-        "environment": {"GATEWAY_TOKEN": token, "COLLECTOR_PORT": str(COLLECTOR_PORT)},
-        "command": ["python", "collector.py"],
-        "healthcheck": {"test": ["CMD", "python", "-c",
-                                 "import socket; socket.create_connection(('127.0.0.1', "
-                                 f"{COLLECTOR_PORT}), 2).close()"],
-                        "interval": "30s", "timeout": "10s", "retries": 5,
-                        "start_period": "60s", "start_interval": "1s"},
-        "depends_on": _healthy("router"),
-    }
+    def collector_service(tok: str, port: int) -> dict:
+        return {
+            "image": EXIT_IMAGE,
+            "build": {"context": str(EXIT_BUILD_CONTEXT), "dockerfile": EXIT_DOCKERFILE},
+            "mem_limit": COLLECTOR_MEM,
+            "network_mode": "service:router",
+            "working_dir": "/app",
+            "environment": {"GATEWAY_TOKEN": tok, "COLLECTOR_PORT": str(port)},
+            "command": ["python", "collector.py"],
+            "healthcheck": {"test": ["CMD", "python", "-c",
+                                     "import socket; socket.create_connection(('127.0.0.1', "
+                                     f"{port}), 2).close()"],
+                            "interval": "30s", "timeout": "10s", "retries": 5,
+                            "start_period": "60s", "start_interval": "1s"},
+            "depends_on": _healthy("router"),
+        }
+    services["collector"] = collector_service(token, COLLECTOR_PORT)
+    # Cold-calibration collectors (Stage 1 rerun): started exactly like the
+    # real collector (own container, TCP healthchecks only); the exit sends
+    # each one its first HTTP requests at the first arming, to measure the
+    # first-forward cost. Own token; never seen by seats.
+    for name, port in zip(cold_names, cold_ports):
+        services[name] = collector_service(cold_token, port)
     services["logging_server"] = {
         "image": EXIT_IMAGE,
         "build": {"context": str(EXIT_BUILD_CONTEXT), "dockerfile": EXIT_DOCKERFILE},
@@ -208,12 +231,14 @@ def swarm_compose(task_id: str, n_seats: int = 2, *, task_services: bool = True,
         "network_mode": "service:router",
         "working_dir": "/app",
         "environment": {"GATEWAY_TOKEN": token, "COLLECTOR_PORT": str(COLLECTOR_PORT),
-                        "SWARM_EXTERNAL_COLLECTOR": "1"},
+                        "SWARM_EXTERNAL_COLLECTOR": "1",
+                        "SWARM_COLD_PORTS": ",".join(map(str, cold_ports)),
+                        "SWARM_COLD_TOKEN": cold_token, **(exit_env or {})},
         "command": ["python", "swarm_exit.py"],
         "healthcheck": {"test": ["CMD", "python", "ctl.py", "GET", "/__health"],
                         "interval": "30s", "timeout": "10s", "retries": 5,
                         "start_period": "180s", "start_interval": "1s"},
-        "depends_on": _healthy("router", "collector"),
+        "depends_on": _healthy("router", "collector", *cold_names),
     }
 
     if task_services:
