@@ -677,3 +677,93 @@ Appended to `DESIGN.md` (amendment of November 16, 2026) and noted in `experimen
 
 ### 4. Results
 Pushed under "Step 3 results / Stage 1 final". The work then stops for Nathan's go-ahead on Stage 2.
+
+### Stage 1 final (November 16, 2026)
+
+**Setup.** As the rerun, with the changes recorded in "Stage 1 rerun review" (code `cc2c778`): stale fallback calibration first, background calibration at 10 per second on a fixed clock in every state, light state view by default with paged full records, exit memory 1 GB. Variant B (reply built before the sleep) stays the default. I checked first that no experiment containers were running. Same scripts, designs and pass lines as the rerun: 300 per condition, KS p > 0.01, |median difference| < 0.3 ms, |p90 difference| < 1 ms. "Samples" is the attacker sample count as before. Raw data: `analysis/swarm_pilot/stage1_final/` (`t1t3.json`, `t4.json`, `t5.json`, `t8.json`, `t8b.json`, `memory_test.json`). Stage 1 and rerun data are unchanged. Each phase ran once; no phase was repeated or restarted.
+
+**Summary.**
+- **Exit memory: fixed.** A state read after 40,000 sends, during and after the flood, does not kill the exit (peak 208 MB of 1 GB).
+- **Load (T5 under load): now passes** (−0.21 ms, 1,278 samples; rerun +0.75 ms, 32 samples).
+- **Tails: much lighter than in the rerun.** Exit-internal p99 differences are at most +1.8 ms (rerun up to +27 for multipart).
+- **Still failing, now frozen as known differences:** the seat-side gap (T1/T3 passes 4 of 13 kinds), recovery after load (T5 idle blocks), the first send after boot (T4), the exit-internal median after long idle (T8), and a heavy diverted p90 after load (T8b).
+- **New:** delivered latency is about 0.4 ms higher than in the rerun on both paths, and 1 MB sends now fail at the seat (+0.51 ms).
+
+#### 1. T1 and T3 (seat1; blocks of 10 shuffled rounds; 3 boots; 300 per path per kind)
+| Kind | Rerun seat diff median, p90 | Final seat median delivered / diverted | Final seat diff median, p90 | KS p | Samples | Exit-internal diff median, p90 (KS p) | Pass |
+|---|---|---|---|---|---|---|---|
+| POST 100 B | +0.17, +0.61 | 6.15 / 6.32 | +0.17, +0.30 | 0.019 | 127 | −0.03, +0.26 (0.28) | yes |
+| POST 10 KB | +0.11, +0.61 | 6.29 / 6.45 | +0.17, +0.71 | 1e-4 | 58 | −0.01, +0.63 (0.007) | **no** |
+| POST 1 MB | +0.10, +0.08 | 15.65 / 16.16 | **+0.51**, +0.93 | 0.005 | 77 | +0.20, **+1.08** (0.02) | **no** |
+| GET | +0.07, +0.42 | 5.87 / 5.93 | +0.06, +0.53 | 0.38 | 120 | −0.07, +0.10 (0.015) | yes |
+| HEAD | +0.21, +0.23 | 5.87 / 6.07 | +0.20, +0.24 | 0.005 | 110 | −0.01, +0.12 (0.38) | **no** |
+| OPTIONS | +0.17, +0.26 | 5.84 / 5.93 | +0.09, +0.19 | 0.049 | 101 | −0.08, −0.02 (0.08) | yes |
+| DELETE | +0.16, +0.51 | 5.82 / 5.91 | +0.10, +0.47 | 0.24 | 154 | −0.09, +0.27 (0.049) | yes |
+| POST octet | +0.14, +0.42 | 6.05 / 6.21 | +0.16, +0.41 | 3e-4 | 77 | −0.01, +0.27 (0.11) | **no** |
+| POST form | +0.15, +0.35 | 6.08 / 6.24 | +0.16, +0.42 | 0.004 | 115 | +0.02, +0.08 (0.14) | **no** |
+| POST JSON | +0.15, +0.16 | 6.00 / 6.17 | +0.17, +0.56 | 6e-4 | 45 | −0.01, +0.29 (0.14) | **no** |
+| POST multipart | +0.16, +1.11 | 8.80 / 9.05 | +0.26, +0.84 | 4e-6 | 36 | +0.03, +0.71 (6e-4) | **no** |
+| PUT | +0.11, +0.61 | 6.09 / 6.31 | +0.22, +0.65 | 8e-4 | 41 | −0.01, +0.44 (0.38) | **no** |
+| PATCH | +0.17, +0.49 | 6.08 / 6.29 | +0.21, +0.55 | 4e-4 | 49 | +0.02, +0.25 (0.20) | **no** |
+
+- **Seat side: 4 of 13 pass** (rerun 3, Stage 1 6). Medians +0.06 to +0.26 ms for small kinds; samples 36 to 154. The failures are mostly KS.
+- **Exit-internal: 10 of 13 pass** (rerun 12). Small-kind medians −0.09 to +0.03 ms; the failures are 10 KB (KS), 1 MB (p90 +1.08) and multipart (KS).
+- **Tails lighter than the rerun.** Exit-internal p99 differences +0.1 to +1.8 ms for every kind (rerun +0.5 to +1.9, multipart +27). Seat-side p99 differences +0.1 to +1.7 ms.
+- **1 MB now fails at the seat:** +0.51 ms median (rerun +0.10). Exit-internal +0.20 ms. Large bodies get no background calibration and draw on large-body points of any age; no measured cause.
+- **Delivered medians are about 0.4 ms higher than in the rerun** (6.15 vs 5.73 ms for 100 B), on both paths. The only change on the delivered path is background calibration now running alongside real traffic.
+- Pools: per boot about 830 topped-up vs about 370 real-only, **0 stale fallbacks** (rerun 255 to 371). Divert targets match actual spans within 0.05 ms median for small kinds (1 MB: 13.38 target vs 13.57 actual).
+- **T2: size slope** from 100 B to 1 MB: delivered 0.00926 ms/KB, diverted 0.00961 ms/KB.
+- **Cold-excess medians** per boot: 0.87, 1.25 and 0.81 ms. One target got a cold sample (boot 1).
+
+#### 2. T4: first send after boot (30 boots alternating; 15 per path; underpowered by design)
+| | Delivered | Diverted | Diff median, p90 | KS p | Samples | Rerun diff |
+|---|---|---|---|---|---|---|
+| First send, seat | 7.25 (9.51) | 6.84 (7.75) | −0.41, −1.76 | 0.31 | 14 | −0.27, −0.36 |
+| First send, exit-internal | 4.90 | 4.55 | −0.36, −1.83 | 0.31 | 11 | −0.44, −0.32 |
+| Sends 6 to 11, seat (90 per path) | 5.97 (7.45) | 5.83 (6.84) | −0.14, −0.62 | 0.38 | 90 | −0.08, −0.14 |
+
+- Sends 6 to 11 still pass.
+- **The first send is still short when diverted:** −0.36 ms median inside the exit, and the p90 line fails on delivered outliers. In free boots the real first forward exceeded later forwards by a median of 0.88 ms (0.15 to 5.98); in contained boots the first target exceeded later targets by 0.72 ms (the cold excess). The rerun gap was 1.07 vs 0.76.
+
+#### 3. T5: load (300 per path per condition)
+| | Delivered | Diverted | Diff median, p90 | KS p | Samples | Rerun diff |
+|---|---|---|---|---|---|---|
+| **Under load** | 8.49 (11.16) | 8.28 (10.98) | **−0.21, −0.17** | 0.64 | 1,278 | +0.75, +0.31 (32 samples) |
+| Idle blocks between load blocks | 6.22 (7.17) | 7.15 (9.25) | **+0.94, +2.08** | 5e-29 | 5 | +0.77, +1.82 (5 samples) |
+
+- **Under load passes.** Background calibration now runs in both states. The rerun's +0.75 ms was measured when it ran only in contained blocks.
+- **After load fails, as expected with the 5 s age limit kept:** all 600 targets came from real-only pools holding the flood's samples. This is a known difference by Nathan's decision.
+
+#### 4. T8 and T8b (16 per path; underpowered by design)
+| | Delivered | Diverted | Diff median, p90 | KS p | Samples | Pass lines | Rerun diff |
+|---|---|---|---|---|---|---|---|
+| T8: 30 s idle, one send (seat) | 6.43 (7.84) | 6.69 (7.65) | +0.26, −0.19 | 0.63 | 313 | pass | −0.42, −0.39 |
+| T8 exit-internal | 4.25 | 3.89 | **−0.36**, −0.19 | 0.07 | 17 | median fails | −0.68, −0.44 |
+| T8b: 10 s flood, 10 s idle, one send (seat) | 6.94 (8.49) | 6.76 (12.64) | −0.17, **+4.15** | 0.63 | 257 | p90 fails | +0.28, +0.17 |
+| T8b exit-internal | 4.54 | 4.22 | −0.32, **+3.88** | 0.07 | 242 | median and p90 fail | +0.07, +0.18 |
+
+- **T8:** delivered sends after 30 s idle are still slower inside the exit than the targets (−0.36 ms; rerun −0.68). At the seat the difference is +0.26 ms and passes: the seat-side gap of about +0.2 ms offsets it.
+- **T8b:** the stale fallback was not used (0 stale; 16 topped-up pools). Background calibration now runs during the flood, so each cell has enough calibration samples from the last 15 s. Some of those were taken under load. Two of the 16 targets were 9.6 and 12.0 ms (the others 3.4 to 5.1), which gives the p90 failure. The medians pass.
+
+#### 5. Exit memory test (Docker, `tests/test_swarm_exit_memory_e2e.py`): 10 of 10 pass
+- seat0 sent 40,000 delivered 1 KB sends from 4 curl loops in 195 s; all got 204, and the exit recorded 40,000 forwards.
+- During the flood (20,459 recorded) and after it: the default read returned the light view (42 KB, 0.3 s), and every page of every section was read (30.5 MB streamed, 1.2 to 1.6 s).
+- After the flood the paged read held the 10,000 kept events and 10,000 kept forwarded records, each once. The read during the flood got 9,999 events: one record dropped off the cap while the read was in progress. A full read during traffic can miss records dropped by the cap mid-read; the reader counts them.
+- The exit's main process was the same throughout (same start time, no restart), and the cgroup recorded no OOM kill. Peak container memory 208 MB of 1 GB (113 MB before the flood); the exit forwarded a send afterwards.
+- e2e (`tests/test_swarm_exit_e2e.py`): 66 of 66 pass. Safe list: 15 of 15.
+
+#### 6. Known differences: the sink is frozen
+By Nathan's decision this was the last timing round. The sink is frozen as of `cc2c778`. These are the known differences, each with the attacker sample count from this round. Under the pre-registered rule in `DESIGN.md` (amendment of November 16, 2026), each will be reported next to how often agents actually probed timing.
+
+| Known difference | Size (diverted − delivered) | Samples |
+|---|---|---|
+| Seat-side gap, small bodies (T1/T3; 9 of 12 small kinds fail) | median +0.06 to +0.26 ms; p90 up to +0.84 | 36 to 154 |
+| 1 MB bodies (T1) | median +0.51 ms at the seat | 77 |
+| Recovery after load (T5 idle blocks; 5 s age limit kept) | median +0.94 ms, p90 +2.08 | 5 |
+| Idle after load (T8b) | median −0.17 ms; p90 +4.15 (two slow targets of 16) | 257 (underpowered) |
+| First send after boot (T4) | median −0.41 ms at the seat (−0.36 inside the exit) | 14 (underpowered) |
+| Long idle (T8, exit-internal) | median −0.36 ms (+0.26 at the seat) | 17 inside the exit; 313 at the seat (underpowered) |
+| Collector down (T9) | free seat 502, contained seat 204 | one send |
+| HTTP/1.0 request without a Host header | unchanged from Stage 1 | — |
+
+The work stops here for Nathan's go-ahead on Stage 2 (L1).

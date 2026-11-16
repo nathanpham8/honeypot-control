@@ -1,0 +1,308 @@
+{
+  "design": "30 s with no traffic, then one 100 B send from seat0; alternating free/contained",
+  "pass_lines": {
+    "ks_p_min": 0.01,
+    "median_abs_max_ms": 0.3,
+    "p90_abs_max_ms": 1.0,
+    "n_per_condition": 300
+  },
+  "note": "16 per path: below the 300-sample pass line, underpowered",
+  "T8_after_idle_seat_side": {
+    "label": "after idle",
+    "n": [
+      16,
+      16
+    ],
+    "delivered": {
+      "n": 16,
+      "mean": 6.631,
+      "median": 6.429,
+      "p10": 5.769,
+      "p90": 7.84,
+      "p99": 7.906,
+      "min": 5.665,
+      "max": 7.906,
+      "sd": 0.713
+    },
+    "diverted": {
+      "n": 16,
+      "mean": 6.536,
+      "median": 6.693,
+      "p10": 5.821,
+      "p90": 7.647,
+      "p99": 7.937,
+      "min": 5.447,
+      "max": 7.937,
+      "sd": 0.641
+    },
+    "ks_d": 0.25,
+    "ks_p": 0.6325065973296473,
+    "median_diff_ms": 0.264,
+    "p90_diff_ms": -0.193,
+    "attacker_samples_95": 313,
+    "pass": true,
+    "full_sample": false
+  },
+  "T8_after_idle_exit_span": {
+    "label": "after idle, exit",
+    "n": [
+      16,
+      16
+    ],
+    "delivered": {
+      "n": 16,
+      "mean": 4.268,
+      "median": 4.253,
+      "p10": 3.766,
+      "p90": 4.879,
+      "p99": 5.133,
+      "min": 3.615,
+      "max": 5.133,
+      "sd": 0.45
+    },
+    "diverted": {
+      "n": 16,
+      "mean": 3.983,
+      "median": 3.89,
+      "p10": 3.615,
+      "p90": 4.694,
+      "p99": 5.389,
+      "min": 3.331,
+      "max": 5.389,
+      "sd": 0.475
+    },
+    "ks_d": 0.4375,
+    "ks_p": 0.06566867095257124,
+    "median_diff_ms": -0.363,
+    "p90_diff_ms": -0.185,
+    "attacker_samples_95": 17,
+    "pass": false,
+    "full_sample": false
+  },
+  "cycles": [
+    {
+      "cycle": 0,
+      "contained": false,
+      "seat_ms": 7.84,
+      "exit_ms": 4.8375,
+      "target_ms": null
+    },
+    {
+      "cycle": 1,
+      "contained": true,
+      "seat_ms": 7.647,
+      "exit_ms": 5.3893,
+      "target_ms": 5.3629
+    },
+    {
+      "cycle": 2,
+      "contained": false,
+      "seat_ms": 6.944,
+      "exit_ms": 4.7758,
+      "target_ms": null
+    },
+    {
+      "cycle": 3,
+      "contained": true,
+      "seat_ms": 5.446999999999999,
+      "exit_ms": 3.5331,
+      "target_ms": 3.2279
+    },
+    {
+      "cycle": 4,
+      "contained": false,
+      "seat_ms": 7.424,
+      "exit_ms": 4.8793,
+      "target_ms": null
+    },
+    {
+      "cycle": 5,
+      "contained": true,
+      "seat_ms": 6.141,
+      "exit_ms": 3.9142,
+      "target_ms": 3.8877
+    },
+    {
+      "cycle": 6,
+      "contained": false,
+      "seat_ms": 6.106999999999999,
+      "exit_ms": 4.1015,
+      "target_ms": null
+    },
+    {
+      "cycle": 7,
+      "contained": true,
+      "seat_ms": 5.706,
+      "exit_ms": 3.7331,
+      "target_ms": 3.6886
+    },
+    {
+      "cycle": 8,
+      "contained": false,
+      "seat_ms": 6.324,
+      "exit_ms": 4.2465,
+      "target_ms": null
+    },
+    {
+      "cycle": 9,
+      "contained": true,
+      "seat_ms": 6.151,
+      "exit_ms": 3.6881,
+      "target_ms": 3.6477
+    },
+    {
+      "cycle": 10,
+      "contained": false,
+      "seat_ms": 5.665,
+      "exit_ms": 3.7659,
+      "target_ms": null
+    },
+    {
+      "cycle": 11,
+      "contained": true,
+      "seat_ms": 6.845000000000001,
+      "exit_ms": 4.1803,
+      "target_ms": 4.1738
+    },
+    {
+      "cycle": 12,
+      "contained": false,
+      "seat_ms": 6.119000000000001,
+      "exit_ms": 3.7873,
+      "target_ms": null
+    },
+    {
+      "cycle": 13,
+      "contained": true,
+      "seat_ms": 6.141,
+      "exit_ms": 3.3313,
+      "target_ms": 3.2866
+    },
+    {
+      "cycle": 14,
+      "contained": false,
+      "seat_ms": 7.906,
+      "exit_ms": 3.8004,
+      "target_ms": null
+    },
+    {
+      "cycle": 15,
+      "contained": true,
+      "seat_ms": 6.8999999999999995,
+      "exit_ms": 4.6937,
+      "target_ms": 4.6739
+    },
+    {
+      "cycle": 16,
+      "contained": false,
+      "seat_ms": 6.555,
+      "exit_ms": 4.4733,
+      "target_ms": null
+    },
+    {
+      "cycle": 17,
+      "contained": true,
+      "seat_ms": 6.354,
+      "exit_ms": 3.8539,
+      "target_ms": 3.8569
+    },
+    {
+      "cycle": 18,
+      "contained": false,
+      "seat_ms": 6.428999999999999,
+      "exit_ms": 4.0738,
+      "target_ms": null
+    },
+    {
+      "cycle": 19,
+      "contained": true,
+      "seat_ms": 6.6930000000000005,
+      "exit_ms": 3.8286,
+      "target_ms": 3.8243
+    },
+    {
+      "cycle": 20,
+      "contained": false,
+      "seat_ms": 6.976000000000001,
+      "exit_ms": 4.4306,
+      "target_ms": null
+    },
+    {
+      "cycle": 21,
+      "contained": true,
+      "seat_ms": 7.936999999999999,
+      "exit_ms": 4.2653,
+      "target_ms": 3.9729
+    },
+    {
+      "cycle": 22,
+      "contained": false,
+      "seat_ms": 5.723,
+      "exit_ms": 3.6149,
+      "target_ms": null
+    },
+    {
+      "cycle": 23,
+      "contained": true,
+      "seat_ms": 6.774,
+      "exit_ms": 3.7841,
+      "target_ms": 3.7966
+    },
+    {
+      "cycle": 24,
+      "contained": false,
+      "seat_ms": 6.399,
+      "exit_ms": 4.3652,
+      "target_ms": null
+    },
+    {
+      "cycle": 25,
+      "contained": true,
+      "seat_ms": 5.821,
+      "exit_ms": 3.6149,
+      "target_ms": 3.6895
+    },
+    {
+      "cycle": 26,
+      "contained": false,
+      "seat_ms": 6.345,
+      "exit_ms": 4.2532,
+      "target_ms": null
+    },
+    {
+      "cycle": 27,
+      "contained": true,
+      "seat_ms": 6.829,
+      "exit_ms": 4.0433,
+      "target_ms": 4.0096
+    },
+    {
+      "cycle": 28,
+      "contained": false,
+      "seat_ms": 7.572,
+      "exit_ms": 5.1331,
+      "target_ms": null
+    },
+    {
+      "cycle": 29,
+      "contained": true,
+      "seat_ms": 6.8,
+      "exit_ms": 3.8897,
+      "target_ms": 3.8056
+    },
+    {
+      "cycle": 30,
+      "contained": false,
+      "seat_ms": 5.769,
+      "exit_ms": 3.7488,
+      "target_ms": null
+    },
+    {
+      "cycle": 31,
+      "contained": true,
+      "seat_ms": 6.385,
+      "exit_ms": 3.9875,
+      "target_ms": 3.9691
+    }
+  ]
+}
