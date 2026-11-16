@@ -100,7 +100,10 @@ BG_CAL = os.environ.get("SWARM_BG_CAL", "1") == "1"
 BG_INTERVAL_S = float(os.environ.get("SWARM_BG_INTERVAL_S", "0.1"))
 QUIET_S = float(os.environ.get("SWARM_QUIET_S", "1.0"))
 BG_RESTART_BYTES = int(os.environ.get("SWARM_BG_RESTART_BYTES", str(50 << 20)))
-REPLY_EARLY = os.environ.get("SWARM_REPLY_EARLY") == "1"
+# Variant B of the Stage 1 rerun's seat-gap round (reply and event built
+# before the sleep) is the default: it cut the seat-side gap from 0.41 to
+# 0.07 ms (analysis/swarm_pilot/stage1_rerun/diag.json). "0" restores A.
+REPLY_EARLY = os.environ.get("SWARM_REPLY_EARLY", "1") == "1"
 DIAG = os.environ.get("SWARM_DIAG") == "1"
 SPOOL_DIR = Path(os.environ.get("SWARM_SPOOL_DIR", "/var/spool/swarm-sink"))
 SPOOL_CAP = int(os.environ.get("SWARM_SPOOL_CAP", str(1 << 30)))

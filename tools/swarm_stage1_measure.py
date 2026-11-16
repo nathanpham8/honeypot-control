@@ -368,11 +368,11 @@ _WD = "-s -o /dev/null -w '%{time_connect} %{time_starttransfer} %{time_total} %
 
 
 def _diag_variant(variant, rounds_per_path=100, rounds_per_block=10):
-    env = {"SWARM_DIAG": "1", **({"SWARM_REPLY_EARLY": "1"} if variant == "B" else {})}
+    env = {"SWARM_DIAG": "1", "SWARM_REPLY_EARLY": "1" if variant == "B" else "0"}
     seat = "seat1"
     keys = ("connect", "starttransfer", "total", "span", "written")
     data = {p: {k: {x: [] for x in keys} for k in T13} for p in ("delivered", "diverted")}
-    st = M.Stack(f"s1diag{variant}", exit_env=env)
+    st = M.Stack(f"s1diag{variant.lower()}", exit_env=env)
     try:
         st.up()
         st.sh(seat, M._PAYLOADS)
