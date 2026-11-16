@@ -708,7 +708,7 @@ Pushed under "Step 3 results / Stage 1 final". The work then stops for Nathan's 
 
 - **Seat side: 4 of 13 pass** (rerun 3, Stage 1 6). Medians +0.06 to +0.26 ms for small kinds; samples 36 to 154. The failures are mostly KS.
 - **Exit-internal: 10 of 13 pass** (rerun 12). Small-kind medians −0.09 to +0.03 ms; the failures are 10 KB (KS), 1 MB (p90 +1.08) and multipart (KS).
-- **Tails lighter than the rerun.** Exit-internal p99 differences +0.1 to +1.8 ms for every kind (rerun +0.5 to +1.9, multipart +27). Seat-side p99 differences +0.1 to +1.7 ms.
+- **Tails lighter than the rerun.** Exit-internal p99 differences −0.03 to +1.8 ms (rerun +0.5 to +1.9, multipart +27). Seat-side p99 differences +0.08 to +1.7 ms.
 - **1 MB now fails at the seat:** +0.51 ms median (rerun +0.10). Exit-internal +0.20 ms. Large bodies get no background calibration and draw on large-body points of any age; no measured cause.
 - **Delivered medians are about 0.4 ms higher than in the rerun** (6.15 vs 5.73 ms for 100 B), on both paths. The only change on the delivered path is background calibration now running alongside real traffic.
 - Pools: per boot about 830 topped-up vs about 370 real-only, **0 stale fallbacks** (rerun 255 to 371). Divert targets match actual spans within 0.05 ms median for small kinds (1 MB: 13.38 target vs 13.57 actual).
@@ -757,7 +757,7 @@ By Nathan's decision this was the last timing round. The sink is frozen as of `c
 
 | Known difference | Size (diverted − delivered) | Samples |
 |---|---|---|
-| Seat-side gap, small bodies (T1/T3; 9 of 12 small kinds fail) | median +0.06 to +0.26 ms; p90 up to +0.84 | 36 to 154 |
+| Seat-side gap, small bodies (T1/T3; 8 of 12 small kinds fail) | median +0.06 to +0.26 ms; p90 up to +0.84 | 36 to 154 |
 | 1 MB bodies (T1) | median +0.51 ms at the seat | 77 |
 | Recovery after load (T5 idle blocks; 5 s age limit kept) | median +0.94 ms, p90 +2.08 | 5 |
 | Idle after load (T8b) | median −0.17 ms; p90 +4.15 (two slow targets of 16) | 257 (underpowered) |
