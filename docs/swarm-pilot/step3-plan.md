@@ -528,3 +528,122 @@ Recorded November 16, 2026, after Nathan's Stage 1 review and before any rerun c
 - T1 to T5, T8, T8b and the no-Docker sink checks, with the same pass lines: 300 per condition, KS p > 0.01, |median difference| < 0.3 ms, |p90 difference| < 1 ms. T4, T8 and T8b are underpowered by design.
 - Same scripts and designs as Stage 1, plus T8b and the diagnostic run. Observed differences and attacker sample counts are reported for every comparison.
 - T6 (L0) is not rerun: L0 is unchanged.
+
+### Stage 1 rerun (November 16, 2026)
+
+**Setup.** As Stage 1, with the changes recorded in "Stage 1 review" (code `9ded122`). The seat-gap round chose variant B, which is the default from `e95d502`. A measurement-only state view was added mid-run (`d44d43f`, see below). I checked first that no experiment containers were running. Same pass lines: 300 per condition, KS p > 0.01, |median difference| < 0.3 ms, |p90 difference| < 1 ms. "Samples" is the attacker sample count as in Stage 0 and Stage 1. Raw data: `analysis/swarm_pilot/stage1_rerun/` (`diag.json`, `t1t3.json`, `t4.json`, `t5.json`, `t8.json`, `t8b.json`). The Stage 1 data is unchanged.
+
+**Summary.**
+- **Fixed by the rerun:**
+  - the cold start: T4 sends 6 to 11 pass; the cold excess is now measured at 0.66 to 0.86 ms per boot, close to the real first-forward cost;
+  - the calibration bias: exit-internal medians now match within ±0.05 ms for 12 of 13 kinds.
+- **Not fixed:**
+  - the seat-side gap: T1/T3 passes 3 of 13 kinds. After the one recorded investigation round, it is now a known difference, with its sample counts below;
+  - load: T5 fails, because its idle blocks begin 1 s after load stops, inside the 5 s age limit.
+- **New problems:**
+  - diverted sends have heavier tails, at the seat and inside the exit;
+  - T8 (30 s idle) now fails its median line, because delivered sends after idle got slower;
+  - the exit process was OOM-killed once by a full state read under heavy traffic.
+
+#### 1. Seat-side gap: the investigation round (`diag.json`; one fresh stack per variant, 100 per path per kind)
+| | Variant A (reply built after the sleep) | Variant B (reply and event built before the sleep) |
+|---|---|---|
+| Seat gap, median over 13 kinds (diverted − delivered) | +0.41 ms | +0.07 ms |
+| Per-kind seat-side median differences | +0.26 to +1.01 | −0.03 to +0.22 |
+| Exit span (WSGI entry to reply-ready), diverted − delivered | −0.07 to +0.56 | −0.10 to +0.05 |
+| Reply written − span, diverted − delivered | +0.21 to +0.43 | +0.11 to +0.21 |
+| Connect time difference | within ±0.013 | within ±0.011 |
+
+- In A, most of the gap came after the span ends: building the reply and recording the event after the sleep took about 0.2 to 0.4 ms longer than the forward path's equivalent work. B moves that work before the sleep.
+- By the rule fixed in advance (B if at least 0.03 ms smaller), **B is used**. It is the exit's default from `e95d502`; `SWARM_REPLY_EARLY=0` restores A.
+- A residual of +0.11 to +0.21 ms after the span remains in B, partly offset by slightly short spans. The rerun T1/T3 below still fails, so by the recorded rule **the seat-side gap is a known difference and is not investigated further.**
+
+#### 2. T1 and T3 rerun (seat1; blocks of 10 shuffled rounds; 3 boots; 300 per path per kind)
+| Kind | Stage 1 seat diff median, p90 (KS p) | Rerun seat median delivered / diverted | Rerun seat diff median, p90 | KS p | Samples | Exit-internal median diff, Stage 1 → rerun; rerun p90 diff (KS p) | Pass |
+|---|---|---|---|---|---|---|---|
+| POST 100 B | +0.12, +0.21 (0.0002) | 5.73 / 5.90 | +0.17, +0.61 | 0.002 | 45 | −0.03 → −0.02, p90 +0.27 (0.14) | **no** |
+| POST 10 KB | +0.01, +0.11 (0.28) | 5.82 / 5.93 | +0.11, +0.61 | 0.015 | 73 | −0.12 → −0.00, p90 +0.55 (0.08) | yes |
+| POST 1 MB | +0.26, +0.40 (1e-5) | 14.81 / 14.91 | +0.10, +0.08 | 0.009 | 651 | +0.05 → −0.08, p90 −0.31 (0.33) | **no** |
+| GET | +0.07, +0.08 (0.015) | 5.53 / 5.60 | +0.07, +0.42 | 0.06 | 97 | −0.08 → −0.03, p90 −0.00 (0.28) | yes |
+| HEAD | +0.21, +0.20 (7e-7) | 5.50 / 5.72 | +0.21, +0.23 | 0.003 | 64 | +0.02 → −0.00, p90 +0.08 (0.44) | **no** |
+| OPTIONS | +0.09, +0.09 (0.009) | 5.43 / 5.60 | +0.17, +0.26 | 1e-4 | 64 | −0.08 → +0.02, p90 +0.05 (0.78) | **no** |
+| DELETE | +0.09, +0.13 (0.05) | 5.47 / 5.63 | +0.16, +0.51 | 4e-4 | 38 | −0.07 → +0.00, p90 +0.24 (0.64) | **no** |
+| POST octet | +0.07, +0.12 (0.11) | 5.65 / 5.79 | +0.14, +0.42 | 0.004 | 53 | −0.06 → −0.02, p90 +0.20 (0.44) | **no** |
+| POST form | +0.14, +0.08 (3e-4) | 5.76 / 5.91 | +0.15, +0.35 | 0.001 | 59 | −0.02 → −0.02, p90 +0.18 (0.33) | **no** |
+| POST JSON | +0.09, +0.08 (0.003) | 5.65 / 5.80 | +0.15, +0.16 | 0.005 | 89 | −0.10 → −0.04, p90 +0.01 (0.38) | **no** |
+| POST multipart | +0.12, +0.13 (0.06) | 8.29 / 8.46 | +0.16, **+1.11** | 8e-4 | 78 | −0.05 → +0.02, p90 +1.19 (0.06) | **no** |
+| PUT | +0.09, +0.10 (0.009) | 5.69 / 5.80 | +0.11, +0.61 | 0.015 | 47 | −0.10 → +0.01, p90 +0.30 (0.71) | yes |
+| PATCH | +0.10, +0.04 (0.015) | 5.72 / 5.89 | +0.17, +0.49 | 0.003 | 45 | −0.01 → +0.01, p90 +0.08 (0.78) | **no** |
+
+- **Calibration bias (item 3): gone.** Exit-internal median differences are −0.08 to +0.02 ms (Stage 1: −0.12 to +0.05). Exit-internal KS passes for 12 of 13 kinds.
+  - Calibration requests are logged by the calibration collector with the same header names, order and values as seat curl's requests at the real collector, for every class (no-Docker test).
+- **Seat side: 3 of 13 pass, against 6 of 13 in Stage 1.** Medians are +0.07 to +0.21 ms; samples 38 to 97, and 651 for 1 MB. The failures are mostly KS, plus multipart's p90 (+1.11 > 1).
+- **Diverted tails are heavier than in Stage 1, inside the exit as well.** Exit-span p90 diverted − delivered: up to +0.55 (multipart +1.19). p99 is +0.5 to +1.9 for most kinds and +27 for multipart. Stage 1's p99 differences were at most +0.32.
+  - Pools were mostly calibration samples now (per boot about 790 topped-up pools vs about 410 real-only; 255 to 371 stale fallbacks).
+  - Untested candidates: outliers among the background calibration samples, which come from a client inside the exit process; and the background calibration itself running only in contained blocks, where it competes with the diverted requests for the exit's interpreter.
+  - By the recorded rule this is part of the seat-side known difference.
+- Delivered medians are about 0.3 ms higher than in Stage 1 (5.73 vs 5.41 for 100 B), for both paths. The stacks now include 10 idle cold-calibration containers; there is no other measured cause.
+- **T2: size slope** from 100 B to 1 MB: delivered 0.00887 ms/KB, diverted 0.00880 ms/KB.
+- **Cold-excess medians** per boot: 0.85, 0.86 and 0.66 ms (10 each). In boot 1, one target got a cold sample: its first block was contained.
+
+#### 3. T4 rerun: first send after boot (30 boots alternating; 15 per path; underpowered by design)
+| | Delivered | Diverted | Diff median, p90 | KS p | Samples | Stage 1 diff |
+|---|---|---|---|---|---|---|
+| First send, seat | 6.78 (7.72) | 6.51 (7.35) | −0.27, −0.36 | 0.59 | 22 | −0.22, −0.29 |
+| First send, exit-internal | 4.76 | 4.32 | −0.44, −0.32 | 0.05 | 8 | −0.43, −0.50 |
+| **Sends 6 to 11, seat (90 per path)** | 5.87 (6.45) | 5.79 (6.31) | **−0.08, −0.14** | 0.10 | 143 | +0.41, +0.91 (7 samples) |
+
+- **The cold-start rule is fixed for later sends** (pass; 143 samples, from 7).
+- **The first send is still about 0.4 ms short inside the exit.** In contained boots the first target exceeded the later targets by a median of 0.76 ms (the cold excess). In free boots the real first forward exceeded later forwards by a median of 1.07 ms (0.33 to 2.21). The cold containers get their first request at arming; the real collector gets its first request later. That may explain the difference; untested.
+
+#### 4. T5 rerun: load (300 per path per condition)
+| | Delivered | Diverted | Diff median, p90 | KS p | Samples | Stage 1 diff |
+|---|---|---|---|---|---|---|
+| Under load | 7.00 (9.48) | 7.75 (9.78) | +0.75, +0.31 | 3e-8 | 32 | +0.52, +0.16 |
+| Idle blocks between load blocks | 5.92 (6.53) | 6.69 (8.36) | +0.77, +1.82 | 4e-31 | 5 | +0.63, +2.42 |
+
+- **Aging did not reach T5's idle blocks.** All 600 targets came from real-only pools: 0 topped up, 0 stale.
+  - A T5 idle block starts 1 s after the flood stops and lasts well under a second, so the flood's samples (same cell, urlencoded up to 1 KB) are still within the 5 s age limit.
+  - Real latency recovers as soon as load stops; with a 5 s age limit, the sink lags by up to 5 s.
+- **Under load, diverted sends are +0.75 ms**, with targets drawn from the flood's own real forwards. No measured cause. Candidates: as for T1, plus sleep overshoot under contention.
+
+#### 5. T8 and T8b reruns (16 per path; underpowered by design)
+| | Delivered | Diverted | Diff median, p90 | KS p | Samples | Pass lines |
+|---|---|---|---|---|---|---|
+| T8b: 10 s flood, 10 s idle, one send (seat) | 5.78 (6.73) | 6.06 (6.90) | +0.28, +0.17 | 0.07 | 33 | pass (median just inside) |
+| T8b exit-internal | 3.85 | 3.92 | +0.07, +0.18 | 0.63 | 138 | pass |
+| T8: 30 s idle, one send (seat) | 6.60 (8.39) | 6.18 (8.00) | **−0.42**, −0.39 | 0.63 | 34 | **median fails** |
+| T8 exit-internal | 4.44 | 3.76 | −0.68, −0.44 | 0.16 | 18 | median fails |
+
+- **T8b: all 16 targets came from the stale fallback.** Background calibration gives each of the 13 cells about 0.77 samples per second, so after 10 s idle a cell holds about 7 fresh calibration samples, under the minimum pool of 10. The recorded fallback adds the newest older samples *real first*, and those are the flood's load-time samples. T8b passed only narrowly, with 16 per path.
+- **T8: delivered sends after 30 s idle are now slower than the targets.** Exit-internal 4.44 vs 3.76 ms; in Stage 1, 3.72 vs 3.67, with no idle penalty. In the rerun the exit and calibration collector are busy with background calibration during the idle period, while the real collector stays idle. A real request after a long idle period then costs more than the warm calibration samples show. Untested.
+
+#### 6. Exit OOM kill under T8b load (a real-system finding)
+- The first T8b attempt stopped at cycle 20, after about 40,000 delivered flood sends. The host kernel log shows the cgroup OOM killer killing the exit process (about 263 MB resident) in the 384 MB exit container at 07:03 UTC. In the same container were the harness's state-read helper (about 85 MB, receiving a 31 MB `/__swarm-state` reply holding 10,000 events and 10,000 bounded forwarded records) and the calibration collector (about 65 MB).
+- A reproduction run of 30 flood cycles did not crash, but container memory rose steadily to 270 MB.
+- **Measurement change (`d44d43f`):** an optional light view, `/__swarm-state?brief=1&events_tail=N` (no forwarded, sink or trip records; last N events). The default reply is unchanged. T8b, T8 and T4 were run (T8b from the start) with the harness using the light view. T1 to T3 and T5 had already completed with the full view.
+- In an experiment, a full state read after heavy traffic could kill the exit the same way. This needs a decision.
+
+#### 7. Sink checks (no Docker, `tests/test_swarm_sink.py`): all pass
+- Model: top-up stops at 30 fresh real samples; real samples older than 5 s and calibration older than 15 s leave the pool; stale fallback; cold excess on the first diverted target only.
+- Exit:
+  - cold collectors get exactly 10 requests each at the first arming;
+  - calibration headers match seat curl's per class;
+  - an unregistered connection from the calibration source is handled as an ordinary request;
+  - background calibration starts no request while real forwards arrive, and restarts its collector after its byte budget.
+- Divert |actual − target|: median 0.024 ms, p90 0.049. T9 is unchanged: free seat 502, contained seat 204 (a known difference).
+- e2e: all 65 checks pass, including the cold collectors, background calibration, spoofed frames from the calibration source and the cold collector port.
+
+#### 8. Known differences after the rerun
+- **Seat-side gap (T1/T3):** diverted +0.07 to +0.21 ms median at the seat, with heavier tails; 38 to 97 samples for small kinds, 651 for 1 MB.
+- **Load and recovery (T5):** +0.75 ms under load (32 samples); +0.77 ms in the first seconds after load (5 samples).
+- **First send after boot (T4):** about 0.4 ms short inside the exit (8 samples, underpowered).
+- **Long idle (T8):** delivered about 0.4 ms slower than diverted (about 34 samples, underpowered).
+- T9 (collector down) and the no-Host HTTP/1.0 quirk, unchanged.
+
+#### 9. Decisions for Nathan before Stage 2 (L1 is not built)
+1. **Accept the timing known differences as they stand,** or spend more on the sink. The detection numbers (5 to 97 samples for the worst cases) apply to a seat that can compare its own sends before and after a trip.
+2. **Stale fallback order:** calibration first instead of real first. This would have kept T8b's load-time samples out. Also consider a minimum pool below the background rate (for example 5), or a higher background rate.
+3. **Age limit vs recovery speed:** 5 s lets T5's after-load blocks use load-time samples. A shorter limit (for example 1 s) needs real or calibration traffic at a higher rate.
+4. **Background calibration:** it runs only while no real forwards arrive, so its load differs with containment. It also appears to cause T8's idle penalty for real requests. Options: move the calibration client out of the exit process, or keep calibration traffic present in both states.
+5. **Exit memory:** raise the exit's 384 MB limit, cap the state reply by default, or keep fewer records, so that a full state read cannot OOM-kill the exit in an experiment.
