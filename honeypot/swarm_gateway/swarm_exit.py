@@ -413,6 +413,16 @@ def swarm_state():
         }
         if DIAG:
             view["diag"] = list(DIAG_LOG)
+        # Light view for measurement harnesses (Stage 1 rerun): ?brief=1 leaves
+        # out the bounded forwarded and sink records and the trip copies;
+        # ?events_tail=N keeps only the last N events. The default is unchanged.
+        if request.args.get("brief") == "1":
+            for k in ("forwarded", "sink", "trips"):
+                view.pop(k)
+            view["events_total"] = len(view["events"])
+        tail = request.args.get("events_tail", "")
+        if tail.isdigit():
+            view["events"] = view["events"][-int(tail):] if int(tail) else []
     view["sink_model"] = SINK.view()
     return Response(json.dumps(view, indent=2), content_type="application/json")
 

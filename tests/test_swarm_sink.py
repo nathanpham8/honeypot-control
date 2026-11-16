@@ -371,6 +371,14 @@ def test_exit(report) -> list:
         r.append(("exit: calibration requests are logged with seat curl's header names, order and values, per class",
                   all(cal_shapes.get(k) == {tuple(v)} for k, v in shapes.items())))
 
+        # light state view for harnesses
+        lv = get(f"http://127.0.0.1:{eport}/__swarm-state?brief=1&events_tail=5")
+        full = state()
+        r.append(("exit: ?brief=1&events_tail=5 leaves out forwarded/sink/trips and keeps the last 5 events",
+                  "forwarded" not in lv and "sink" not in lv and "trips" not in lv
+                  and lv["events"] == full["events"][-5:] and lv["events_total"] == len(full["events"])
+                  and "forwarded" in full))
+
         # real forwards enter the windows
         n_real = state()["sink_model"]["counts"]["real"]
         for i in range(30):

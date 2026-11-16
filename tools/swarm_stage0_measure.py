@@ -95,9 +95,12 @@ class Stack:
         self.subnets = subnets
         return time.time() - t0
 
-    def state(self):
+    def state(self, light: bool = False):
+        # light: the exit's brief view with the last 500 events (Stage 1
+        # rerun: a full state read under heavy traffic got the exit OOM-killed)
+        path = "/__swarm-state?brief=1&events_tail=500" if light else "/__swarm-state"
         return json.loads(self.dc("exec", "-T", "logging_server", "python", "ctl.py",
-                                  "GET", "/__swarm-state").stdout)
+                                  "GET", path).stdout)
 
     def collector_log(self):
         return json.loads(self.dc("exec", "-T", "logging_server", "python", "ctl.py",

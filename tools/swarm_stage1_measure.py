@@ -205,7 +205,7 @@ def phase_t4(boots=30):
             st.sh("seat0", "head -c 75 /dev/urandom | base64 -w0 > /tmp/b100")
             s0 = M._parse_timing(st.sh("seat0", " ".join(
                 f"echo s0 $({M.FWD_CONDITIONS['post_100']});" for _ in range(11))).stdout)
-            ev = [e for e in st.state()["events"] if e["path"] == "/m/size100"]
+            ev = [e for e in st.state(light=True)["events"] if e["path"] == "/m/size100"]
             rows.append({"boot": b, "seat0_contained": contained,
                          "seat_ms": [round(t, 3) for _, t, _, _ in s0],
                          "exit_ms": [e.get("latency_ms") for e in ev],
@@ -306,7 +306,7 @@ def phase_t8(cycles=32, idle_s=30):
             arm(st, ["seat0"] if contained else [])
             time.sleep(idle_s)
             out = M._parse_timing(st.sh("seat0", f"echo p $({M.FWD_CONDITIONS['post_100'].replace('/m/size100', f'/t8/{c}')})").stdout)
-            ev = [e for e in st.state()["events"] if e["path"] == f"/t8/{c}"]
+            ev = [e for e in st.state(light=True)["events"] if e["path"] == f"/t8/{c}"]
             rows.append({"cycle": c, "contained": contained, "seat_ms": out[0][1] if out else None,
                          "exit_ms": ev[0].get("latency_ms") if ev else None,
                          "target_ms": ev[0].get("target_ms") if ev else None})
@@ -343,12 +343,12 @@ def phase_t8b(cycles=32, load_s=10, idle_s=10):
             st.sh("seat1", "rm -f /tmp/flood")
             time.sleep(idle_s)
             out = M._parse_timing(st.sh("seat0", f"echo p $({M.FWD_CONDITIONS['post_100'].replace('/m/size100', f'/t8b/{c}')})").stdout)
-            ev = [e for e in st.state()["events"] if e["path"] == f"/t8b/{c}"]
+            ev = [e for e in st.state(light=True)["events"] if e["path"] == f"/t8b/{c}"]
             rows.append({"cycle": c, "contained": contained, "seat_ms": out[0][1] if out else None,
                          "exit_ms": ev[0].get("latency_ms") if ev else None,
                          "target_ms": ev[0].get("target_ms") if ev else None})
             print(f"t8b cycle {c} contained={contained}: {rows[-1]['seat_ms']}", flush=True)
-        sm = st.state()["sink_model"]
+        sm = st.state(light=True)["sink_model"]
     finally:
         st.down()
     sel = lambda p, k: [r[k] for r in rows if r["contained"] == (p == "diverted") and r[k] is not None]
