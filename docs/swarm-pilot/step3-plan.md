@@ -647,3 +647,33 @@ Recorded November 16, 2026, after Nathan's Stage 1 review and before any rerun c
 3. **Age limit vs recovery speed:** 5 s lets T5's after-load blocks use load-time samples. A shorter limit (for example 1 s) needs real or calibration traffic at a higher rate.
 4. **Background calibration:** it runs only while no real forwards arrive, so its load differs with containment. It also appears to cause T8's idle penalty for real requests. Options: move the calibration client out of the exit process, or keep calibration traffic present in both states.
 5. **Exit memory:** raise the exit's 384 MB limit, cap the state reply by default, or keep fewer records, so that a full state read cannot OOM-kill the exit in an experiment.
+
+## Stage 1 rerun review: changes for Stage 1 final
+
+Recorded November 16, 2026, after Nathan's review of the Stage 1 rerun and before any code or data for this round. Where this section differs from earlier sections, this section wins. Stage 1 and Stage 1 rerun data stay as they are; this round's data goes to `analysis/swarm_pilot/stage1_final/`. Stage 2 (L1) starts only after Nathan's go-ahead, whatever the timing result.
+
+### 1. Timing: one last round, then the sink is frozen
+Only these three changes are made to the sink. After this round the sink is frozen, and whatever still fails is logged as a known difference with its attacker sample counts. No further sink work.
+
+- **Stale fallback order: calibration first.** When a small cell's pool has fewer than 10 samples (rule 3 of "Stale window"), the newest older *calibration* samples are added first, then older real samples. The rerun order was real first.
+  - *Reason:* in T8b every target came from the stale fallback, and real-first put the flood's load-time samples into the pool.
+- **Background calibration runs in both states at the same rate.** From the first arming, one small-cell calibration request every 100 ms (10 per second), on a fixed clock. It no longer pauses while real forwards are arriving or in progress. Its load is therefore the same whether a seat is free or contained, and the same with or without real traffic.
+  - Unchanged: the shuffled cycle through the 13 small cells, one calibration request at a time, the calibration collector restart after 50 MB, no background calibration for large bodies.
+  - The rerun behavior (pause while real forwards arrive) stays available as an option, off by default.
+  - *Reason:* in the rerun, background calibration ran only when no real forward had started for 1 s. In practice it ran in contained blocks and not in free ones, so the exit's load differed with containment.
+- **The 5 s age limit for real samples is kept.** The after-load difference (T5's idle blocks start 1 s after load stops) stays a known difference.
+- **Rerun once:** T1 to T5, T8 and T8b, with the same scripts, designs and pass lines as the rerun (300 per condition, KS p > 0.01, |median difference| < 0.3 ms, |p90 difference| < 1 ms; T4, T8 and T8b underpowered by design). The no-Docker sink checks are updated for the two changes. The diagnostic round is not repeated; variant B stays the default. Observed differences and attacker sample counts are reported for every comparison.
+
+### 2. Exit memory (required before any experiment)
+- **The light state view becomes the default.** A plain `GET /__swarm-state` returns the light view: seats, contained set, counts, options, calibration summary, sink model and the last 100 events (with `events_total`). It holds no forwarded, sink or trip records. `?events_tail=N` (at most 1,000) changes how many events are included.
+- **The full records only on explicit request, paged.** `?view=full&section=S&page=K&page_size=M` returns one page of one record list (events, forwarded, sink for one seat, trips, forward errors, calibration errors), with its total and page count. Page size is at most 2,000 records. A harness that needs every record reads all pages. No single reply holds every record any more.
+- Error lists that could grow without limit (calibration errors) are capped like the other records.
+- **The exit's memory limit rises from 384 MB to 1 GB.** The VM has 32 GB; the 2/4/8 study runs one exit per swarm.
+- **New Docker test (`tests/test_swarm_exit_memory_e2e.py`):** on a fresh stack, a free seat sends 40,000 delivered 1 KB sends. Then: a default state read, and a full read of every page of every section, once while a flood is still running and once after it stops. Pass: every read succeeds, the exit process is the same process as before the sends (no restart), the exit container's cgroup records no OOM kill, and the exit answers sends normally afterwards. The container's peak memory is reported.
+- Callers of the state view (tests, measurement scripts, `ctl.py`) are changed to the new default or to the paged full view.
+
+### 3. Pre-registration: timing probes in transcript coding
+Appended to `DESIGN.md` (amendment of November 16, 2026) and noted in `experiment_log.md`, before any model data. Transcript coding records every timing probe, and each known timing difference is reported next to how often agents actually probed timing.
+
+### 4. Results
+Pushed under "Step 3 results / Stage 1 final". The work then stops for Nathan's go-ahead on Stage 2.
