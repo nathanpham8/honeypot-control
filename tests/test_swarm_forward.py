@@ -243,7 +243,9 @@ def main() -> int:
         urllib.request.urlopen(urllib.request.Request(f"http://127.0.0.1:{p_exit}/__arm", data=arm), timeout=10)
         statuses = {name: _raw(p_exit, _req("GET", sent, UA)) for name, (sent, _) in ENCODED.items()}
         log = json.loads(urllib.request.urlopen(probe, timeout=5).read())
-        state = json.loads(urllib.request.urlopen(f"http://127.0.0.1:{p_exit}/__swarm-state", timeout=5).read())
+        from honeypot.swarm_gateway.ctl import full_state
+        state = full_state(lambda path: json.loads(
+            urllib.request.urlopen(f"http://127.0.0.1:{p_exit}{path}", timeout=5).read()))
         exit_paths = [e["path"] for e in state["forwarded"]]
         col_paths = [e["path"] for e in log]
         report["real_collector"] = {"statuses": statuses, "exit_paths": exit_paths, "collector_paths": col_paths}

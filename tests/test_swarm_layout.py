@@ -118,8 +118,10 @@ def test_compose() -> list:
     r.append(("compose: exit image copies the Experiment 3 gateway and collector unchanged",
               "COPY gateway_server/app.py gateway_server/collector.py /app/" in dockerfile))
     col = sv["collector"]
-    r.append(("compose: collector in its own container, router namespace, own memory budget",
+    r.append(("compose: collector in its own container, router namespace, own memory budget; "
+              "exit memory limit 1 GB (Stage 1 final)",
               col["network_mode"] == "service:router" and col["mem_limit"] == L.COLLECTOR_MEM
+              and ex["mem_limit"] == "1g"
               and col["command"] == ["python", "collector.py"] and col["image"] == L.EXIT_IMAGE))
     r.append(("compose: exit and collector share the per-file token; exit uses the external collector",
               col["environment"]["GATEWAY_TOKEN"] == TOKEN == ex["environment"]["GATEWAY_TOKEN"]
@@ -276,7 +278,8 @@ def test_exit() -> list:
             return c.post(path, data=body, environ_base=env)
 
         def state():
-            return json.loads(c.get("/__swarm-state", environ_base=LOCAL).data)
+            from honeypot.swarm_gateway.ctl import full_state
+            return full_state(lambda path: json.loads(c.get(path, environ_base=LOCAL).data))
 
         def collector():
             return json.loads(c.get("/get-request-log", environ_base=LOCAL).data)

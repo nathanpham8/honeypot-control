@@ -37,15 +37,28 @@ What this module adds:
     source address and a per-connection registry; background calibration runs
     while no real forward has started for QUIET_S; the cold excess is measured
     on cold-calibration collector containers started like the real collector.
+    Stage 1 final: background calibration runs on a fixed clock in every state
+    (SWARM_BG_MODE=quiet restores the rerun's pause while real forwards
+    arrive); the state view is light by default and the full records are
+    paged; error lists are capped like the other records.
 
 Control endpoints, 127.0.0.1 only (404 to anyone else):
   * ``POST /__arm``          JSON {"decoy_values": [...], "seats": {name: cidr},
                              "contained": [names], "feedback": "L0"}. Feedback is
                              required; "L1" is refused until Stage 2. Arming
                              with a new decoy set runs the calibration first.
-  * ``GET  /__swarm-state``  seats, contained set, trips, events, bounded
-                             forwarded and sink records, forward errors, sink
-                             model, calibration.
+  * ``GET  /__swarm-state``  the light view (default): seats, contained set,
+                             record counts, the last 100 events
+                             (``?events_tail=N``, at most 1,000), the last 20
+                             forward and calibration errors, options, sink
+                             model and calibration summary. No forwarded, sink
+                             or trip records.
+  * ``GET  /__swarm-state?view=full&section=S&page=K&page_size=M[&seat=X]``
+                             one page of one record list (sections:
+                             ``SECTIONS``). Pages are numbered by absolute
+                             record index since boot, so records evicted by the
+                             cap or appended between reads do not shift later
+                             pages. ``ctl.py`` reads every page.
   * ``GET  /__health``       200 once the boot calibration is done.
 
 All values handled here are synthetic honeytokens inside a sandbox.
@@ -97,6 +110,11 @@ COLD_PORTS = [int(x) for x in os.environ.get("SWARM_COLD_PORTS", "").split(",") 
 COLD_TOKEN = os.environ.get("SWARM_COLD_TOKEN", "")
 COLD_REQS = 10
 BG_CAL = os.environ.get("SWARM_BG_CAL", "1") == "1"
+# "fixed" (Stage 1 final, default): one request per interval on a fixed clock,
+# whatever the real traffic, so its load never depends on containment.
+# "quiet": the Stage 1 rerun's rule (only while no real forward has started
+# for QUIET_S and none is in progress).
+BG_MODE = os.environ.get("SWARM_BG_MODE", "fixed")
 BG_INTERVAL_S = float(os.environ.get("SWARM_BG_INTERVAL_S", "0.1"))
 QUIET_S = float(os.environ.get("SWARM_QUIET_S", "1.0"))
 BG_RESTART_BYTES = int(os.environ.get("SWARM_BG_RESTART_BYTES", str(50 << 20)))
@@ -116,13 +134,20 @@ _CAL_REG: dict = {}                     # client source port -> {"port", "token"
 _REAL = {"last_start": 0.0, "in_flight": 0}
 DIAG_LOG: deque = deque(maxlen=50000)
 
-SINK = sink_mod.SinkModel()
+# Stale fallback order: calibration first (Stage 1 final, default) or
+# "real_first" (the Stage 1 rerun).
+SINK = sink_mod.SinkModel(stale_cal_first=os.environ.get("SWARM_STALE_ORDER", "cal_first") != "real_first")
+EVENTS_TAIL_DEFAULT, EVENTS_TAIL_MAX = 100, 1000
+ERRORS_TAIL = 20
+PAGE_SIZE_DEFAULT, PAGE_SIZE_MAX = 500, 2000
+SECTIONS = ("events", "forwarded", "sink", "trips", "forward_errors", "calibration_errors", "diag")
+_EVICTED: dict = {}                     # id(record list) -> records dropped by the cap
 CAL = {
     "boot_done": False, "boot_error": None, "overshoot_ms": 0.0,
     "calibrated_with": None, "runs": [], "errors": [],
     "cold": [], "cold_done": False, "procs": {},
-    "background": {"running": False, "sends": 0, "bytes_since_restart": 0, "restarts": 0,
-                   "skipped_busy": 0},
+    "background": {"running": False, "mode": BG_MODE, "sends": 0, "bytes_since_restart": 0,
+                   "restarts": 0, "skipped_busy": 0, "late": 0},
 }
 
 
@@ -241,9 +266,16 @@ def _event(seat, entry, decision, reason, newly=False, **extra) -> dict:
 
 
 def _append(lst: list, item) -> None:
+    """Append under the record cap (MAX_LOG_ENTRIES); dropped records are
+    counted so that paged reads can use absolute indexes."""
     lst.append(item)
-    if len(lst) > MAX_LOG_ENTRIES:
+    while len(lst) > MAX_LOG_ENTRIES:
         lst.pop(0)
+        _EVICTED[id(lst)] = _EVICTED.get(id(lst), 0) + 1
+
+
+def _cal_error(e) -> None:
+    _append(CAL["errors"], {"timestamp": datetime.now().isoformat(), "error": repr(e)})
 
 
 def _cut(s):
@@ -344,10 +376,10 @@ def _forward_to(base_url: str, token: str, target: str | None = None,
         rec = {"timestamp": datetime.now().isoformat(), "path": request.path, "error": repr(e)}
         if errors is None:
             with exp3._LOCK:
-                exp3.STATE["forward_errors"].append(rec)
+                _append(exp3.STATE["forward_errors"], rec)
         else:
             with _LOCK:
-                errors.append(rec)
+                _append(errors, rec)
         return Response("", status=502), False
 
 
@@ -376,7 +408,7 @@ def arm():
             calibrated = True
             _start_background_once()
         except Exception as e:  # noqa: BLE001
-            CAL["errors"].append({"timestamp": datetime.now().isoformat(), "error": repr(e)})
+            _cal_error(e)
     return json.dumps({"armed": True, "feedback": feedback,
                        "seats": {n: str(c) for n, c in seats},
                        "contained": sorted(contained), "calibrated": calibrated}), 200
@@ -395,36 +427,92 @@ def health():
 def swarm_state():
     if not exp3._is_local():
         return "", 404
+    if request.args.get("view") == "full":
+        return _state_page()
+    tail = request.args.get("events_tail", "")
+    n_tail = min(int(tail), EVENTS_TAIL_MAX) if tail.isdigit() else EVENTS_TAIL_DEFAULT
+    sink_view = SINK.view()
     with _LOCK:
+        events = STATE["events"]
+        fe = exp3.STATE["forward_errors"]
         view = {
+            "view": "light",
             "armed": STATE["armed"],
             "feedback": STATE["feedback"],
             "seats": {n: str(c) for n, c in STATE["seats"]},
             "contained": sorted(STATE["containment"].contained),
-            "trips": STATE["trips"],
-            "events": STATE["events"],
-            "forwarded": STATE["forwarded"],
-            "sink": STATE["sink"],
+            "tripped": sorted(STATE["trips"]),
+            "events": events[-n_tail:] if n_tail else [],
+            "events_total": len(events) + _EVICTED.get(id(events), 0),
+            "totals": {
+                "events": len(events) + _EVICTED.get(id(events), 0),
+                "forwarded": len(STATE["forwarded"]) + _EVICTED.get(id(STATE["forwarded"]), 0),
+                "sink": {k: len(v) + _EVICTED.get(id(v), 0) for k, v in STATE["sink"].items()},
+                "forward_errors": len(fe) + _EVICTED.get(id(fe), 0),
+                "calibration_errors": len(CAL["errors"]) + _EVICTED.get(id(CAL["errors"]), 0),
+            },
             "spool": dict(STATE["spool"]),
-            "forward_errors": list(exp3.STATE["forward_errors"]),
-            "calibration": {k: v for k, v in CAL.items() if k != "procs"},
+            "forward_errors": fe[-ERRORS_TAIL:],
+            "calibration": {k: v for k, v in CAL.items() if k not in ("procs", "errors")},
             "options": {"reply_early": REPLY_EARLY, "diag": DIAG, "background_calibration": BG_CAL,
-                        "cal_src": CAL_SRC, "cold_ports": COLD_PORTS},
+                        "background_mode": BG_MODE, "cal_src": CAL_SRC, "cold_ports": COLD_PORTS},
         }
-        if DIAG:
-            view["diag"] = list(DIAG_LOG)
-        # Light view for measurement harnesses (Stage 1 rerun): ?brief=1 leaves
-        # out the bounded forwarded and sink records and the trip copies;
-        # ?events_tail=N keeps only the last N events. The default is unchanged.
-        if request.args.get("brief") == "1":
-            for k in ("forwarded", "sink", "trips"):
-                view.pop(k)
-            view["events_total"] = len(view["events"])
-        tail = request.args.get("events_tail", "")
-        if tail.isdigit():
-            view["events"] = view["events"][-int(tail):] if int(tail) else []
-    view["sink_model"] = SINK.view()
+        view["calibration"]["errors"] = CAL["errors"][-ERRORS_TAIL:]
+        view["calibration"]["background"] = dict(CAL["background"])
+    view["sink_model"] = sink_view
     return Response(json.dumps(view, indent=2), content_type="application/json")
+
+
+def _section_list(name: str, seat: str):
+    """The live record list behind a section (callers hold _LOCK)."""
+    if name == "events":
+        return STATE["events"]
+    if name == "forwarded":
+        return STATE["forwarded"]
+    if name == "sink":
+        return STATE["sink"].get(seat, [])
+    if name == "forward_errors":
+        return exp3.STATE["forward_errors"]
+    if name == "calibration_errors":
+        return CAL["errors"]
+    raise KeyError(name)
+
+
+def _state_page():
+    """One page of one record list. Page K holds the records with absolute
+    index K*size .. K*size+size-1 (index counted since boot); records
+    already dropped by the cap are reported by ``first_available``."""
+    section = request.args.get("section", "")
+    seat = request.args.get("seat", "")
+    if section not in SECTIONS:
+        return Response(json.dumps({"error": f"section must be one of {list(SECTIONS)}"}), 400,
+                        content_type="application/json")
+    size = request.args.get("page_size", "")
+    size = max(1, min(int(size), PAGE_SIZE_MAX)) if size.isdigit() else PAGE_SIZE_DEFAULT
+    page = request.args.get("page", "0")
+    page = int(page) if page.isdigit() else 0
+    with _LOCK:
+        if section == "trips":
+            lst, evicted = [dict(rec, seat=k) for k, rec in sorted(STATE["trips"].items())], 0
+        elif section == "diag":
+            lst, evicted = DIAG_LOG, 0
+        else:
+            lst = _section_list(section, seat)
+            evicted = _EVICTED.get(id(lst), 0)
+        total = len(lst) + evicted
+        lo = max(page * size - evicted, 0)
+        hi = max(min((page + 1) * size - evicted, len(lst)), 0)
+        if section == "diag":
+            from itertools import islice
+            items = list(islice(lst, lo, hi)) if hi > lo else []
+        else:
+            items = lst[lo:hi] if hi > lo else []
+        sink_seats = sorted(STATE["sink"]) if section == "sink" else None
+    body = json.dumps({"view": "full", "section": section, "seat": seat if section == "sink" else None,
+                       "page": page, "page_size": size, "total": total,
+                       "pages": (total + size - 1) // size, "first_available": evicted,
+                       "sink_seats": sink_seats, "items": items})
+    return Response(body, content_type="application/json")
 
 
 # ---------------------------------------------------------------- agent paths
@@ -632,7 +720,7 @@ def _cal_send(cls: str, size: int, port: int, mode: str, rng, token: str | None 
             raise RuntimeError(f"calibration reply {data[:40]!r}")
         return reg["ms"]
     except Exception as e:  # noqa: BLE001
-        CAL["errors"].append({"timestamp": datetime.now().isoformat(), "error": repr(e)})
+        _cal_error(e)
         return None
     finally:
         sock.close()
@@ -735,22 +823,37 @@ def _calibrate() -> None:
 
 
 def _background_calibration() -> None:
-    """While no real forward has started for QUIET_S (and none is in
-    progress): one small-cell calibration request every BG_INTERVAL_S,
-    cycling through the small cells in shuffled order. The calibration
-    collector is restarted after BG_RESTART_BYTES of bodies."""
+    """One small-cell calibration request every BG_INTERVAL_S, cycling
+    through the small cells in shuffled order. BG_MODE "fixed" (default): on a
+    fixed clock in every state, whatever the real traffic; a tick missed
+    because a send or restart overran is skipped (counted as "late"), never
+    made up in a burst. BG_MODE "quiet" (the Stage 1 rerun): only while no
+    real forward has started for QUIET_S and none is in progress. The
+    calibration collector is restarted after BG_RESTART_BYTES of bodies."""
     import random
     rng = random.Random(secrets.randbits(64))
     bg = CAL["background"]
     bg["running"] = True
     order: list = []
+    next_t = time.monotonic()
     while True:
-        time.sleep(BG_INTERVAL_S)
-        with _LOCK:
-            quiet = (_REAL["in_flight"] == 0
-                     and time.monotonic() - _REAL["last_start"] >= QUIET_S)
-        if not quiet:
-            bg["skipped_busy"] += 1
+        if BG_MODE == "quiet":
+            time.sleep(BG_INTERVAL_S)
+            with _LOCK:
+                quiet = (_REAL["in_flight"] == 0
+                         and time.monotonic() - _REAL["last_start"] >= QUIET_S)
+            if not quiet:
+                bg["skipped_busy"] += 1
+                continue
+        else:
+            next_t += BG_INTERVAL_S
+            delay = next_t - time.monotonic()
+            if delay > 0:
+                time.sleep(delay)
+            else:
+                bg["late"] += 1
+                next_t = time.monotonic()
+        if not BG_CAL:                       # tests: switched off at run time
             continue
         if not order:
             order = sink_mod.cells()
@@ -767,7 +870,7 @@ def _background_calibration() -> None:
                 bg["sends"] += 1
                 bg["bytes_since_restart"] += size
             except Exception as e:  # noqa: BLE001
-                CAL["errors"].append({"timestamp": datetime.now().isoformat(), "error": repr(e)})
+                _cal_error(e)
 
 
 def _start_background_once() -> None:
@@ -789,6 +892,7 @@ def reset() -> None:
     with _LOCK:
         STATE.clear()
         STATE.update(_fresh_state())
+        _EVICTED.clear()
 
 
 def start_background_calibration() -> threading.Thread:

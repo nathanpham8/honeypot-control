@@ -14,8 +14,9 @@ Stage 1", section 4.
     A small cell's pool is its real forwards from the last AGE_REAL seconds
     (newest WINDOW); if fewer than MIN_REAL, calibration samples from the last
     AGE_CAL seconds top it up to WINDOW; if still under MIN_POOL, the newest
-    samples of any age are added (counted as "stale"). Large bodies keep the
-    newest WINDOW points of any age (unchanged from Stage 1).
+    samples of any age are added (counted as "stale"): calibration first,
+    then real (Stage 1 final; the rerun added real first). Large bodies keep
+    the newest WINDOW points of any age (unchanged from Stage 1).
   * Cold start (Stage 1 rerun): a cold-excess sample is added only to the
     first diverted target after a boot, and only if no real forward has
     completed before it.
@@ -91,8 +92,10 @@ def fit_line(points):
 
 
 class SinkModel:
-    def __init__(self, window: int = WINDOW, rng: random.Random | None = None, clock=None):
+    def __init__(self, window: int = WINDOW, rng: random.Random | None = None, clock=None,
+                 stale_cal_first: bool = True):
         self.window = window
+        self.stale_cal_first = stale_cal_first   # False: the Stage 1 rerun order
         self.rng = rng or random.Random(secrets.randbits(64))
         self.clock = clock or time.monotonic
         self.lock = threading.Lock()
@@ -151,10 +154,12 @@ class SinkModel:
         if count:
             self.counts["pool_topped_up"] += 1
         if len(pool) < MIN_POOL:
-            # newest first within each source: real first, then calibration
+            # newest first within each source; calibration first (Stage 1
+            # final), or real first (the rerun order)
             old_real = [ms for t, ms in reversed(real) if now - t > AGE_REAL]
             old_cal = [ms for t, ms in reversed(cal) if now - t > AGE_CAL]
-            extra = (old_real + old_cal)[:MIN_POOL - len(pool)]
+            order = old_cal + old_real if self.stale_cal_first else old_real + old_cal
+            extra = order[:MIN_POOL - len(pool)]
             if extra and count:
                 self.counts["stale"] += 1
             pool += extra
@@ -223,7 +228,8 @@ class SinkModel:
             return {
                 "window": self.window,
                 "rules": {"age_real_s": AGE_REAL, "age_cal_s": AGE_CAL, "min_real": MIN_REAL,
-                          "min_pool": MIN_POOL},
+                          "min_pool": MIN_POOL,
+                          "stale_order": "cal_first" if self.stale_cal_first else "real_first"},
                 "first_real_done": self.first_real_done,
                 "cold_used": self.cold_used,
                 "counts": dict(self.counts),

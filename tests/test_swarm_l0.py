@@ -141,7 +141,10 @@ def arm(eport, contained=()):
 
 
 def state(eport):
-    return json.loads(urllib.request.urlopen(f"http://127.0.0.1:{eport}/__swarm-state", timeout=5).read())
+    """Every record, read through the paged full view (Stage 1 final)."""
+    from honeypot.swarm_gateway.ctl import full_state
+    return full_state(lambda path: json.loads(
+        urllib.request.urlopen(f"http://127.0.0.1:{eport}{path}", timeout=5).read()))
 
 
 L0_VARIANTS = {

@@ -1,0 +1,107 @@
+{
+  "design": "seat0 free; 4 curl loops x 10000 delivered 1 KB sends; reads during (after 20,000 recorded) and after the flood",
+  "exit_mem_limit": "1g",
+  "exit_before": {
+    "pid1_start": "84477387",
+    "pid1_cmd": "python swarm_exit.py",
+    "oom_kill": 0,
+    "oom": 0,
+    "peak_mb": 112.9,
+    "current_mb": 61.7,
+    "max_mb": 1024.0,
+    "restart_count": 0,
+    "oom_killed": false,
+    "started_at": "2026-11-16T17:53:05.979953825Z"
+  },
+  "read_during_flood": {
+    "default_rc": 0,
+    "default_bytes": 41876,
+    "default_seconds": 0.33,
+    "dump_rc": 0,
+    "dump_bytes": 30546414,
+    "dump_seconds": 1.57,
+    "dump_stderr": "",
+    "default_keys_ok": true,
+    "events_total": 20519,
+    "forwarded_total": 20519,
+    "dump_counts": {
+      "events": 9999,
+      "forwarded": 9999
+    },
+    "recorded_at_start": 20459,
+    "flood_running": true
+  },
+  "flood_seconds": 195.0,
+  "sends_204": 40000,
+  "read_after_flood": {
+    "default_rc": 0,
+    "default_bytes": 41867,
+    "default_seconds": 0.28,
+    "dump_rc": 0,
+    "dump_bytes": 30549422,
+    "dump_seconds": 1.21,
+    "dump_stderr": "",
+    "default_keys_ok": true,
+    "events_total": 40000,
+    "forwarded_total": 40000,
+    "dump_counts": {
+      "events": 10000,
+      "forwarded": 10000
+    }
+  },
+  "exit_after": {
+    "pid1_start": "84477387",
+    "pid1_cmd": "python swarm_exit.py",
+    "oom_kill": 0,
+    "oom": 0,
+    "peak_mb": 207.8,
+    "current_mb": 193.1,
+    "max_mb": 1024.0,
+    "restart_count": 0,
+    "oom_killed": false,
+    "started_at": "2026-11-16T17:53:05.979953825Z"
+  },
+  "peak_mb": 207.8,
+  "checks": [
+    {
+      "check": "stack up and healthy",
+      "pass": true
+    },
+    {
+      "check": "exit armed, seat0 free",
+      "pass": true
+    },
+    {
+      "check": "exit container memory limit is 1g",
+      "pass": true
+    },
+    {
+      "check": "read during the flood: default view light, every page read, flood still running",
+      "pass": true
+    },
+    {
+      "check": "all 40000 sends got 204",
+      "pass": true
+    },
+    {
+      "check": "read after the flood: default view light; exit recorded every forward",
+      "pass": true
+    },
+    {
+      "check": "read after the flood: every page read; kept records (cap 10,000) each once",
+      "pass": true
+    },
+    {
+      "check": "exit process not restarted (same main process, no container restart)",
+      "pass": true
+    },
+    {
+      "check": "exit container cgroup records no OOM kill",
+      "pass": true
+    },
+    {
+      "check": "exit still forwards a send afterwards",
+      "pass": true
+    }
+  ]
+}

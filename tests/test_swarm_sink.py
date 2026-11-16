@@ -1,8 +1,9 @@
-"""Timing-matched sink (step 3, Stage 1 and its rerun), without Docker.
+"""Timing-matched sink (step 3, Stage 1, its rerun and Stage 1 final), without Docker.
 
 Part 1, the model (honeypot/swarm_gateway/swarm_sink.py), pure Python with a
 fake clock: classes and buckets, window top-up and when it stops, aging of
-real and calibration samples, the stale fallback, the cold excess on the first
+real and calibration samples, the stale fallback (calibration first; the
+rerun's real-first order as an option), the cold excess on the first
 diverted target only, the large-body fit, fallbacks.
 
 Part 2, the swarm exit as a real werkzeug server in front of a real collector
@@ -24,9 +25,15 @@ sources 127.0.0.2 (seat0) and 127.0.0.3 (seat1); the calibration source is
     (reported: median and p90 of |actual - target|); only the first diverted
     target after boot gets a cold-excess sample;
   * real forwards enter the windows;
-  * background calibration runs while no real forward has started for the
-    quiet period, stops while real forwards arrive, and restarts its
+  * background calibration (Stage 1 final) runs at the same rate while idle,
+    while a free seat's real forwards arrive back to back and while a
+    contained seat's diverted sends arrive back to back; the rerun's quiet
+    mode (an option) starts none while real forwards arrive; it restarts its
     collector after its byte budget;
+  * the state view: light by default (no forwarded, sink or trip records;
+    last 100 events, events_tail capped at 1,000); the full records paged by
+    absolute index, so records dropped by the cap or appended between pages
+    neither shift nor repeat later pages; ctl.full_state reassembles them;
   * T9: with the collector stopped, a free seat gets 502 (recorded as a
     forward error, not entered into the windows) while a contained seat still
     gets 204 after its delay: a known difference, reported;
@@ -46,6 +53,7 @@ import sys
 import tempfile
 import threading
 import time
+import urllib.error
 import urllib.request
 from pathlib import Path
 
@@ -161,9 +169,31 @@ def test_model() -> list:
         a.record("other", "1k", 100, 5.0, real=True)
     p3 = a._small_pool("other", "1k")
     r.append(("model: aging: real older than 5 s leaves the pool (calibration from the last 15 s used); "
-              "with nothing fresh, the newest 10 of any age, real first (counted stale); fresh real again",
-              set(p1) == {3.0} and len(p1) == 50 and p2 == [7.0] * S.MIN_POOL and stale == 1
+              "with nothing fresh, the newest 10 of any age, calibration first (counted stale); fresh real again",
+              set(p1) == {3.0} and len(p1) == 50 and p2 == [3.0] * S.MIN_POOL and stale == 1
               and set(p3) == {5.0} and len(p3) == 30))
+
+    # stale fallback order (Stage 1 final): T8b's case. Load-time real and
+    # older calibration samples are both stale; 7 fresh calibration samples
+    # are under MIN_POOL, so 3 stale samples are added.
+    def t8b_pool(cal_first):
+        b = S.SinkModel(rng=random.Random(9), clock=clock, stale_cal_first=cal_first)
+        now[0] = 200.0
+        for _ in range(20):
+            b.record("other", "1k", 100, 2.0, real=False)
+        for _ in range(50):
+            b.record("other", "1k", 100, 7.0, real=True)
+        now[0] = 210.0
+        for _ in range(7):
+            b.record("other", "1k", 100, 3.0, real=False)
+        now[0] = 200.0 + S.AGE_CAL + 3
+        return sorted(b._small_pool("other", "1k")), b.view()["rules"]["stale_order"]
+    pc, oc = t8b_pool(True)
+    pr, orr = t8b_pool(False)
+    r.append(("model: stale fallback adds older calibration before older real (default); "
+              "the rerun's real-first order is an option",
+              pc == [2.0] * 3 + [3.0] * 7 and oc == "cal_first"
+              and pr == [3.0] * 7 + [7.0] * 3 and orr == "real_first"))
 
     # cold excess: first diverted target only
     m2 = S.SinkModel(rng=random.Random(2), clock=clock)
@@ -291,7 +321,8 @@ def test_exit(report) -> list:
     se, eport, cport, proc, cold_ports, cold = start()
     col = lambda: get(f"http://127.0.0.1:{cport}/get-request-log", TOKEN) if proc.poll() is None else None
     cal_col = lambda: get(f"http://127.0.0.1:{os.environ['SWARM_CAL_PORT']}/get-request-log", se.CAL_TOKEN)
-    state = lambda: get(f"http://127.0.0.1:{eport}/__swarm-state")
+    from honeypot.swarm_gateway.ctl import full_state
+    state = lambda: full_state(lambda path: get(f"http://127.0.0.1:{eport}{path}"))
     try:
         se.start_background_calibration().join(timeout=300)
         st = state()
@@ -371,13 +402,58 @@ def test_exit(report) -> list:
         r.append(("exit: calibration requests are logged with seat curl's header names, order and values, per class",
                   all(cal_shapes.get(k) == {tuple(v)} for k, v in shapes.items())))
 
-        # light state view for harnesses
-        lv = get(f"http://127.0.0.1:{eport}/__swarm-state?brief=1&events_tail=5")
+        # state view (Stage 1 final): light by default, full records paged
+        for i in range(120):
+            raw(eport, post(f"/view/{i}", b"v" * 100), SEAT0)
+        dv = get(f"http://127.0.0.1:{eport}/__swarm-state")
+        lv = get(f"http://127.0.0.1:{eport}/__swarm-state?events_tail=5")
+        big = get(f"http://127.0.0.1:{eport}/__swarm-state?events_tail=99999")
         full = state()
-        r.append(("exit: ?brief=1&events_tail=5 leaves out forwarded/sink/trips and keeps the last 5 events",
-                  "forwarded" not in lv and "sink" not in lv and "trips" not in lv
-                  and lv["events"] == full["events"][-5:] and lv["events_total"] == len(full["events"])
-                  and "forwarded" in full))
+        r.append(("exit: the default state view is light: no forwarded/sink/trip records, the last 100 events",
+                  dv["view"] == "light" and not ({"forwarded", "sink", "trips"} & set(dv))
+                  and dv["events"] == full["events"][-100:] and dv["events_total"] == len(full["events"])
+                  and dv["totals"]["forwarded"] == len(full["forwarded"]) >= 120
+                  and dv["tripped"] == sorted(full["trips"]) and "sink_model" in dv))
+        r.append(("exit: events_tail=5 keeps the last 5 events; events_tail is capped at 1,000",
+                  lv["events"] == full["events"][-5:] and len(big["events"]) == min(1000, len(full["events"]))))
+        pg = get(f"http://127.0.0.1:{eport}/__swarm-state?view=full&section=forwarded&page=1&page_size=50")
+        bad = urllib.request.Request(f"http://127.0.0.1:{eport}/__swarm-state?view=full&section=nope")
+        try:
+            urllib.request.urlopen(bad, timeout=10)
+            bad_code = 200
+        except urllib.error.HTTPError as e:
+            bad_code = e.code
+        r.append(("exit: full view is paged: one section, page_size records, total and page count; "
+                  "unknown section refused",
+                  pg["items"] == full["forwarded"][50:100] and pg["total"] == len(full["forwarded"])
+                  and pg["pages"] == -(-len(full["forwarded"]) // 50) and bad_code == 400))
+        # absolute paging under the cap: shrink the cap, then read across new appends
+        old_cap = se.MAX_LOG_ENTRIES
+        se.MAX_LOG_ENTRIES = 40
+        try:
+            for i in range(30):
+                raw(eport, post(f"/cap/{i}", b"c" * 100), SEAT0)
+            p0 = get(f"http://127.0.0.1:{eport}/__swarm-state?view=full&section=events&page=0&page_size=10")
+            tot0 = p0["total"]
+            last_pg = (tot0 - 1) // 10
+            pa = get(f"http://127.0.0.1:{eport}/__swarm-state?view=full&section=events&page={last_pg - 1}&page_size=10")
+            for i in range(5):
+                raw(eport, post(f"/cap2/{i}", b"c" * 100), SEAT0)
+            pb = get(f"http://127.0.0.1:{eport}/__swarm-state?view=full&section=events&page={last_pg - 1}&page_size=10")
+            from honeypot.swarm_gateway.ctl import iter_section
+            stats = {}
+            it = list(iter_section(lambda path: get(f"http://127.0.0.1:{eport}{path}"), "events",
+                                   page_size=10, stats=stats))
+            light = get(f"http://127.0.0.1:{eport}/__swarm-state?events_tail=0")
+        finally:
+            se.MAX_LOG_ENTRIES = old_cap
+        r.append(("exit: with the cap reached, pages are numbered by absolute index: a page reads the same "
+                  "records after new appends; first_available counts dropped records; a full read yields "
+                  "the kept records once each",
+                  p0["items"] == [] and p0["first_available"] == tot0 - 40 and pa["items"] == pb["items"]
+                  and len(pa["items"]) == 10 and len(it) == 40 and stats.get("missed", 0) == 0
+                  and [e["path"] for e in it][-5:] == [f"/cap2/{i}" for i in range(5)]
+                  and light["events_total"] == tot0 + 5))
 
         # real forwards enter the windows
         n_real = state()["sink_model"]["counts"]["real"]
@@ -388,26 +464,47 @@ def test_exit(report) -> list:
                   st["sink_model"]["counts"]["real"] == n_real + 30 and st["sink_model"]["first_real_done"]
                   and st["sink_model"]["real"]["urlencoded/1k"]["n"] >= 30))
 
-        # background calibration
-        se.BG_INTERVAL_S, se.QUIET_S, se.BG_CAL = 0.02, 0.3, True
+        # background calibration (Stage 1 final: a fixed clock in every state)
+        bgv = lambda: dict(get(f"http://127.0.0.1:{eport}/__swarm-state?events_tail=0")["calibration"]["background"])
+        se.BG_INTERVAL_S, se.QUIET_S, se.BG_CAL = 0.05, 0.3, True
         se._start_background_once()
-        time.sleep(1.5)
-        bg1 = dict(state()["calibration"]["background"])
+        time.sleep(0.5)
+        rates = {}
+        for phase, src, path in (("idle", None, None), ("free seat busy", SEAT0, "/busy"),
+                                 ("contained seat busy", SEAT1, "/cbusy"), ("idle again", None, None)):
+            b0, t0 = bgv(), time.time()
+            while time.time() - t0 < 2.0:
+                if src:
+                    raw(eport, post(path, b"b" * 100), src)   # back to back
+                else:
+                    time.sleep(0.05)
+            b1 = bgv()
+            rates[phase] = round((b1["sends"] - b0["sends"]) / (time.time() - t0), 2)
+        report["background_rates_per_s"] = rates
+        nominal = 1 / se.BG_INTERVAL_S
+        r.append(("exit: background calibration runs at the same rate idle, under a free seat's real forwards "
+                  "and under a contained seat's diverted sends (each within 20% of the nominal rate)",
+                  all(abs(v - nominal) <= 0.2 * nominal for v in rates.values())))
+        se.BG_MODE = "quiet"                        # the Stage 1 rerun's rule, as an option
+        time.sleep(1.0)
+        bq1 = bgv()
         t_end = time.time() + 1.5
         while time.time() < t_end:                  # real forwards back to back
             raw(eport, post("/busy", b"b" * 100), SEAT0)
-        bg2 = dict(state()["calibration"]["background"])
+        bq2 = bgv()
+        se.BG_MODE = "fixed"
+        r.append(("exit: SWARM_BG_MODE=quiet (the rerun's rule) starts none while real forwards arrive",
+                  bq2["sends"] - bq1["sends"] <= 1 and bq2["skipped_busy"] > bq1["skipped_busy"]))
+        b2 = bgv()
         se.BG_RESTART_BYTES = 30000
         time.sleep(2.0)
-        bg3 = dict(state()["calibration"]["background"])
-        report["background"] = {"after_idle": bg1, "after_busy": bg2, "after_restart_budget": bg3}
-        r.append(("exit: background calibration runs while quiet, starts none while real forwards arrive",
-                  bg1["sends"] >= 10 and bg2["sends"] - bg1["sends"] <= 1 and bg2["skipped_busy"] > bg1["skipped_busy"]))
+        bg3 = bgv()
+        report["background"] = {"quiet_mode_before_busy": bq1, "quiet_mode_after_busy": bq2,
+                                "after_restart_budget": bg3}
         r.append(("exit: background calibration restarts its collector after its byte budget; no errors",
-                  bg3["restarts"] >= 1 and bg3["sends"] > bg2["sends"] and state()["calibration"]["errors"] == []))
-        se.BG_CAL = False
-        se.QUIET_S = 1e9                            # stop starting background sends
-        time.sleep(0.2)
+                  bg3["restarts"] >= 1 and bg3["sends"] > b2["sends"] and state()["calibration"]["errors"] == []))
+        se.BG_CAL = False                           # stop starting background sends
+        time.sleep(0.3)
 
         # T8 (no-Docker part): first real forward after idle vs the window
         st = state()
@@ -439,7 +536,6 @@ def test_exit(report) -> list:
                   st["sink_model"]["counts"]["real"] == n_real))
     finally:
         se.BG_CAL = False
-        se.QUIET_S = 1e9
         for pr in [proc, *cold]:
             if pr.poll() is None:
                 pr.terminate()

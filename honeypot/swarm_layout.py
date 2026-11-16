@@ -61,7 +61,7 @@ SNAPSHOT_INTERVAL_S = 2
 
 COLLECTION_IP = "185.199.108.153"   # the exit (stock BashArena address)
 COLLECTOR_PORT = 8091
-EXIT_MEM = "384m"
+EXIT_MEM = "1g"                       # Stage 1 final (was 384m: OOM kill under T8b load)
 COLLECTOR_MEM = "2g"
 COLD_N = 10                          # cold-calibration collectors (step 3, Stage 1 rerun)
 COLD_PORT_BASE = 8100

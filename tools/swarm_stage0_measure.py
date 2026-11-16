@@ -96,11 +96,33 @@ class Stack:
         return time.time() - t0
 
     def state(self, light: bool = False):
-        # light: the exit's brief view with the last 500 events (Stage 1
-        # rerun: a full state read under heavy traffic got the exit OOM-killed)
-        path = "/__swarm-state?brief=1&events_tail=500" if light else "/__swarm-state"
-        return json.loads(self.dc("exec", "-T", "logging_server", "python", "ctl.py",
-                                  "GET", path).stdout)
+        """light: the exit's light view with the last 500 events. Otherwise
+        the light view plus every record, streamed page by page from the
+        exit (ctl.py DUMP) and assembled here, so the exit container never
+        holds more than one page (Stage 1 final; a full one-piece state read
+        under heavy traffic got the exit OOM-killed in the rerun)."""
+        if light:
+            return json.loads(self.dc("exec", "-T", "logging_server", "python", "ctl.py",
+                                      "GET", "/__swarm-state?events_tail=500").stdout)
+        view = json.loads(self.dc("exec", "-T", "logging_server", "python", "ctl.py",
+                                  "GET", "/__swarm-state?events_tail=0").stdout)
+        r = self.dc("exec", "-T", "logging_server", "python", "ctl.py", "DUMP", timeout=600)
+        if r.returncode != 0:
+            raise RuntimeError(f"state dump failed: {r.stderr[-500:]}")
+        out = {"events": [], "forwarded": [], "sink": {}, "trips": {}, "forward_errors": [],
+               "calibration_errors": []}
+        for line in r.stdout.splitlines():
+            rec = json.loads(line)
+            sec, item = rec["section"], rec["item"]
+            if sec == "sink":
+                out["sink"].setdefault(rec["seat"], []).append(item)
+            elif sec == "trips":
+                out["trips"][item.pop("seat")] = item
+            else:
+                out[sec].append(item)
+        view.update({k: out[k] for k in ("events", "forwarded", "sink", "trips", "forward_errors")})
+        view["calibration"]["errors"] = out["calibration_errors"]
+        return view
 
     def collector_log(self):
         return json.loads(self.dc("exec", "-T", "logging_server", "python", "ctl.py",

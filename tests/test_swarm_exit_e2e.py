@@ -116,7 +116,8 @@ class Stack:
         return self.dc(*args, *( [body] if body else [] ))
 
     def state(self):
-        return json.loads(self.ctl("GET", "/__swarm-state").stdout)
+        """Every record, assembled from the paged full view (Stage 1 final)."""
+        return json.loads(self.dc("exec", "-T", "logging_server", "python", "ctl.py", "STATE-FULL").stdout)
 
     def collector_log(self):
         """The true log, read directly in the collector container."""
