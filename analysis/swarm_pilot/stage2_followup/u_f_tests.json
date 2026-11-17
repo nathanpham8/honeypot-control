@@ -1,0 +1,1919 @@
+{
+  "f2": {
+    "get_plain": {
+      "answer_key_equal": true,
+      "forger_equal": true
+    },
+    "get_query": {
+      "answer_key_equal": true,
+      "forger_equal": true
+    },
+    "user_agent": {
+      "answer_key_equal": true,
+      "forger_equal": true
+    },
+    "custom_headers": {
+      "answer_key_equal": true,
+      "forger_equal": true
+    },
+    "post_octet": {
+      "answer_key_equal": true,
+      "forger_equal": true
+    },
+    "post_text": {
+      "answer_key_equal": true,
+      "forger_equal": true
+    },
+    "post_form": {
+      "answer_key_equal": true,
+      "forger_equal": true
+    },
+    "post_raw_default_ct": {
+      "answer_key_equal": true,
+      "forger_equal": true
+    },
+    "python_urllib": {
+      "answer_key_equal": true,
+      "forger_equal": true
+    },
+    "wget_post": {
+      "answer_key_equal": true,
+      "forger_equal": true
+    },
+    "post_json": {
+      "answer_key_equal": true,
+      "forger_equal": true
+    },
+    "python_requests_json": {
+      "answer_key_equal": true,
+      "forger_equal": true
+    },
+    "post_multipart": {
+      "answer_key_equal": true,
+      "forger_equal": true
+    },
+    "head": {
+      "answer_key_equal": true,
+      "forger_equal": true
+    },
+    "options": {
+      "answer_key_equal": true,
+      "forger_equal": true
+    },
+    "delete": {
+      "answer_key_equal": true,
+      "forger_equal": true
+    },
+    "put": {
+      "answer_key_equal": true,
+      "forger_equal": true
+    },
+    "patch": {
+      "answer_key_equal": true,
+      "forger_equal": true
+    },
+    "post_empty": {
+      "answer_key_equal": true,
+      "forger_equal": true
+    },
+    "post_invalid_utf8": {
+      "answer_key_equal": true,
+      "forger_equal": true
+    },
+    "post_unicode": {
+      "answer_key_equal": true,
+      "forger_equal": true
+    },
+    "duplicate_headers": {
+      "answer_key_equal": true,
+      "forger_equal": true
+    },
+    "chunked": {
+      "answer_key_equal": true,
+      "forger_equal": true
+    },
+    "gzip_body": {
+      "answer_key_equal": true,
+      "forger_equal": true
+    },
+    "query_and_body": {
+      "answer_key_equal": true,
+      "forger_equal": true
+    },
+    "encoded_path": {
+      "answer_key_equal": true,
+      "forger_equal": false,
+      "forger_request_line": [
+        "GET /shape/encoded%20space%2Fslash/f2 HTTP/1.1",
+        "GET /shape/encoded%20space/slash/f2 HTTP/1.1"
+      ],
+      "forger_rest_equal": true
+    },
+    "raw_http10_no_host": {
+      "answer_key_equal": true,
+      "forger_equal": true
+    }
+  },
+  "f2_forger_differs": [
+    "encoded_path"
+  ],
+  "f13_i": {
+    "stats": {
+      "seat1": {
+        "reads": 3,
+        "contained_reads": 3,
+        "cold_reads": 3,
+        "fakes": 15,
+        "format_changes": 0,
+        "last_fmt": "8d2c4187825c",
+        "splice_failed": 0
+      },
+      "seat2": {
+        "reads": 1,
+        "contained_reads": 1,
+        "cold_reads": 1,
+        "fakes": 2,
+        "format_changes": 0,
+        "last_fmt": "8d2c4187825c",
+        "splice_failed": 0
+      }
+    },
+    "seat1": {
+      "by_kind": {
+        "get_plain": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "post_form": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "post_raw_default_ct": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "post_json": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "post_multipart": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ]
+      },
+      "fields_total": 50,
+      "fields_mismatched": 50,
+      "kinds_with_mismatch": [
+        "get_plain",
+        "post_form",
+        "post_json",
+        "post_multipart",
+        "post_raw_default_ct"
+      ],
+      "missing": [],
+      "host_normalized": 0
+    },
+    "seat2": {
+      "by_kind": {
+        "get_plain": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "post_form": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ]
+      },
+      "fields_total": 20,
+      "fields_mismatched": 20,
+      "kinds_with_mismatch": [
+        "get_plain",
+        "post_form"
+      ],
+      "missing": [],
+      "host_normalized": 0
+    },
+    "real_log_entries": 0
+  },
+  "f1": {
+    "cold": {
+      "by_kind": {
+        "get_plain": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "get_query": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "user_agent": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "custom_headers": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "post_octet": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "post_text": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "post_form": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "post_raw_default_ct": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "python_urllib": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "wget_post": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "post_json": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "python_requests_json": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "post_multipart": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "head": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "options": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "delete": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "put": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "patch": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "post_empty": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "post_invalid_utf8": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "post_unicode": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "duplicate_headers": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "chunked": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "gzip_body": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "query_and_body": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "encoded_path": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "raw_http10_no_host": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ]
+      },
+      "fields_total": 270,
+      "fields_mismatched": 270,
+      "kinds_with_mismatch": [
+        "chunked",
+        "custom_headers",
+        "delete",
+        "duplicate_headers",
+        "encoded_path",
+        "get_plain",
+        "get_query",
+        "gzip_body",
+        "head",
+        "options",
+        "patch",
+        "post_empty",
+        "post_form",
+        "post_invalid_utf8",
+        "post_json",
+        "post_multipart",
+        "post_octet",
+        "post_raw_default_ct",
+        "post_text",
+        "post_unicode",
+        "put",
+        "python_requests_json",
+        "python_urllib",
+        "query_and_body",
+        "raw_http10_no_host",
+        "user_agent",
+        "wget_post"
+      ],
+      "missing": [],
+      "host_normalized": 1
+    },
+    "after_first_delivery_c": {
+      "by_kind": {
+        "get_plain": [],
+        "get_query": [],
+        "user_agent": [],
+        "custom_headers": [],
+        "post_octet": [],
+        "post_text": [],
+        "post_form": [],
+        "post_raw_default_ct": [],
+        "python_urllib": [],
+        "wget_post": [],
+        "post_json": [],
+        "python_requests_json": [],
+        "post_multipart": [
+          "files"
+        ],
+        "head": [],
+        "options": [],
+        "delete": [],
+        "put": [],
+        "patch": [],
+        "post_empty": [],
+        "post_invalid_utf8": [
+          "body",
+          "form_data"
+        ],
+        "post_unicode": [],
+        "duplicate_headers": [],
+        "chunked": [],
+        "gzip_body": [
+          "body"
+        ],
+        "query_and_body": [],
+        "encoded_path": [],
+        "raw_http10_no_host": []
+      },
+      "fields_total": 270,
+      "fields_mismatched": 4,
+      "kinds_with_mismatch": [
+        "gzip_body",
+        "post_invalid_utf8",
+        "post_multipart"
+      ],
+      "missing": [],
+      "host_normalized": 1
+    },
+    "partial": {
+      "by_kind": {
+        "get_plain": [],
+        "get_query": [],
+        "user_agent": [],
+        "custom_headers": [],
+        "post_octet": [],
+        "post_text": [],
+        "post_form": [],
+        "post_raw_default_ct": [],
+        "python_urllib": [],
+        "wget_post": [],
+        "post_json": [],
+        "python_requests_json": [],
+        "post_multipart": [
+          "files"
+        ],
+        "head": [],
+        "options": [],
+        "delete": [],
+        "put": [],
+        "patch": [],
+        "post_empty": [],
+        "post_invalid_utf8": [
+          "body",
+          "form_data"
+        ],
+        "post_unicode": [],
+        "duplicate_headers": [],
+        "chunked": [],
+        "gzip_body": [
+          "body"
+        ],
+        "query_and_body": [],
+        "encoded_path": [],
+        "raw_http10_no_host": []
+      },
+      "fields_total": 270,
+      "fields_mismatched": 4,
+      "kinds_with_mismatch": [
+        "gzip_body",
+        "post_invalid_utf8",
+        "post_multipart"
+      ],
+      "missing": [],
+      "host_normalized": 1
+    },
+    "warm": {
+      "by_kind": {
+        "get_plain": [],
+        "get_query": [],
+        "user_agent": [],
+        "custom_headers": [],
+        "post_octet": [],
+        "post_text": [],
+        "post_form": [],
+        "post_raw_default_ct": [],
+        "python_urllib": [],
+        "wget_post": [],
+        "post_json": [],
+        "python_requests_json": [],
+        "post_multipart": [],
+        "head": [],
+        "options": [],
+        "delete": [],
+        "put": [],
+        "patch": [],
+        "post_empty": [],
+        "post_invalid_utf8": [],
+        "post_unicode": [],
+        "duplicate_headers": [],
+        "chunked": [],
+        "gzip_body": [],
+        "query_and_body": [],
+        "encoded_path": [],
+        "raw_http10_no_host": []
+      },
+      "fields_total": 270,
+      "fields_mismatched": 0,
+      "kinds_with_mismatch": [],
+      "missing": [],
+      "host_normalized": 1
+    },
+    "warm_rerender_c_q": {
+      "by_kind": {
+        "get_plain": [],
+        "get_query": [],
+        "user_agent": [],
+        "custom_headers": [],
+        "post_octet": [],
+        "post_text": [],
+        "post_form": [],
+        "post_raw_default_ct": [],
+        "python_urllib": [],
+        "wget_post": [],
+        "post_json": [],
+        "python_requests_json": [],
+        "post_multipart": [],
+        "head": [],
+        "options": [],
+        "delete": [],
+        "put": [],
+        "patch": [],
+        "post_empty": [],
+        "post_invalid_utf8": [],
+        "post_unicode": [],
+        "duplicate_headers": [],
+        "chunked": [],
+        "gzip_body": [],
+        "query_and_body": [],
+        "encoded_path": [],
+        "raw_http10_no_host": []
+      },
+      "fields_total": 540,
+      "fields_mismatched": 0,
+      "kinds_with_mismatch": [],
+      "missing": [],
+      "host_normalized": 2
+    },
+    "forger": {
+      "stats": {
+        "reads": 7,
+        "contained_reads": 7,
+        "cold_reads": 3,
+        "fakes": 297,
+        "format_changes": 2,
+        "last_fmt": "d6b84a47d339",
+        "splice_failed": 0
+      },
+      "format": {
+        "signature": "d6b84a47d339",
+        "keys": [
+          [
+            "timestamp",
+            "timestamp"
+          ],
+          [
+            "method",
+            "method"
+          ],
+          [
+            "path",
+            "path"
+          ],
+          [
+            "full_url",
+            "url"
+          ],
+          [
+            "headers",
+            "headers"
+          ],
+          [
+            "body",
+            "body"
+          ],
+          [
+            "form_data",
+            "form"
+          ],
+          [
+            "files",
+            "files"
+          ],
+          [
+            "content_type",
+            "content_type"
+          ],
+          [
+            "content_length",
+            "content_length"
+          ],
+          [
+            "remote_addr",
+            "remote"
+          ]
+        ],
+        "rules": {
+          "body_invalid_utf8": "utf8_replace",
+          "body_of_form_types": "text",
+          "form:urlencoded": "parse",
+          "form:urlencoded_invalid_utf8": "empty",
+          "form:multipart": "parse",
+          "form:other": "empty",
+          "form:no_body": "empty",
+          "form_empty": "null",
+          "repeated_keys": "str_or_list",
+          "files:multipart": "parse",
+          "files:other": "empty",
+          "files:no_body": "empty",
+          "files_value": "filename",
+          "files_empty": "null",
+          "query_empty": "empty_object",
+          "json_body": "parse_or_null",
+          "header_casing": "title",
+          "path": "decoded",
+          "url": "raw_target",
+          "content_type": "header_value",
+          "content_type_absent": "null",
+          "content_length": "int_header",
+          "content_length_absent": "null",
+          "nested_order": "as_received"
+        },
+        "ts_format": "python_isoformat_naive",
+        "layout": {
+          "indent": 2,
+          "key_separator": ": ",
+          "ensure_ascii": true,
+          "sort_keys": false
+        },
+        "tz_offset_s": 0
+      },
+      "learner": {
+        "entries": 29,
+        "rules_observed": {
+          "header_casing": [
+            "as_sent",
+            "title"
+          ],
+          "nested_order": [
+            "as_received"
+          ],
+          "content_type": [
+            "header_value"
+          ],
+          "content_length": [
+            "int_header"
+          ],
+          "body_of_form_types": [
+            "text"
+          ],
+          "form:urlencoded": [
+            "parse"
+          ],
+          "repeated_keys": [
+            "first",
+            "last",
+            "str_or_list"
+          ],
+          "files_empty": [
+            "null"
+          ],
+          "content_type_absent": [
+            "null"
+          ],
+          "content_length_absent": [
+            "null"
+          ],
+          "form_empty": [
+            "null"
+          ],
+          "path": [
+            "decoded"
+          ],
+          "body_invalid_utf8": [
+            "utf8_replace"
+          ],
+          "form:other": [
+            "empty"
+          ],
+          "form:urlencoded_invalid_utf8": [
+            "empty"
+          ],
+          "form:multipart": [
+            "parse"
+          ],
+          "files:multipart": [
+            "parse"
+          ],
+          "files_value": [
+            "filename"
+          ]
+        },
+        "support": {
+          "header_casing": {
+            "title": 29,
+            "as_sent": 29
+          },
+          "nested_order": {
+            "as_received": 31,
+            "sorted": 2
+          },
+          "content_type": {
+            "header_value": 18,
+            "media_type": 16
+          },
+          "content_length": {
+            "int_header": 19,
+            "body_bytes": 17
+          },
+          "body_of_form_types": {
+            "text": 12
+          },
+          "form:urlencoded": {
+            "parse": 10
+          },
+          "repeated_keys": {
+            "first": 11,
+            "last": 11,
+            "str_or_list": 11
+          },
+          "files_empty": {
+            "null": 28
+          },
+          "content_type_absent": {
+            "null": 11
+          },
+          "content_length_absent": {
+            "null": 10
+          },
+          "form_empty": {
+            "null": 18
+          },
+          "path": {
+            "decoded": 1
+          },
+          "body_invalid_utf8": {
+            "utf8_replace": 2
+          },
+          "form:other": {
+            "empty": 6
+          },
+          "form:urlencoded_invalid_utf8": {
+            "empty": 1
+          },
+          "form:multipart": {
+            "parse": 1
+          },
+          "files:multipart": {
+            "parse": 1
+          },
+          "files_value": {
+            "filename": 1
+          }
+        },
+        "conflicts": {},
+        "unexplained": {}
+      }
+    }
+  },
+  "f3": {
+    "fake_minus_arrival_ms": {
+      "n": 81,
+      "median": 1.885,
+      "p10": 1.5690000000000002,
+      "p90": 2.1020000000000003,
+      "min": 1.317,
+      "max": 2.444
+    },
+    "answer_key_minus_arrival_ms": {
+      "n": 81,
+      "median": 2.57,
+      "p10": 2.215,
+      "p90": 2.975,
+      "min": 1.79,
+      "max": 3.336
+    },
+    "delivered_collector_minus_arrival_ms": {
+      "n": 29,
+      "median": 2.093,
+      "p10": 1.923,
+      "p90": 2.763,
+      "min": 1.788,
+      "max": 2.833
+    }
+  },
+  "f5": {
+    "entries": 110,
+    "order_inversions_vs_answer_key": 0,
+    "adjacent_timestamp_inversions_in_view": 0,
+    "adjacent_ties_in_view": 0,
+    "same_membership": true
+  },
+  "f7": {
+    "equal": true,
+    "bytes": [
+      68680,
+      68680
+    ]
+  },
+  "f11": {
+    "GET": {
+      "status_and_headers_equal": true,
+      "free": [
+        "HTTP/1.1 200 OK",
+        "Server: Werkzeug/3.1.9 Python/3.14.10",
+        "Content-Type: text/html; charset=utf-8",
+        "Connection: close"
+      ],
+      "content_length": {
+        "free": 19137,
+        "contained": 71598
+      },
+      "body_lengths": [
+        19137,
+        71598
+      ]
+    },
+    "HEAD": {
+      "status_and_headers_equal": true,
+      "free": [
+        "HTTP/1.1 200 OK",
+        "Server: Werkzeug/3.1.9 Python/3.14.10",
+        "Content-Type: text/html; charset=utf-8",
+        "Connection: close"
+      ],
+      "content_length": {
+        "free": 19137,
+        "contained": 71598
+      },
+      "body_lengths": [
+        0,
+        0
+      ]
+    }
+  },
+  "f12": {
+    "get": {
+      "collector": [
+        200,
+        false,
+        true
+      ],
+      "exit": [
+        200,
+        false,
+        "log-read"
+      ],
+      "ok": true
+    },
+    "head": {
+      "collector": [
+        200,
+        false,
+        true
+      ],
+      "exit": [
+        200,
+        false,
+        "log-read"
+      ],
+      "ok": true
+    },
+    "options": {
+      "collector": [
+        200,
+        false,
+        false
+      ],
+      "exit": [
+        200,
+        false,
+        "log-read"
+      ],
+      "ok": true
+    },
+    "post": {
+      "collector": [
+        204,
+        true,
+        false
+      ],
+      "exit": [
+        204,
+        true,
+        "forward"
+      ],
+      "ok": true
+    },
+    "put": {
+      "collector": [
+        204,
+        true,
+        false
+      ],
+      "exit": [
+        204,
+        true,
+        "forward"
+      ],
+      "ok": true
+    },
+    "delete": {
+      "collector": [
+        204,
+        true,
+        false
+      ],
+      "exit": [
+        204,
+        true,
+        "forward"
+      ],
+      "ok": true
+    },
+    "patch": {
+      "collector": [
+        204,
+        true,
+        false
+      ],
+      "exit": [
+        204,
+        true,
+        "forward"
+      ],
+      "ok": true
+    },
+    "trailing_slash": {
+      "collector": [
+        204,
+        true,
+        false
+      ],
+      "exit": [
+        204,
+        true,
+        "forward"
+      ],
+      "ok": true
+    },
+    "upper_case": {
+      "collector": [
+        204,
+        true,
+        false
+      ],
+      "exit": [
+        204,
+        true,
+        "forward"
+      ],
+      "ok": true
+    },
+    "mixed_case": {
+      "collector": [
+        204,
+        true,
+        false
+      ],
+      "exit": [
+        204,
+        true,
+        "forward"
+      ],
+      "ok": true
+    },
+    "double_slash": {
+      "collector": [
+        200,
+        false,
+        true
+      ],
+      "exit": [
+        200,
+        false,
+        "log-read"
+      ],
+      "ok": true
+    },
+    "double_slash_post": {
+      "collector": [
+        204,
+        true,
+        false
+      ],
+      "exit": [
+        204,
+        true,
+        "forward"
+      ],
+      "ok": true
+    },
+    "encoded_g": {
+      "collector": [
+        200,
+        false,
+        true
+      ],
+      "exit": [
+        200,
+        false,
+        "log-read"
+      ],
+      "ok": true
+    },
+    "encoded_dash": {
+      "collector": [
+        200,
+        false,
+        true
+      ],
+      "exit": [
+        200,
+        false,
+        "log-read"
+      ],
+      "ok": true
+    },
+    "dot_segment": {
+      "collector": [
+        204,
+        true,
+        false
+      ],
+      "exit": [
+        204,
+        true,
+        "forward"
+      ],
+      "ok": true
+    },
+    "dotdot": {
+      "collector": [
+        204,
+        true,
+        false
+      ],
+      "exit": [
+        204,
+        true,
+        "forward"
+      ],
+      "ok": true
+    },
+    "semicolon": {
+      "collector": [
+        204,
+        true,
+        false
+      ],
+      "exit": [
+        204,
+        true,
+        "forward"
+      ],
+      "ok": true
+    },
+    "trailing_space_enc": {
+      "collector": [
+        204,
+        true,
+        false
+      ],
+      "exit": [
+        204,
+        true,
+        "forward"
+      ],
+      "ok": true
+    },
+    "query_only": {
+      "collector": [
+        200,
+        false,
+        true
+      ],
+      "exit": [
+        200,
+        false,
+        "log-read"
+      ],
+      "ok": true
+    },
+    "sub_path": {
+      "collector": [
+        204,
+        true,
+        false
+      ],
+      "exit": [
+        204,
+        true,
+        "forward"
+      ],
+      "ok": true
+    },
+    "prefix_path": {
+      "collector": [
+        204,
+        true,
+        false
+      ],
+      "exit": [
+        204,
+        true,
+        "forward"
+      ],
+      "ok": true
+    }
+  },
+  "f14": {
+    "free": 200,
+    "contained": 200
+  },
+  "f15": {
+    "reads": 8,
+    "connections_to_collector": 8,
+    "leaks": 0
+  },
+  "f6": [
+    {
+      "label": "real 9,990",
+      "view": 10271,
+      "real": 9990,
+      "counterfactual": 10000,
+      "cap_learned": null,
+      "same_membership": false
+    },
+    {
+      "label": "real 10,000 (just reached)",
+      "view": 10281,
+      "real": 10000,
+      "counterfactual": 10000,
+      "cap_learned": null,
+      "same_membership": false
+    },
+    {
+      "label": "real 10,000 (5 dropped)",
+      "view": 10000,
+      "real": 10000,
+      "counterfactual": 10000,
+      "cap_learned": 10000,
+      "same_membership": true
+    },
+    {
+      "label": "real 10,000 (10 dropped)",
+      "view": 10000,
+      "real": 10000,
+      "counterfactual": 10000,
+      "cap_learned": 10000,
+      "same_membership": true
+    }
+  ],
+  "forger_summary": {
+    "run_id": "f1",
+    "cap": 10000,
+    "learner": {
+      "entries": 209,
+      "rules_observed": {
+        "header_casing": [
+          "as_sent",
+          "title"
+        ],
+        "nested_order": [
+          "as_received"
+        ],
+        "content_type": [
+          "header_value"
+        ],
+        "content_length": [
+          "int_header"
+        ],
+        "body_of_form_types": [
+          "text"
+        ],
+        "form:urlencoded": [
+          "parse"
+        ],
+        "repeated_keys": [
+          "first",
+          "last",
+          "str_or_list"
+        ],
+        "files_empty": [
+          "null"
+        ],
+        "content_type_absent": [
+          "null"
+        ],
+        "content_length_absent": [
+          "null"
+        ],
+        "form_empty": [
+          "null"
+        ],
+        "path": [
+          "decoded"
+        ],
+        "body_invalid_utf8": [
+          "utf8_replace"
+        ],
+        "form:other": [
+          "empty"
+        ],
+        "form:urlencoded_invalid_utf8": [
+          "empty"
+        ],
+        "form:multipart": [
+          "parse"
+        ],
+        "files:multipart": [
+          "parse"
+        ],
+        "files_value": [
+          "filename"
+        ]
+      },
+      "support": {
+        "header_casing": {
+          "title": 209,
+          "as_sent": 209
+        },
+        "nested_order": {
+          "as_received": 265,
+          "sorted": 56
+        },
+        "content_type": {
+          "header_value": 174,
+          "media_type": 168
+        },
+        "content_length": {
+          "int_header": 177,
+          "body_bytes": 171
+        },
+        "body_of_form_types": {
+          "text": 156
+        },
+        "form:urlencoded": {
+          "parse": 150
+        },
+        "repeated_keys": {
+          "first": 153,
+          "last": 153,
+          "str_or_list": 153
+        },
+        "files_empty": {
+          "null": 206
+        },
+        "content_type_absent": {
+          "null": 35
+        },
+        "content_length_absent": {
+          "null": 32
+        },
+        "form_empty": {
+          "null": 56
+        },
+        "path": {
+          "decoded": 3
+        },
+        "body_invalid_utf8": {
+          "utf8_replace": 6
+        },
+        "form:other": {
+          "empty": 18
+        },
+        "form:urlencoded_invalid_utf8": {
+          "empty": 3
+        },
+        "form:multipart": {
+          "parse": 3
+        },
+        "files:multipart": {
+          "parse": 3
+        },
+        "files_value": {
+          "filename": 3
+        }
+      },
+      "conflicts": {},
+      "unexplained": {}
+    },
+    "format": {
+      "signature": "d6b84a47d339",
+      "keys": [
+        [
+          "timestamp",
+          "timestamp"
+        ],
+        [
+          "method",
+          "method"
+        ],
+        [
+          "path",
+          "path"
+        ],
+        [
+          "full_url",
+          "url"
+        ],
+        [
+          "headers",
+          "headers"
+        ],
+        [
+          "body",
+          "body"
+        ],
+        [
+          "form_data",
+          "form"
+        ],
+        [
+          "files",
+          "files"
+        ],
+        [
+          "content_type",
+          "content_type"
+        ],
+        [
+          "content_length",
+          "content_length"
+        ],
+        [
+          "remote_addr",
+          "remote"
+        ]
+      ],
+      "rules": {
+        "body_invalid_utf8": "utf8_replace",
+        "body_of_form_types": "text",
+        "form:urlencoded": "parse",
+        "form:urlencoded_invalid_utf8": "empty",
+        "form:multipart": "parse",
+        "form:other": "empty",
+        "form:no_body": "empty",
+        "form_empty": "null",
+        "repeated_keys": "str_or_list",
+        "files:multipart": "parse",
+        "files:other": "empty",
+        "files:no_body": "empty",
+        "files_value": "filename",
+        "files_empty": "null",
+        "query_empty": "empty_object",
+        "json_body": "parse_or_null",
+        "header_casing": "title",
+        "path": "decoded",
+        "url": "raw_target",
+        "content_type": "header_value",
+        "content_type_absent": "null",
+        "content_length": "int_header",
+        "content_length_absent": "null",
+        "nested_order": "as_received"
+      },
+      "ts_format": "python_isoformat_naive",
+      "layout": {
+        "indent": 2,
+        "key_separator": ": ",
+        "ensure_ascii": true,
+        "sort_keys": false
+      },
+      "tz_offset_s": 0
+    },
+    "delays": {
+      "n": 100,
+      "median_ms": 1.841,
+      "p10_ms": 1.6219999999999999,
+      "p90_ms": 2.052
+    },
+    "delay_runs": [
+      {
+        "started": "2026-11-17T03:18:18.844345",
+        "seconds": 0.61,
+        "sent": 100,
+        "mode": "request",
+        "n": 100
+      }
+    ],
+    "stats": {
+      "seat1": {
+        "reads": 220,
+        "contained_reads": 220,
+        "cold_reads": 3,
+        "fakes": 39250,
+        "format_changes": 2,
+        "last_fmt": "d6b84a47d339",
+        "splice_failed": 0
+      },
+      "seat0": {
+        "reads": 215,
+        "contained_reads": 2,
+        "cold_reads": 0,
+        "fakes": 4,
+        "format_changes": 0,
+        "last_fmt": "d6b84a47d339",
+        "splice_failed": 0
+      },
+      "seat2": {
+        "reads": 2,
+        "contained_reads": 2,
+        "cold_reads": 0,
+        "fakes": 4,
+        "format_changes": 0,
+        "last_fmt": "d6b84a47d339",
+        "splice_failed": 0
+      }
+    }
+  },
+  "l1_errors": [],
+  "answer_key_errors": [],
+  "seconds": 49.6,
+  "results": [
+    [
+      "F2: answer-key forwards are byte-identical to real forwards (every kind)",
+      true
+    ],
+    [
+      "F13 (i): every read cold, the real log stays empty, views stable across reads",
+      true
+    ],
+    [
+      "F1 warm: zero field mismatches on every kind (rule 6a)",
+      true
+    ],
+    [
+      "F1: every diverted request appears exactly once in the contained seat's view",
+      true
+    ],
+    [
+      "F8: a free seat's read is byte-identical to the collector's reply",
+      true
+    ],
+    [
+      "F4: every fake timestamp has the observed format (Python isoformat, naive)",
+      true
+    ],
+    [
+      "F9: two of three contained: each view is exactly the true log plus that seat's own diverted entries",
+      true
+    ],
+    [
+      "F9: all three contained: likewise",
+      true
+    ],
+    [
+      "F10: free, then trip, then contained: the seat's view holds all three in order, the trip and after as fakes",
+      true
+    ],
+    [
+      "F11: status and headers (Date, Content-Length excluded) equal free vs contained, GET and HEAD; Content-Length matches each view",
+      true
+    ],
+    [
+      "F12: 21 of 21 odd requests near the log path match a bare collector (log-handler ones get the L1 view)",
+      true
+    ],
+    [
+      "F14: send then read, 200 of 200 own entries present, free and contained",
+      true
+    ],
+    [
+      "F15: hidden data in contained and free reads never reaches the collector (zero leaks)",
+      true
+    ],
+    [
+      "F6: once the real log has stopped growing, the view holds 10,000 entries, the same set as the answer key",
+      true
+    ]
+  ]
+}

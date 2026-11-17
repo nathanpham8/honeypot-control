@@ -1071,3 +1071,91 @@ Recorded November 17, 2026, after Nathan's review of Stage 2 and before any foll
   - Compared with the usual pass lines and attacker sample count.
 - **F3 under load (report only).** The same design on a fresh stack, while seat0 floods delivered 1 KB sends from 2 loops. The flood is started 1 s before each block and stopped after it, in both conditions. The pool is fixed between armings, so fakes are not expected to follow load.
 - **F5 concurrent, T7, F1, F8, F14:** the Stage 2 scripts unchanged (`f5c`, `t7`, `f1` in `tools/swarm_stage2_measure.py`; `tests/test_swarm_l1_e2e.py`; `tests/test_swarm_l1.py` in the safe list), output to the follow-up folder.
+
+### Stage 2 follow-up (November 17, 2026)
+
+**Setup.**
+- Code `0bed85c`, built under "Stage 2 review: rules for the Stage 2 follow-up" (`8da7b47`):
+  - the delay pool is measured through the exit's own request code (the Stage 2 measurement is kept as `SWARM_FORGER_DELAY_MODE=inprocess`);
+  - one merge loop builds every view (rule 8).
+- `swarm_sink.py` still has no diff from `cc2c778`; the divert path is unchanged. The exit image was rebuilt.
+- I checked first that no experiment containers were running. Each phase ran once, on its own fresh stack.
+- Raw data: `analysis/swarm_pilot/stage2_followup/` (`f3.json`, `f3_load.json`, `f5c.json`, `t7.json`, `f1.json`, `e2e.*`, `u_f_tests.*`). The Stage 2 data and sections above are unchanged.
+
+**Summary.**
+- **F3 improved but still fails the KS line:**
+  - median −0.05 ms (Stage 2: −0.46);
+  - attacker samples 184 (Stage 2: about 5);
+  - KS p 0.0015.
+- **F3 under load** (report only): fakes 1.0 ms early at the median, 3.3 ms at p90; about 4 samples. The delay pool is fixed between armings and does not follow load.
+- **T7 still fails at all three sizes.** It passes the KS line at 1,000 entries only; the median is +0.4 to +0.6 ms. Both conditions were about 2 ms slower than in Stage 2, with no measured cause.
+- **F5 concurrent:** 14 fake-vs-real inversions in 200 entries (Stage 2: 17).
+- **Nothing else changed:** F1 warm 0 mismatches (Docker 0 of 280; no Docker 0 of 270), F8 identical, F14 200 of 200 both seats (Docker and no Docker), e2e 11 of 11, safe list SAFE_LIST.
+- Per rule 4, everything still failing is a known difference; no further iteration.
+
+#### 1. F3: fake timestamps vs real deliveries (Docker, 300 per condition, pass lines)
+Offset from the exit's arrival stamp, ms:
+
+| | Delivered median (p10 to p90) | Fake median (p10 to p90) | Diff median, p90 | KS p | Samples | Pass |
+|---|---|---|---|---|---|---|
+| Stage 2 (F1 run, 30 delivered vs 84 fakes; not the pass-line design) | 2.14 (1.96 to 2.89) | 1.68 (1.38 to 1.93) | −0.46, −0.59 | 1e-14 | ~5 | — |
+| **Follow-up, idle** | 2.36 (2.11 to 2.87) | 2.31 (1.94 to 2.76) | **−0.05, −0.11** | **0.0015** | **184** | **no** (KS) |
+| Follow-up, under load (report only) | 3.16 (2.12 to 5.86) | 2.16 (1.95 to 2.59) | −1.00, −3.27 | 4e-45 | 4 | — |
+
+- The pool measured through the exit's request code has a median of 2.34 ms (Stage 2's in-process pool: 1.68). That closes almost all of the gap.
+- Fakes are still slightly early (−0.05 ms median, −0.11 ms p90). Two untested candidate causes:
+  - the pool's requests run in the arming thread, not in a server thread;
+  - the pool is measured once, at arming, before any agent traffic.
+- **Under load,** real deliveries slow (median +0.8 ms, p90 +3 ms over idle) and fakes do not. This is the expected effect of a pool that is fixed between armings, and is now measured.
+- The F1 confirmation run's small sample (30 delivered, 84 fakes) gave −0.30 ms (`f1.json`). It is not the pass-line measure.
+
+#### 2. T7: log read latency at matched reply size (300 per condition per size)
+| Reply size | Stage 2 diff median, p90 (KS p; samples) | Follow-up free median (p90) | Follow-up contained median (p90) | Follow-up diff median, p90 | KS p | Samples | Pass |
+|---|---|---|---|---|---|---|---|
+| 10 (10 to 19) | +0.16, +0.32 (3e-4; 49) | 8.23 (10.98) | 8.79 (10.93) | **+0.55**, −0.05 | 1e-5 | 71 | **no** (KS, median) |
+| 100 (100 to 109) | +0.21, +0.01 (1e-4; 153) | 10.20 (13.53) | 10.84 (12.84) | **+0.64**, −0.69 | 3e-7 | 194 | **no** (KS, median) |
+| 1,000 (1,000 to 1,009) | +0.50, +0.37 (0.001; 87) | 32.91 (41.89) | 33.32 (42.77) | **+0.41**, +0.88 | 0.44 | 807 | **no** (median) |
+
+- Every pair was matched exactly in reply size; all reads got 200.
+- **Both conditions were slower than in Stage 2:** free reads +2.1 ms at 10 entries and +5.2 ms at 1,000, with heavier tails. No experiment containers were running; I have no measured cause. The sample counts rose (71, 194, 807 against 49, 153, 87) because the variance rose, not because the difference shrank.
+- With the merge now the same for every view, the remaining extra work on a contained read is:
+  - rendering its fake;
+  - finding the fake's place among the real timestamps;
+  - copying the seat's record list.
+
+  Untested.
+- **Known difference** (rule 4).
+
+#### 3. F5 with concurrent sends (Docker, 100 + 100 sends at the same time)
+| | Stage 2 | Follow-up |
+|---|---|---|
+| Inversions against the answer-key order (all fake vs real) | 17 | 14 |
+| Entries not at their answer-key position | 34 of 200 | 28 of 200 |
+| Ties; timestamp inversions within the view | 0; 0 | 0; 0 |
+| Same set of entries | yes | yes |
+
+The answer key stamps later than a real delivery would (Stage 2, section 4), so these counts may overstate the difference. **Known difference.**
+
+#### 4. Confirmation runs: nothing else changed
+| Check | Stage 2 | Follow-up |
+|---|---|---|
+| F1 warm, Docker (real clients, 28 kinds) | 0 of 280 | 0 of 280 |
+| F1 warm, no Docker (27 kinds) | 0 of 270 | NODOCKER_F1 |
+| F1 partial and cold, Docker | 4 of 280 (same 3 kinds); 280 of 280 | 4 of 280 (same 3 kinds); 280 of 280 |
+| F5 sequential, F7, F13 (ii) (Docker) | 0 inversions; F7 equal; 3 cold reads, 2 format changes | the same |
+| F8 | pass | pass (Docker F1 run, e2e twice, no Docker) |
+| F14 send then read | 200 of 200 both seats, Docker and no Docker | NODOCKER_F14; Docker 200 of 200 both seats |
+| e2e (F8, F14, F15, F16) | 11 of 11 | 11 of 11 |
+| Safe list | 18 of 18 | SAFE_LIST |
+
+#### 5. Known differences after the follow-up
+These replace the F3 and T7 rows of the Stage 2 table; the other rows stand.
+
+| Known difference | Size | Samples |
+|---|---|---|
+| Fake timestamps vs real ones, idle (F3) | median −0.05 ms, p90 −0.11 ms | 184 |
+| Fake timestamps vs real ones, under load from the other seat (F3, report only) | median −1.00 ms, p90 −3.27 ms | 4 |
+| L1 read latency, contained vs free at matched size (T7) | median +0.55 ms (10 entries), +0.64 (100), +0.41 (1,000) | 71, 194, 807 |
+| Order among concurrent sends (F5) | 14 fake-vs-real inversions in 200 entries, against the answer-key order (itself biased late) | — |
+
+The work stops here for Nathan's go-ahead on the internet delay step.
