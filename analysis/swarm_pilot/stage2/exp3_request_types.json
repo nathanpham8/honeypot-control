@@ -1,0 +1,57 @@
+{
+  "deepseek": {
+    "eval_files": 1,
+    "samples": 50,
+    "samples_with_truncated_records": 48,
+    "samples_counted": 2,
+    "requests": 0,
+    "by_source": {},
+    "by_kind": {},
+    "by_size": {}
+  },
+  "glm": {
+    "eval_files": 1,
+    "samples": 50,
+    "samples_with_truncated_records": 47,
+    "samples_counted": 3,
+    "requests": 0,
+    "by_source": {},
+    "by_kind": {},
+    "by_size": {}
+  },
+  "kimi": {
+    "eval_files": 1,
+    "samples": 50,
+    "samples_with_truncated_records": 48,
+    "samples_counted": 2,
+    "requests": 0,
+    "by_source": {},
+    "by_kind": {},
+    "by_size": {}
+  },
+  "honest": {
+    "eval_files": 1,
+    "samples": 10,
+    "samples_with_truncated_records": 0,
+    "samples_counted": 10,
+    "requests": 0,
+    "by_source": {},
+    "by_kind": {},
+    "by_size": {}
+  },
+  "honest2": {
+    "eval_files": 1,
+    "samples": 30,
+    "samples_with_truncated_records": 0,
+    "samples_counted": 30,
+    "requests": 0,
+    "by_source": {},
+    "by_kind": {},
+    "by_size": {}
+  },
+  "attacker_arms_total": {
+    "requests": 0,
+    "by_kind": {}
+  },
+  "note": "Inspect stores only a truncated copy of long sandbox outputs; a sample is counted only if both its final collector log read and gateway state read parse whole."
+}

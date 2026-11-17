@@ -1,0 +1,62 @@
+{
+  "name": "httpbin /anything record, plus a timestamp",
+  "written": "2026-11-17, before any Stage 2 code or data (step3-plan.md, rule 4). Never tuned toward the collector's format.",
+  "source": "The request record httpbin returns from /anything (keys args, data, files, form, headers, json, method, origin, url), a common public request-echo format. httpbin runs on Flask, like the collector; nothing here was chosen to match the collector. A timestamp is added because a log needs one; its format is RFC 3339 in UTC with milliseconds and a Z suffix.",
+  "use": "Cold forger only (no real entry seen in this run), and, once warm, the rule for any role or context not yet observed.",
+  "layout": {
+    "indent": 2,
+    "sort_keys": true,
+    "ensure_ascii": true,
+    "key_separator": ": "
+  },
+  "fields": [
+    ["args", "query_args"],
+    ["data", "body"],
+    ["files", "files"],
+    ["form", "form"],
+    ["headers", "headers"],
+    ["json", "json_body"],
+    ["method", "method"],
+    ["origin", "remote"],
+    ["timestamp", "timestamp"],
+    ["url", "url"]
+  ],
+  "rules": {
+    "timestamp_format": "rfc3339_utc_ms_z",
+    "body_invalid_utf8": "data_url_base64",
+    "body_of_form_types": "empty",
+    "form": {
+      "urlencoded": "parse",
+      "urlencoded_invalid_utf8": "parse",
+      "multipart": "parse",
+      "other": "empty",
+      "no_body": "empty"
+    },
+    "form_empty": "empty_object",
+    "repeated_keys": "str_or_list",
+    "files": {
+      "multipart": "parse",
+      "other": "empty",
+      "no_body": "empty"
+    },
+    "files_value": "content",
+    "files_empty": "empty_object",
+    "query_empty": "empty_object",
+    "json_body": "parse_or_null",
+    "header_casing": "title",
+    "path": "decoded",
+    "url": "raw_target",
+    "content_type": "header_value",
+    "content_type_absent": "null",
+    "content_length": "int_header",
+    "content_length_absent": "null",
+    "remote": "forward_source"
+  },
+  "reasons": {
+    "httpbin": "args, data, files, form, headers, json, method, origin and url follow httpbin: query and form values are a string, or a list when a key repeats; empty maps are {}; data is the body text, empty for form bodies, and a base64 data URL when the body is not valid UTF-8; files map a field name to the file's content; json is the parsed body or null; header names are title-cased; origin is the client address, here the exit's own forward source.",
+    "path": "Not in httpbin. Percent-decoded, as WSGI and CGI pass PATH_INFO (PEP 3333).",
+    "content_type": "Not in httpbin. The Content-Type header value as sent; null when absent.",
+    "content_length": "Not in httpbin. The Content-Length header as an integer; null when absent.",
+    "url": "httpbin's url is the request URL; here scheme, Host header and the request target as sent."
+  }
+}
