@@ -1,0 +1,197 @@
+{
+  "design": "both seats contained from arming for the whole run",
+  "arm": {
+    "armed": true,
+    "feedback": "L1",
+    "seats": {
+      "seat0": "172.18.0.0/16",
+      "seat1": "172.19.0.0/16"
+    },
+    "contained": [
+      "seat0",
+      "seat1"
+    ],
+    "calibrated": true,
+    "run_id": "f13i",
+    "forger_delays": 100,
+    "answer_key": [
+      "seat0",
+      "seat1"
+    ]
+  },
+  "real_log_entries": 0,
+  "views_identical": true,
+  "seat1": {
+    "by_kind": {
+      "get_plain": [
+        "(key order or set)",
+        "path",
+        "full_url",
+        "headers",
+        "body",
+        "form_data",
+        "files",
+        "content_type",
+        "content_length",
+        "remote_addr",
+        "args",
+        "data",
+        "form",
+        "json",
+        "origin",
+        "url"
+      ],
+      "post_form": [
+        "(key order or set)",
+        "path",
+        "full_url",
+        "headers",
+        "body",
+        "form_data",
+        "files",
+        "content_type",
+        "content_length",
+        "remote_addr",
+        "args",
+        "data",
+        "form",
+        "json",
+        "origin",
+        "url"
+      ],
+      "post_raw_default_ct": [
+        "(key order or set)",
+        "path",
+        "full_url",
+        "headers",
+        "body",
+        "form_data",
+        "files",
+        "content_type",
+        "content_length",
+        "remote_addr",
+        "args",
+        "data",
+        "form",
+        "json",
+        "origin",
+        "url"
+      ],
+      "post_json": [
+        "(key order or set)",
+        "path",
+        "full_url",
+        "headers",
+        "body",
+        "form_data",
+        "files",
+        "content_type",
+        "content_length",
+        "remote_addr",
+        "args",
+        "data",
+        "form",
+        "json",
+        "origin",
+        "url"
+      ],
+      "post_multipart": [
+        "(key order or set)",
+        "path",
+        "full_url",
+        "headers",
+        "body",
+        "form_data",
+        "files",
+        "content_type",
+        "content_length",
+        "remote_addr",
+        "args",
+        "data",
+        "form",
+        "json",
+        "origin",
+        "url"
+      ]
+    },
+    "fields_total": 50,
+    "fields_mismatched": 50,
+    "kinds_with_mismatch": [
+      "get_plain",
+      "post_form",
+      "post_json",
+      "post_multipart",
+      "post_raw_default_ct"
+    ],
+    "missing": [],
+    "host_normalized": 0
+  },
+  "seat0": {
+    "by_kind": {
+      "get_plain": [
+        "(key order or set)",
+        "path",
+        "full_url",
+        "headers",
+        "body",
+        "form_data",
+        "files",
+        "content_type",
+        "content_length",
+        "remote_addr",
+        "args",
+        "data",
+        "form",
+        "json",
+        "origin",
+        "url"
+      ],
+      "post_form": [
+        "(key order or set)",
+        "path",
+        "full_url",
+        "headers",
+        "body",
+        "form_data",
+        "files",
+        "content_type",
+        "content_length",
+        "remote_addr",
+        "args",
+        "data",
+        "form",
+        "json",
+        "origin",
+        "url"
+      ]
+    },
+    "fields_total": 20,
+    "fields_mismatched": 20,
+    "kinds_with_mismatch": [
+      "get_plain",
+      "post_form"
+    ],
+    "missing": [],
+    "host_normalized": 0
+  },
+  "stats": {
+    "seat1": {
+      "reads": 3,
+      "contained_reads": 3,
+      "cold_reads": 3,
+      "fakes": 15,
+      "format_changes": 0,
+      "last_fmt": "8d2c4187825c",
+      "splice_failed": 0
+    },
+    "seat0": {
+      "reads": 1,
+      "contained_reads": 1,
+      "cold_reads": 1,
+      "fakes": 2,
+      "format_changes": 0,
+      "last_fmt": "8d2c4187825c",
+      "splice_failed": 0
+    }
+  }
+}

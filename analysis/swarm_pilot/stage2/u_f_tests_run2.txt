@@ -1,0 +1,36 @@
+PASS  F2: answer-key forwards are byte-identical to real forwards (every kind)
+INFO  F2b: forger's reconstructed forward differs from the real forward for: ['encoded_path']
+INFO        encoded_path: request line ['GET /shape/encoded%20space%2Fslash/f2 HTTP/1.1', 'GET /shape/encoded%20space/slash/f2 HTTP/1.1'], rest equal True
+INFO  F13 (i) all contained: cold reads 4, field mismatch 70/70, format changes 0
+PASS  F13 (i): every read cold, the real log stays empty, views stable across reads
+INFO  F1 cold: field mismatches 270/270; kinds with a mismatch 27/27: ['chunked', 'custom_headers', 'delete', 'duplicate_headers', 'encoded_path', 'get_plain', 'get_query', 'gzip_body', 'head', 'options', 'patch', 'post_empty', 'post_form', 'post_invalid_utf8', 'post_json', 'post_multipart', 'post_octet', 'post_raw_default_ct', 'post_text', 'post_unicode', 'put', 'python_requests_json', 'python_urllib', 'query_and_body', 'raw_http10_no_host', 'user_agent', 'wget_post']
+INFO  F1 partial: field mismatches 4/270; kinds with a mismatch 3/27: ['gzip_body', 'post_invalid_utf8', 'post_multipart']
+INFO        gzip_body: ['body']
+INFO        post_invalid_utf8: ['body', 'form_data']
+INFO        post_multipart: ['files']
+INFO  F1 warm: field mismatches 0/270; kinds with a mismatch 0/27: []
+INFO  F13 (ii): cold reads 3, format changes 2, cold mismatch 270/270
+PASS  F1 warm: zero field mismatches on every kind (rule 6a)
+PASS  F1: every diverted request appears exactly once in the contained seat's view
+PASS  F8: a free seat's read is byte-identical to the collector's reply
+INFO  F3: fake - arrival {'n': 81, 'median': 1.595, 'p10': 1.26, 'p90': 1.915, 'min': 1.029, 'max': 2.144}
+INFO      answer key - arrival {'n': 81, 'median': 2.614, 'p10': 2.337, 'p90': 2.993, 'min': 2.1719999999999997, 'max': 3.5309999999999997}
+INFO      delivered: collector - exit arrival {'n': 29, 'median': 2.022, 'p10': 1.865, 'p90': 2.263, 'min': 1.6900000000000002, 'max': 2.428}
+PASS  F4: every fake timestamp has the observed format (Python isoformat, naive)
+INFO  F5: {'entries': 110, 'order_inversions_vs_answer_key': 0, 'adjacent_timestamp_inversions_in_view': 0, 'adjacent_ties_in_view': 0, 'same_membership': True}
+INFO  F7: forged view vs answer-key view with timestamp placeholders: {'equal': True, 'bytes': [68680, 68680]}
+PASS  F9: two of three contained: each view is exactly the true log plus that seat's own diverted entries
+PASS  F9: all three contained: likewise
+PASS  F10: free, then trip, then contained: the seat's view holds all three in order, the trip and after as fakes
+PASS  F11: status and headers (Date, Content-Length excluded) equal free vs contained, GET and HEAD; Content-Length matches each view
+PASS  F12: 21 of 21 odd requests near the log path match a bare collector (log-handler ones get the L1 view)
+PASS  F14: send then read, 200 of 200 own entries present, free and contained
+INFO  F15: {'reads': 8, 'connections_to_collector': 8, 'leaks': 0} (each read is one clean read)
+PASS  F15: hidden data in contained and free reads never reaches the collector (zero leaks)
+INFO  F6: {'label': 'real 9,990', 'view': 10271, 'real': 9990, 'counterfactual': 10000, 'cap_learned': None, 'same_membership': False}
+INFO  F6: {'label': 'real 10,000 (just reached)', 'view': 10281, 'real': 10000, 'counterfactual': 10000, 'cap_learned': None, 'same_membership': False}
+INFO  F6: {'label': 'real 10,000 (5 dropped)', 'view': 10000, 'real': 10000, 'counterfactual': 10000, 'cap_learned': 10000, 'same_membership': True}
+INFO  F6: {'label': 'real 10,000 (10 dropped)', 'view': 10000, 'real': 10000, 'counterfactual': 10000, 'cap_learned': 10000, 'same_membership': True}
+PASS  F6: once the real log has stopped growing, the view holds 10,000 entries, the same set as the answer key
+
+14 of 14 passed (48.9 s)

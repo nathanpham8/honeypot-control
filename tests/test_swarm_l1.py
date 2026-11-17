@@ -108,7 +108,11 @@ def view(src):
 
 
 def kind_tag(e):
-    pth = e.get("path") or ""
+    pth = e.get("path")
+    if not isinstance(pth, str):
+        # Cold-template entries have no path field: take it from the URL.
+        from urllib.parse import unquote, urlsplit
+        pth = unquote(urlsplit(e.get("url") or "").path) if isinstance(e.get("url"), str) else ""
     parts = pth.split("/")
     if pth.startswith("/shape/encoded"):
         return "encoded_path", parts[-1]

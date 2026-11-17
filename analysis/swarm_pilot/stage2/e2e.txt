@@ -1,0 +1,13 @@
+PASS  arm: L1 with seat1 contained, calibration and delay pool, answer-key shadows
+PASS  smoke: seat1's view is the two real entries plus its own two, equal to the answer key
+PASS  F8: seat0's read is byte-identical to the collector's log
+PASS  F14: send then read, 200 of 200 own entries present, free and contained
+PASS  F8: seat0's read is byte-identical to the collector's log after F14
+PASS  F15: every hidden-data read handled as a log read; collector log unchanged and free of the data
+PASS  F16: shadow, calibration, delay-calibration, cold and collector ports closed to a seat via the router's address
+PASS  F16: raw SYN frames to those ports on the router's loopback are all dropped
+PASS  no L1 errors, no answer-key errors, no forward errors
+PASS  logging_server not OOM-killed
+PASS  collector not OOM-killed
+
+11 of 11 passed (107.1 s)

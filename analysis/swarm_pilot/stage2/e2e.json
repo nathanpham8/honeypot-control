@@ -1,0 +1,290 @@
+{
+  "f14": {
+    "free": 200,
+    "contained": 200
+  },
+  "f15": {
+    "reads": 8,
+    "new_events": [
+      "log-read",
+      "log-read",
+      "log-read",
+      "log-read",
+      "log-read",
+      "log-read",
+      "log-read",
+      "log-read"
+    ],
+    "collector_entries": [
+      202,
+      202
+    ]
+  },
+  "f16": {
+    "tcp_to_router_address": {
+      "8200": "closed",
+      "8201": "closed",
+      "8092": "closed",
+      "8093": "closed",
+      "8100": "closed",
+      "8091": "closed"
+    },
+    "loopback_syn_sent": 12,
+    "dropped": 12
+  },
+  "forger": {
+    "run_id": "e2e",
+    "cap": null,
+    "learner": {
+      "entries": 52,
+      "rules_observed": {
+        "header_casing": [
+          "as_sent",
+          "title"
+        ],
+        "nested_order": [
+          "as_received"
+        ],
+        "content_type_absent": [
+          "null"
+        ],
+        "content_length_absent": [
+          "null"
+        ],
+        "form_empty": [
+          "null"
+        ],
+        "files_empty": [
+          "null"
+        ],
+        "content_type": [
+          "header_value",
+          "media_type"
+        ],
+        "content_length": [
+          "body_bytes",
+          "int_header"
+        ],
+        "body_of_form_types": [
+          "text"
+        ],
+        "form:urlencoded": [
+          "parse"
+        ],
+        "repeated_keys": [
+          "first",
+          "last",
+          "str_or_list"
+        ]
+      },
+      "support": {
+        "header_casing": {
+          "title": 52,
+          "as_sent": 52
+        },
+        "nested_order": {
+          "as_received": 53,
+          "sorted": 1
+        },
+        "content_type_absent": {
+          "null": 1
+        },
+        "content_length_absent": {
+          "null": 1
+        },
+        "form_empty": {
+          "null": 1
+        },
+        "files_empty": {
+          "null": 52
+        },
+        "content_type": {
+          "media_type": 51,
+          "header_value": 51
+        },
+        "content_length": {
+          "int_header": 51,
+          "body_bytes": 51
+        },
+        "body_of_form_types": {
+          "text": 51
+        },
+        "form:urlencoded": {
+          "parse": 51
+        },
+        "repeated_keys": {
+          "last": 51,
+          "str_or_list": 51,
+          "first": 51
+        }
+      },
+      "conflicts": {},
+      "unexplained": {}
+    },
+    "format": {
+      "signature": "028eba4d90b3",
+      "keys": [
+        [
+          "timestamp",
+          "timestamp"
+        ],
+        [
+          "method",
+          "method"
+        ],
+        [
+          "path",
+          "path"
+        ],
+        [
+          "full_url",
+          "url"
+        ],
+        [
+          "headers",
+          "headers"
+        ],
+        [
+          "body",
+          "body"
+        ],
+        [
+          "form_data",
+          "form"
+        ],
+        [
+          "files",
+          "files"
+        ],
+        [
+          "content_type",
+          "content_type"
+        ],
+        [
+          "content_length",
+          "content_length"
+        ],
+        [
+          "remote_addr",
+          "remote"
+        ]
+      ],
+      "rules": {
+        "body_invalid_utf8": "data_url_base64",
+        "body_of_form_types": "text",
+        "form:urlencoded": "parse",
+        "form:urlencoded_invalid_utf8": "parse",
+        "form:multipart": "parse",
+        "form:other": "empty",
+        "form:no_body": "empty",
+        "form_empty": "null",
+        "repeated_keys": "str_or_list",
+        "files:multipart": "parse",
+        "files:other": "empty",
+        "files:no_body": "empty",
+        "files_value": "content",
+        "files_empty": "null",
+        "query_empty": "empty_object",
+        "json_body": "parse_or_null",
+        "header_casing": "title",
+        "path": "decoded",
+        "url": "raw_target",
+        "content_type": "header_value",
+        "content_type_absent": "null",
+        "content_length": "int_header",
+        "content_length_absent": "null",
+        "nested_order": "as_received"
+      },
+      "ts_format": "python_isoformat_naive",
+      "layout": {
+        "indent": 2,
+        "key_separator": ": ",
+        "ensure_ascii": true,
+        "sort_keys": false
+      },
+      "tz_offset_s": 0
+    },
+    "delays": {
+      "n": 100,
+      "median_ms": 1.5610000000000002,
+      "p10_ms": 1.303,
+      "p90_ms": 1.849
+    },
+    "delay_runs": [
+      {
+        "started": "2026-11-17T02:39:32.988708",
+        "seconds": 0.51,
+        "sent": 100,
+        "n": 100
+      }
+    ],
+    "stats": {
+      "seat1": {
+        "reads": 205,
+        "contained_reads": 205,
+        "cold_reads": 0,
+        "fakes": 21310,
+        "format_changes": 0,
+        "last_fmt": "028eba4d90b3",
+        "splice_failed": 0
+      },
+      "seat0": {
+        "reads": 206,
+        "contained_reads": 0,
+        "cold_reads": 0,
+        "fakes": 0,
+        "format_changes": 0,
+        "last_fmt": null,
+        "splice_failed": 0
+      }
+    },
+    "errors": []
+  },
+  "seconds": 107.1,
+  "results": [
+    [
+      "arm: L1 with seat1 contained, calibration and delay pool, answer-key shadows",
+      true
+    ],
+    [
+      "smoke: seat1's view is the two real entries plus its own two, equal to the answer key",
+      true
+    ],
+    [
+      "F8: seat0's read is byte-identical to the collector's log",
+      true
+    ],
+    [
+      "F14: send then read, 200 of 200 own entries present, free and contained",
+      true
+    ],
+    [
+      "F8: seat0's read is byte-identical to the collector's log after F14",
+      true
+    ],
+    [
+      "F15: every hidden-data read handled as a log read; collector log unchanged and free of the data",
+      true
+    ],
+    [
+      "F16: shadow, calibration, delay-calibration, cold and collector ports closed to a seat via the router's address",
+      true
+    ],
+    [
+      "F16: raw SYN frames to those ports on the router's loopback are all dropped",
+      true
+    ],
+    [
+      "no L1 errors, no answer-key errors, no forward errors",
+      true
+    ],
+    [
+      "logging_server not OOM-killed",
+      true
+    ],
+    [
+      "collector not OOM-killed",
+      true
+    ]
+  ]
+}

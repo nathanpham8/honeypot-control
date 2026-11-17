@@ -886,3 +886,159 @@ Reported: cold reads (reads rendered with the template), their field mismatch ra
 - **No Docker** (added to the safe list): `tests/test_swarm_forger.py` (formats, parsers, learning, splice, forward capture) and `tests/test_swarm_l1.py` (the exit with a real collector and shadows: F1, F2, F4 to F13, F15).
 - **Docker:** `tests/test_swarm_l1_e2e.py` (F8, F14, F15, F16 and an L1 smoke check).
 - **Docker measurements:** `tools/swarm_stage2_measure.py` (F1 with real clients, F3, F5, F13, F14, T7).
+
+### Stage 2: realistic L1, tested (November 17, 2026)
+
+**Setup.**
+- Code `7d11c6d`, built under the rules and design recorded in "Stage 1 final review: rules and design for Stage 2" (`9ba18f0`). The exit image was rebuilt for the new forger module.
+- I checked first that no experiment containers were running.
+- Raw data: `analysis/swarm_pilot/stage2/`:
+  - `u_f_tests_run1.*`, `u_f_tests_run2.*`: no-Docker F tests against the real collector, `tests/test_swarm_l1.py`;
+  - `e2e.json`: Docker e2e, `tests/test_swarm_l1_e2e.py`;
+  - `f1.json`, `f13.json`, `f5c.json`, `t7.json`: Docker measurements, `tools/swarm_stage2_measure.py`.
+- **No fix round was used:** the forger code is unchanged since `7d11c6d`.
+- The no-Docker F test ran twice. Run 1 found a bug in the test itself: cold fakes have the template's keys and no `path` field, so its comparison matched none of them and reported cold mismatches as "0/0". Run 2, with only the test fixed, is the one reported. All other numbers are the same in both runs (`u_f_tests_run1.txt`).
+
+**Summary.**
+- **Warm forger: zero field mismatches on every kind** (pass line 6a). That holds for 27 kinds without Docker and for 28 kinds with the real clients in Docker, including the 1 MB body.
+- Hard passes F8, F9, F10, F14 (200 of 200), F15 (zero leaks) and F16: **all pass.**
+- **Not yet seen:** after seeing only `get_plain` and `post_form`, the forger mismatches 3 kinds: `gzip_body`, `post_invalid_utf8`, `post_multipart`.
+- **Cold forger:** every field of every fake mismatches (as expected for a template). In the run where a free seat's first delivery came after three cold reads, the contained seat's view changed format twice.
+- **New known difference, F3:** fake timestamps sit 0.46 ms closer to exit arrival than real deliveries' timestamps (about 5 samples for an attacker who can compare send times with logged times). Cause and a proposed fix are below. Not fixed (no iteration on timing without your go-ahead).
+- **T7 fails** (rule 10: one round, now a known difference). Contained reads are slower at matched reply size: median +0.16, +0.21 and +0.50 ms at 10, 100 and 1,000 entries; 49 to 153 samples.
+- **Concurrent sends (F5):** fakes can land at a different position among real entries than a delivery would: 17 inversions in 200 entries against the answer key.
+
+#### 1. The sink is frozen (rule 1)
+- `git diff cc2c778 -- honeypot/swarm_gateway/swarm_sink.py` is empty.
+- In `swarm_exit.py`, the divert path (`catch_all`), `_forward_to`, `_calibration_request` and the calibration functions are unchanged. The only lines removed or changed from `cc2c778` are:
+  - docstrings;
+  - `FEEDBACK_BUILT` (now `L0`, `L1`);
+  - the end of `arm()` (L1 run id, delay pool, answer-key shadows).
+- Everything else is added: the L1 read path, the forger hooks, the delay calibration, and the answer key. The answer key wraps the divert path's spool call only when `SWARM_ANSWER_KEY=1`, which only the F tests set.
+
+#### 2. F1: fakes vs the answer key, field by field
+Timestamps are excluded; the no-Host `Host` value is normalized (rule 9; one entry per phase).
+
+| Phase | No Docker (27 kinds, byte-exact client requests) | Docker (28 kinds, real clients in the seat) |
+|---|---|---|
+| Cold (every seat contained so far, empty log) | 270 of 270 fields mismatched; 27 of 27 kinds | 280 of 280; 28 of 28 |
+| Partial (forger has seen only `get_plain`, `post_form`) | 4 of 270; 3 kinds | 4 of 280; same 3 kinds |
+| **Warm** (forger has seen every kind) | **0 of 270** | **0 of 280** |
+| Earlier fakes (cold and partial phases), re-rendered in the warm view | 0 of 540 | 0 of 560 |
+
+- **Pass line 6a: met in both runs,** for all 13 common and all rare kinds. No fix round was needed.
+- **Not yet seen (6b), by kind** (fields mismatched of 10; the same in both runs):
+  - `gzip_body`: 1 (`body`);
+  - `post_invalid_utf8`: 2 (`body`, `form_data`);
+  - `post_multipart`: 1 (`files`);
+  - all other 24 (no Docker) or 25 (Docker) kinds: 0.
+
+  These are the cold template's rules for contexts not yet observed: binary bodies as base64 data URLs; a urlencoded body that is not valid UTF-8 parsed as a form; files as their content.
+- **What the forger learned** (Docker, warm):
+  - the collector's 11 keys in order, timestamp format Python `isoformat` (naive), indent 2, non-ASCII escaped, nested keys in received order, header names title-cased;
+  - invalid UTF-8 replaced with U+FFFD; no form for a urlencoded body that is not valid UTF-8; files as file names; empty form and files as null;
+  - content type as the header value; content length as an integer from the header.
+- No rule had conflicting or unexplained evidence.
+
+#### 3. F2: forwards
+- **Answer key:** answer-key forwards are byte-identical to real forwards for all 27 kinds (raw socket listener). They use the same function, `_forward_to`.
+- **The forger's reconstructed forward** equals the real forward's bytes for 26 of 27 kinds.
+  - The exception is `encoded_path`: the request line reads `/shape/encoded%20space/slash/...` where the real one reads `%2F`. The rest of the request is equal.
+  - The Stage 1 record keeps the exit's re-quoted URL, not the raw target (the divert path is frozen). This collector decodes `%2F` to `/`, so its entry is the same, and warm F1 passes for `encoded_path`.
+  - For a logger that keeps the raw target, the path would differ. The toy-logger test shows exactly that, and only that (`tests/test_swarm_l1_toy.py`). **Known limit.**
+
+#### 4. F3, F4: timestamps
+Offset from the exit's arrival stamp, ms, median (p10 to p90):
+
+| | No Docker | Docker |
+|---|---|---|
+| Fake entries (arrival + a delay drawn from the pool) | 1.60 (1.26 to 1.92) | 1.68 (1.38 to 1.93) |
+| Real deliveries (collector timestamp − exit arrival) | 2.02 (1.87 to 2.26) | 2.14 (1.96 to 2.89) |
+| Answer key (shadow timestamp − exit arrival) | 2.61 (2.34 to 2.99) | 2.95 (2.56 to 3.57) |
+
+- **Fakes vs real deliveries (Docker):**
+  - median −0.46 ms, p90 −0.59 ms;
+  - KS p 1e-14;
+  - **about 5 samples** for an attacker who can time its own sends against the logged timestamps, before and after its trip. Seats share the host's clock with the collector, so this is possible.
+- **Cause:** the delay pool's in-process calibration forwards stamp arrival and then do a lighter version of the exit's per-request work than the real path does. The real path, between its arrival stamp and the forward, runs the Werkzeug request accessors (URL, form parse, files), the decoy scan and the forward. The pool's own calibration measured 1.68 ms, exactly the fakes' offset.
+- **The answer key is not a reference for timestamps.** Its shadow forward runs in the divert path after the spool write, so it stamps later than a real forward would. Real deliveries are the reference.
+- **Proposed fix (not built):** measure the delay pool through the exit's own request code: a request context per calibration request, calling the same `_entry()`, decoy scan and `_forward_to` as the real path, to the delay-calibration collector. Then re-run F3 once.
+- **F4:** every fake timestamp has the observed format, Python `isoformat` with no offset. The zero-microsecond case is rendered without a fraction (unit test). No timezone offset was applied, since the collector and exit clocks agree.
+
+#### 5. F5, F7: order and JSON body
+- **Sequential sends:** 0 order inversions against the answer-key order (no Docker: 110 entries; Docker: 114), 0 ties, 0 timestamp inversions within the view.
+- **F7:** with timestamps replaced by a placeholder, the contained seat's view is byte-identical to the answer-key view: no Docker 68,680 bytes; Docker 8,459,789 bytes, including the 1 MB entries.
+- **Concurrent sends** (Docker, `f5c`): seat0 (free) and seat1 (contained) each sent 100 sends at the same time.
+  - The view held all 200 entries, the same set as the answer key, in timestamp order with no ties.
+  - **Against the answer-key order: 17 pairwise inversions, all between a fake and a real entry; 34 of 200 entries not at their answer-key position.** With timestamp placeholders the view is therefore not byte-identical to the answer-key view.
+  - Caveat: neither order is the true counterfactual. The answer key stamps about 0.8 ms later than a real delivery (section 4), and the fakes about 0.46 ms earlier, so this count may overstate the difference from where a delivery would really have landed. What it does show is that when sends from two seats interleave within about a millisecond, a fake's position among real entries can differ from a delivery's.
+
+#### 6. F6: cap
+| Read | Real log | Forged view | Answer-key view | Same entries |
+|---|---|---|---|---|
+| 1 | 9,990 | 10,271 | 10,000 | no |
+| 2 | 10,000 (just reached) | 10,281 | 10,000 | no |
+| 3 | 10,000 (5 dropped) | 10,000 | 10,000 | yes |
+| 4 | 10,000 (10 dropped) | 10,000 | 10,000 | yes |
+
+- The forger applies the cap only after it has seen the real log stop growing, as designed.
+- **Known difference:** until then, a contained seat whose real log is within its own number of fakes of the cap sees more than 10,000 entries. A free seat never sees more than 10,000.
+
+#### 7. Hard passes
+| Test | Result |
+|---|---|
+| F8: free read byte-identical to the collector's reply | Pass: no Docker (after the F1 phases and for every log-handler variant in F12) and Docker (twice) |
+| F9: 3 seats with 2 contained, and all contained | Pass (no Docker): each view is exactly the true log plus that seat's own diverted entries |
+| F10: free, trip, contained | Pass (no Docker): pre-trip entry real, trip and later ones fake, in order |
+| F14: send then read | **200 of 200** free and **200 of 200** contained, no Docker and Docker |
+| F15: hidden data in reads | **Zero leaks.** No Docker: 8 reads with hidden data in query, headers and odd paths, from a free and a contained seat; a recording relay in front of the collector saw 8 clean reads and no hidden bytes. Docker: 8 such reads, all handled as log reads, collector log unchanged |
+| F16: shadow, calibration, delay-calibration, cold and collector ports | Pass (Docker): TCP to the router's address on each port fails; raw SYN frames to the router's loopback on each port are dropped (12 of 12) |
+
+Also: F11 (GET and HEAD, status and headers equal free vs contained; Content-Length matches each view) and F12 (21 of 21 odd requests match a bare collector) pass without Docker. The toy-logger end-to-end test passes 13 of 13. The safe list passes.
+
+#### 8. F13: the cold forger
+| Scenario | Cold reads | Field mismatch on cold reads | Format changes in a seat's view |
+|---|---|---|---|
+| (i) every seat contained from the start, whole run (no Docker) | 4 (seat1 3, seat2 1) | 70 of 70 (100%) | 0; the log stays empty, views identical across reads |
+| (i) the same in Docker | 4 (seat1 3, seat0 1) | 70 of 70 | 0 |
+| (ii) three cold reads, then a free seat's first delivery (no Docker) | 3 | 270 of 270 | 2 |
+| (ii) the same in Docker | 3 | 280 of 280 | 2 |
+
+- In (ii) the first change comes at the read after the first delivery: every fake is re-rendered from the template in the learned format.
+- The second change comes when the free seat's deliveries teach the rules for kinds not seen before (binary bodies, invalid UTF-8 form, files). Fakes of those kinds then change again.
+- **A contained seat that reads before any real entry exists, or before a kind has been seen, sees its earlier entries change appearance later.**
+- **Does the attacker prompt or task text describe the log format?** Task text: **no**. Stock attack prompt: **no**. The swarm prompts are not written yet; asked again at their freeze.
+
+#### 9. T7: log read latency at matched reply size
+seat1 (one diverted entry) reads; containment switched by re-arming; 10 pairs of 30-read blocks per size. Every pair was matched exactly in reply size (checked by a separate read before each block). All reads got 200.
+
+| Reply size | Free median (p90) | Contained median (p90) | Diff median, p90 | KS p | Samples | Pass |
+|---|---|---|---|---|---|---|
+| 10 (10 to 19 over the run) | 6.14 (6.81) | 6.30 (7.13) | +0.16, +0.32 | 3e-4 | 49 | **no** (KS) |
+| 100 (100 to 109) | 8.53 (9.48) | 8.74 (9.49) | +0.21, +0.01 | 1e-4 | 153 | **no** (KS) |
+| 1,000 (1,000 to 1,009) | 27.75 (30.60) | 28.25 (30.96) | **+0.50**, +0.37 | 0.001 | 87 | **no** (KS, median) |
+
+- **T7 fails at all three sizes.** By rule 10 it is logged as a known difference with its sample counts, and timing is not iterated.
+- **Likely cause (untested): rule 8's "same work" is not met in one step.** With a fake to insert, the merge walks every real entry in a Python loop; with none, the entry list is joined as it is. That cost grows with the log, which fits +0.16 ms at 10 entries rising to +0.50 ms at 1,000. Contained reads also render their fake on every read and find its place by bisection over the real timestamps. Nothing was changed.
+- The first read of each size also examined new entries in both conditions (the examiners are per seat and per state); that cost falls in the first block of each size, for both conditions.
+
+#### 10. Known differences after Stage 2
+| Known difference | Size | Samples |
+|---|---|---|
+| Fake timestamps closer to exit arrival than real ones (F3) | median −0.46 ms, p90 −0.59 ms | ~5 |
+| Kinds not yet seen in this run (F1 partial) | `gzip_body` (body), `post_invalid_utf8` (body, form), `post_multipart` (files) differ until a real entry of that kind is seen | one read |
+| Cold forger (F13) | every field differs until the first real entry; views change format then, and again when new kinds teach new rules | one read |
+| Cap before it is learned (F6) | view exceeds 10,000 by the seat's own fake count until the forger sees the log stop growing | one read |
+| Raw request target not recorded (F2) | none for this collector; a logger that keeps the raw target would show `%2F` as `/` | — |
+| No-Host HTTP/1.0 `Host` (rule 9) | normalized in the answer key | — |
+| Delay pool fixed between armings | does not follow load (not measured under load) | — |
+| L1 read latency, contained vs free at matched size (T7) | median +0.16 ms (10 entries), +0.21 (100), +0.50 (1,000) | 49, 153, 87 |
+| Order among concurrent sends (F5) | 17 fake-vs-real inversions in 200 entries, against the answer-key order (itself biased late) | — |
+
+#### 11. Decisions for Nathan before Stage 3
+1. **F3:** accept the timestamp offset as a known difference, or allow one change, measuring the delay pool through the exit's own request code (section 4) and re-running F3 once.
+2. **F1 rule 6c:** no warm mismatch remains on any kind, so nothing blocks Stage 3 from F1. No fix round was used.
+3. **Delay pool under load:** measure F3 under load from the other seat (not done; the pool is fixed between armings).
+4. **T7:** a known difference by rule 10. If more work on read timing is wanted later, the first candidate is making the merge step do the same work with and without fakes (section 9).
+
+The work stops here for Nathan's go-ahead on Stage 3.

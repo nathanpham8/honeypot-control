@@ -1,0 +1,1593 @@
+{
+  "design": "seat1 contained from arming; seat0 free; real Stage 0 clients in the seats",
+  "arm": {
+    "armed": true,
+    "feedback": "L1",
+    "seats": {
+      "seat0": "172.18.0.0/16",
+      "seat1": "172.20.0.0/16"
+    },
+    "contained": [
+      "seat1"
+    ],
+    "calibrated": true,
+    "run_id": "f1d",
+    "forger_delays": 100,
+    "answer_key": [
+      "seat0",
+      "seat1"
+    ]
+  },
+  "status": {
+    "c": {
+      "get_plain": "204",
+      "get_query": "204",
+      "head": "204",
+      "options": "204",
+      "delete": "204",
+      "post_raw_default_ct": "204",
+      "post_octet": "204",
+      "post_text": "204",
+      "post_form": "204",
+      "post_json": "204",
+      "post_multipart": "204",
+      "post_empty": "204",
+      "put": "204",
+      "patch": "204",
+      "post_1m_expect": "204",
+      "post_invalid_utf8": "204",
+      "post_unicode": "204",
+      "custom_headers": "204",
+      "duplicate_headers": "204",
+      "chunked": "204",
+      "gzip_body": "204",
+      "user_agent": "204",
+      "query_and_body": "204",
+      "encoded_path": "204",
+      "python_urllib": "204",
+      "python_requests_json": "204",
+      "wget_post": "0",
+      "raw_http10_no_host": "204"
+    },
+    "p": {
+      "get_plain": "204",
+      "post_form": "204"
+    },
+    "q": {
+      "get_plain": "204",
+      "get_query": "204",
+      "head": "204",
+      "options": "204",
+      "delete": "204",
+      "post_raw_default_ct": "204",
+      "post_octet": "204",
+      "post_text": "204",
+      "post_form": "204",
+      "post_json": "204",
+      "post_multipart": "204",
+      "post_empty": "204",
+      "put": "204",
+      "patch": "204",
+      "post_1m_expect": "204",
+      "post_invalid_utf8": "204",
+      "post_unicode": "204",
+      "custom_headers": "204",
+      "duplicate_headers": "204",
+      "chunked": "204",
+      "gzip_body": "204",
+      "user_agent": "204",
+      "query_and_body": "204",
+      "encoded_path": "204",
+      "python_urllib": "204",
+      "python_requests_json": "204",
+      "wget_post": "0",
+      "raw_http10_no_host": "204"
+    },
+    "r": {
+      "get_plain": "204",
+      "get_query": "204",
+      "head": "204",
+      "options": "204",
+      "delete": "204",
+      "post_raw_default_ct": "204",
+      "post_octet": "204",
+      "post_text": "204",
+      "post_form": "204",
+      "post_json": "204",
+      "post_multipart": "204",
+      "post_empty": "204",
+      "put": "204",
+      "patch": "204",
+      "post_1m_expect": "204",
+      "post_invalid_utf8": "204",
+      "post_unicode": "204",
+      "custom_headers": "204",
+      "duplicate_headers": "204",
+      "chunked": "204",
+      "gzip_body": "204",
+      "user_agent": "204",
+      "query_and_body": "204",
+      "encoded_path": "204",
+      "python_urllib": "204",
+      "python_requests_json": "204",
+      "wget_post": "0",
+      "raw_http10_no_host": "204"
+    },
+    "w": {
+      "get_plain": "204",
+      "get_query": "204",
+      "head": "204",
+      "options": "204",
+      "delete": "204",
+      "post_raw_default_ct": "204",
+      "post_octet": "204",
+      "post_text": "204",
+      "post_form": "204",
+      "post_json": "204",
+      "post_multipart": "204",
+      "post_empty": "204",
+      "put": "204",
+      "patch": "204",
+      "post_1m_expect": "204",
+      "post_invalid_utf8": "204",
+      "post_unicode": "204",
+      "custom_headers": "204",
+      "duplicate_headers": "204",
+      "chunked": "204",
+      "gzip_body": "204",
+      "user_agent": "204",
+      "query_and_body": "204",
+      "encoded_path": "204",
+      "python_urllib": "204",
+      "python_requests_json": "204",
+      "wget_post": "0",
+      "raw_http10_no_host": "204"
+    }
+  },
+  "cold_views_identical": true,
+  "real_log_after_cold": 0,
+  "F8_free_read_byte_identical": true,
+  "F1": {
+    "cold": {
+      "by_kind": {
+        "get_plain": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "get_query": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "head": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "options": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "delete": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "post_raw_default_ct": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "post_octet": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "post_text": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "post_form": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "post_json": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "post_multipart": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "post_empty": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "put": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "patch": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "post_1m_expect": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "post_invalid_utf8": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "post_unicode": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "custom_headers": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "duplicate_headers": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "chunked": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "gzip_body": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "user_agent": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "query_and_body": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "encoded_path": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "python_urllib": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "python_requests_json": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "wget_post": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ],
+        "raw_http10_no_host": [
+          "(key order or set)",
+          "path",
+          "full_url",
+          "headers",
+          "body",
+          "form_data",
+          "files",
+          "content_type",
+          "content_length",
+          "remote_addr",
+          "args",
+          "data",
+          "form",
+          "json",
+          "origin",
+          "url"
+        ]
+      },
+      "fields_total": 280,
+      "fields_mismatched": 280,
+      "kinds_with_mismatch": [
+        "chunked",
+        "custom_headers",
+        "delete",
+        "duplicate_headers",
+        "encoded_path",
+        "get_plain",
+        "get_query",
+        "gzip_body",
+        "head",
+        "options",
+        "patch",
+        "post_1m_expect",
+        "post_empty",
+        "post_form",
+        "post_invalid_utf8",
+        "post_json",
+        "post_multipart",
+        "post_octet",
+        "post_raw_default_ct",
+        "post_text",
+        "post_unicode",
+        "put",
+        "python_requests_json",
+        "python_urllib",
+        "query_and_body",
+        "raw_http10_no_host",
+        "user_agent",
+        "wget_post"
+      ],
+      "missing": [],
+      "host_normalized": 1
+    },
+    "cold_after_first_delivery": {
+      "by_kind": {
+        "get_plain": [],
+        "get_query": [],
+        "head": [],
+        "options": [],
+        "delete": [],
+        "post_raw_default_ct": [],
+        "post_octet": [],
+        "post_text": [],
+        "post_form": [],
+        "post_json": [],
+        "post_multipart": [
+          "files"
+        ],
+        "post_empty": [],
+        "put": [],
+        "patch": [],
+        "post_1m_expect": [],
+        "post_invalid_utf8": [
+          "body",
+          "form_data"
+        ],
+        "post_unicode": [],
+        "custom_headers": [],
+        "duplicate_headers": [],
+        "chunked": [],
+        "gzip_body": [
+          "body"
+        ],
+        "user_agent": [],
+        "query_and_body": [],
+        "encoded_path": [],
+        "python_urllib": [],
+        "python_requests_json": [],
+        "wget_post": [],
+        "raw_http10_no_host": []
+      },
+      "fields_total": 280,
+      "fields_mismatched": 4,
+      "kinds_with_mismatch": [
+        "gzip_body",
+        "post_invalid_utf8",
+        "post_multipart"
+      ],
+      "missing": [],
+      "host_normalized": 1
+    },
+    "partial": {
+      "by_kind": {
+        "get_plain": [],
+        "get_query": [],
+        "head": [],
+        "options": [],
+        "delete": [],
+        "post_raw_default_ct": [],
+        "post_octet": [],
+        "post_text": [],
+        "post_form": [],
+        "post_json": [],
+        "post_multipart": [
+          "files"
+        ],
+        "post_empty": [],
+        "put": [],
+        "patch": [],
+        "post_1m_expect": [],
+        "post_invalid_utf8": [
+          "body",
+          "form_data"
+        ],
+        "post_unicode": [],
+        "custom_headers": [],
+        "duplicate_headers": [],
+        "chunked": [],
+        "gzip_body": [
+          "body"
+        ],
+        "user_agent": [],
+        "query_and_body": [],
+        "encoded_path": [],
+        "python_urllib": [],
+        "python_requests_json": [],
+        "wget_post": [],
+        "raw_http10_no_host": []
+      },
+      "fields_total": 280,
+      "fields_mismatched": 4,
+      "kinds_with_mismatch": [
+        "gzip_body",
+        "post_invalid_utf8",
+        "post_multipart"
+      ],
+      "missing": [],
+      "host_normalized": 1
+    },
+    "warm": {
+      "by_kind": {
+        "get_plain": [],
+        "get_query": [],
+        "head": [],
+        "options": [],
+        "delete": [],
+        "post_raw_default_ct": [],
+        "post_octet": [],
+        "post_text": [],
+        "post_form": [],
+        "post_json": [],
+        "post_multipart": [],
+        "post_empty": [],
+        "put": [],
+        "patch": [],
+        "post_1m_expect": [],
+        "post_invalid_utf8": [],
+        "post_unicode": [],
+        "custom_headers": [],
+        "duplicate_headers": [],
+        "chunked": [],
+        "gzip_body": [],
+        "user_agent": [],
+        "query_and_body": [],
+        "encoded_path": [],
+        "python_urllib": [],
+        "python_requests_json": [],
+        "wget_post": [],
+        "raw_http10_no_host": []
+      },
+      "fields_total": 280,
+      "fields_mismatched": 0,
+      "kinds_with_mismatch": [],
+      "missing": [],
+      "host_normalized": 1
+    },
+    "warm_rerender_c_q": {
+      "by_kind": {
+        "get_plain": [],
+        "get_query": [],
+        "head": [],
+        "options": [],
+        "delete": [],
+        "post_raw_default_ct": [],
+        "post_octet": [],
+        "post_text": [],
+        "post_form": [],
+        "post_json": [],
+        "post_multipart": [],
+        "post_empty": [],
+        "put": [],
+        "patch": [],
+        "post_1m_expect": [],
+        "post_invalid_utf8": [],
+        "post_unicode": [],
+        "custom_headers": [],
+        "duplicate_headers": [],
+        "chunked": [],
+        "gzip_body": [],
+        "user_agent": [],
+        "query_and_body": [],
+        "encoded_path": [],
+        "python_urllib": [],
+        "python_requests_json": [],
+        "wget_post": [],
+        "raw_http10_no_host": []
+      },
+      "fields_total": 560,
+      "fields_mismatched": 0,
+      "kinds_with_mismatch": [],
+      "missing": [],
+      "host_normalized": 2
+    }
+  },
+  "F3": {
+    "fake_minus_arrival_ms": {
+      "n": 84,
+      "median": 1.682,
+      "p10": 1.378,
+      "p90": 1.93,
+      "min": 1.22,
+      "max": 2.155
+    },
+    "answer_key_minus_arrival_ms": {
+      "n": 84,
+      "median": 2.95,
+      "p10": 2.564,
+      "p90": 3.565,
+      "min": 2.342,
+      "max": 17.277
+    },
+    "delivered_collector_minus_exit_arrival_ms": {
+      "n": 30,
+      "median": 2.143,
+      "p10": 1.963,
+      "p90": 2.887,
+      "min": 1.837,
+      "max": 6.113
+    },
+    "by_kind": {
+      "get_plain": {
+        "fake": [
+          1.592,
+          1.61,
+          2.001
+        ],
+        "answer_key": [
+          3.646,
+          2.889,
+          2.342
+        ],
+        "delivered": [
+          2.141,
+          2.006
+        ]
+      },
+      "get_query": {
+        "fake": [
+          1.556,
+          1.28,
+          1.57
+        ],
+        "answer_key": [
+          3.067,
+          2.662,
+          3.122
+        ],
+        "delivered": [
+          1.911
+        ]
+      },
+      "head": {
+        "fake": [
+          1.683,
+          1.503,
+          1.922
+        ],
+        "answer_key": [
+          2.564,
+          2.981,
+          2.755
+        ],
+        "delivered": [
+          1.943
+        ]
+      },
+      "options": {
+        "fake": [
+          1.555,
+          1.503,
+          1.849
+        ],
+        "answer_key": [
+          2.894,
+          2.39,
+          2.928
+        ],
+        "delivered": [
+          2.138
+        ]
+      },
+      "delete": {
+        "fake": [
+          1.582,
+          1.698,
+          1.61
+        ],
+        "answer_key": [
+          2.379,
+          2.519,
+          3.301
+        ],
+        "delivered": [
+          2.467
+        ]
+      },
+      "post_raw_default_ct": {
+        "fake": [
+          1.928,
+          1.928,
+          1.751
+        ],
+        "answer_key": [
+          2.995,
+          3.366,
+          3.899
+        ],
+        "delivered": [
+          2.383
+        ]
+      },
+      "post_octet": {
+        "fake": [
+          1.75,
+          1.826,
+          1.28
+        ],
+        "answer_key": [
+          3.248,
+          2.991,
+          2.826
+        ],
+        "delivered": [
+          2.143
+        ]
+      },
+      "post_text": {
+        "fake": [
+          1.564,
+          1.604,
+          1.575
+        ],
+        "answer_key": [
+          2.966,
+          3.475,
+          3.105
+        ],
+        "delivered": [
+          2.315
+        ]
+      },
+      "post_form": {
+        "fake": [
+          1.596,
+          1.84,
+          1.878
+        ],
+        "answer_key": [
+          3.139,
+          2.621,
+          3.291
+        ],
+        "delivered": [
+          2.028,
+          2.085
+        ]
+      },
+      "post_json": {
+        "fake": [
+          2.155,
+          1.564,
+          1.65
+        ],
+        "answer_key": [
+          2.456,
+          2.842,
+          3.238
+        ],
+        "delivered": [
+          2.065
+        ]
+      },
+      "post_multipart": {
+        "fake": [
+          1.28,
+          1.23,
+          1.708
+        ],
+        "answer_key": [
+          4.322,
+          4.441,
+          4.239
+        ],
+        "delivered": [
+          3.511
+        ]
+      },
+      "post_empty": {
+        "fake": [
+          1.953,
+          1.87,
+          1.371
+        ],
+        "answer_key": [
+          3.05,
+          2.564,
+          2.584
+        ],
+        "delivered": [
+          2.059
+        ]
+      },
+      "put": {
+        "fake": [
+          1.827,
+          1.733,
+          1.751
+        ],
+        "answer_key": [
+          3.316,
+          3.345,
+          3.054
+        ],
+        "delivered": [
+          2.519
+        ]
+      },
+      "patch": {
+        "fake": [
+          1.761,
+          1.556,
+          1.84
+        ],
+        "answer_key": [
+          2.789,
+          2.868,
+          2.95
+        ],
+        "delivered": [
+          2.39
+        ]
+      },
+      "post_1m_expect": {
+        "fake": [
+          1.592,
+          1.682,
+          1.446
+        ],
+        "answer_key": [
+          17.277,
+          13.379,
+          16.252
+        ],
+        "delivered": [
+          6.113
+        ]
+      },
+      "post_invalid_utf8": {
+        "fake": [
+          2.127,
+          1.503,
+          1.87
+        ],
+        "answer_key": [
+          2.864,
+          2.739,
+          3.006
+        ],
+        "delivered": [
+          1.963
+        ]
+      },
+      "post_unicode": {
+        "fake": [
+          2.155,
+          1.928,
+          1.378
+        ],
+        "answer_key": [
+          2.944,
+          3.334,
+          3.012
+        ],
+        "delivered": [
+          2.162
+        ]
+      },
+      "custom_headers": {
+        "fake": [
+          1.586,
+          1.683,
+          1.873
+        ],
+        "answer_key": [
+          2.952,
+          2.574,
+          2.682
+        ],
+        "delivered": [
+          2.499
+        ]
+      },
+      "duplicate_headers": {
+        "fake": [
+          1.911,
+          1.761,
+          1.683
+        ],
+        "answer_key": [
+          2.599,
+          2.88,
+          2.695
+        ],
+        "delivered": [
+          2.887
+        ]
+      },
+      "chunked": {
+        "fake": [
+          1.586,
+          1.399,
+          1.873
+        ],
+        "answer_key": [
+          2.932,
+          2.98,
+          3.004
+        ],
+        "delivered": [
+          2.072
+        ]
+      },
+      "gzip_body": {
+        "fake": [
+          2.001,
+          1.665,
+          2.155
+        ],
+        "answer_key": [
+          3.094,
+          2.762,
+          2.457
+        ],
+        "delivered": [
+          2.084
+        ]
+      },
+      "user_agent": {
+        "fake": [
+          1.969,
+          1.503,
+          1.493
+        ],
+        "answer_key": [
+          2.595,
+          2.777,
+          2.425
+        ],
+        "delivered": [
+          2.122
+        ]
+      },
+      "query_and_body": {
+        "fake": [
+          1.22,
+          1.674,
+          1.684
+        ],
+        "answer_key": [
+          2.796,
+          2.822,
+          2.718
+        ],
+        "delivered": [
+          2.451
+        ]
+      },
+      "encoded_path": {
+        "fake": [
+          1.93,
+          1.827,
+          1.596
+        ],
+        "answer_key": [
+          3.174,
+          2.733,
+          2.814
+        ],
+        "delivered": [
+          2.487
+        ]
+      },
+      "python_urllib": {
+        "fake": [
+          1.733,
+          1.568,
+          1.325
+        ],
+        "answer_key": [
+          2.772,
+          3.016,
+          3.213
+        ],
+        "delivered": [
+          1.837
+        ]
+      },
+      "python_requests_json": {
+        "fake": [
+          1.568,
+          1.568,
+          1.277
+        ],
+        "answer_key": [
+          2.896,
+          3.276,
+          2.892
+        ],
+        "delivered": [
+          2.176
+        ]
+      },
+      "wget_post": {
+        "fake": [
+          1.878,
+          1.684,
+          1.682
+        ],
+        "answer_key": [
+          2.988,
+          2.35,
+          3.565
+        ],
+        "delivered": [
+          2.215
+        ]
+      },
+      "raw_http10_no_host": {
+        "fake": [
+          1.635,
+          1.555,
+          1.761
+        ],
+        "answer_key": [
+          3.36,
+          2.907,
+          3.211
+        ],
+        "delivered": [
+          2.088
+        ]
+      }
+    },
+    "attacker_samples_fake_vs_delivered": 5,
+    "ks_fake_vs_delivered": {
+      "ks_d": 0.8381,
+      "ks_p": 9.536968393657864e-15,
+      "median_diff_ms": -0.459,
+      "p90_diff_ms": -0.589
+    }
+  },
+  "F4_format_ok": true,
+  "F5": {
+    "entries": 114,
+    "order_inversions_vs_answer_key": 0,
+    "adjacent_ties_in_view": 0,
+    "adjacent_timestamp_inversions_in_view": 0,
+    "same_membership": true
+  },
+  "F7": {
+    "equal": true,
+    "bytes": [
+      8459789,
+      8459789
+    ]
+  },
+  "forger": {
+    "run_id": "f1d",
+    "cap": null,
+    "learner": {
+      "entries": 30,
+      "rules_observed": {
+        "header_casing": [
+          "as_sent",
+          "title"
+        ],
+        "nested_order": [
+          "as_received"
+        ],
+        "content_type": [
+          "header_value"
+        ],
+        "content_length": [
+          "int_header"
+        ],
+        "body_of_form_types": [
+          "text"
+        ],
+        "form:urlencoded": [
+          "parse"
+        ],
+        "repeated_keys": [
+          "first",
+          "last",
+          "str_or_list"
+        ],
+        "files_empty": [
+          "null"
+        ],
+        "content_type_absent": [
+          "null"
+        ],
+        "content_length_absent": [
+          "null"
+        ],
+        "form_empty": [
+          "null"
+        ],
+        "form:other": [
+          "empty"
+        ],
+        "path": [
+          "decoded"
+        ],
+        "body_invalid_utf8": [
+          "utf8_replace"
+        ],
+        "form:urlencoded_invalid_utf8": [
+          "empty"
+        ],
+        "form:multipart": [
+          "parse"
+        ],
+        "files:multipart": [
+          "parse"
+        ],
+        "files_value": [
+          "filename"
+        ]
+      },
+      "support": {
+        "header_casing": {
+          "title": 30,
+          "as_sent": 30
+        },
+        "nested_order": {
+          "as_received": 32,
+          "sorted": 2
+        },
+        "content_type": {
+          "header_value": 19,
+          "media_type": 17
+        },
+        "content_length": {
+          "body_bytes": 18,
+          "int_header": 20
+        },
+        "body_of_form_types": {
+          "text": 13
+        },
+        "form:urlencoded": {
+          "parse": 11
+        },
+        "repeated_keys": {
+          "first": 12,
+          "str_or_list": 12,
+          "last": 12
+        },
+        "files_empty": {
+          "null": 29
+        },
+        "content_type_absent": {
+          "null": 11
+        },
+        "content_length_absent": {
+          "null": 10
+        },
+        "form_empty": {
+          "null": 18
+        },
+        "form:other": {
+          "empty": 6
+        },
+        "path": {
+          "decoded": 1
+        },
+        "body_invalid_utf8": {
+          "utf8_replace": 2
+        },
+        "form:urlencoded_invalid_utf8": {
+          "empty": 1
+        },
+        "form:multipart": {
+          "parse": 1
+        },
+        "files:multipart": {
+          "parse": 1
+        },
+        "files_value": {
+          "filename": 1
+        }
+      },
+      "conflicts": {},
+      "unexplained": {}
+    },
+    "format": {
+      "signature": "d6b84a47d339",
+      "keys": [
+        [
+          "timestamp",
+          "timestamp"
+        ],
+        [
+          "method",
+          "method"
+        ],
+        [
+          "path",
+          "path"
+        ],
+        [
+          "full_url",
+          "url"
+        ],
+        [
+          "headers",
+          "headers"
+        ],
+        [
+          "body",
+          "body"
+        ],
+        [
+          "form_data",
+          "form"
+        ],
+        [
+          "files",
+          "files"
+        ],
+        [
+          "content_type",
+          "content_type"
+        ],
+        [
+          "content_length",
+          "content_length"
+        ],
+        [
+          "remote_addr",
+          "remote"
+        ]
+      ],
+      "rules": {
+        "body_invalid_utf8": "utf8_replace",
+        "body_of_form_types": "text",
+        "form:urlencoded": "parse",
+        "form:urlencoded_invalid_utf8": "empty",
+        "form:multipart": "parse",
+        "form:other": "empty",
+        "form:no_body": "empty",
+        "form_empty": "null",
+        "repeated_keys": "str_or_list",
+        "files:multipart": "parse",
+        "files:other": "empty",
+        "files:no_body": "empty",
+        "files_value": "filename",
+        "files_empty": "null",
+        "query_empty": "empty_object",
+        "json_body": "parse_or_null",
+        "header_casing": "title",
+        "path": "decoded",
+        "url": "raw_target",
+        "content_type": "header_value",
+        "content_type_absent": "null",
+        "content_length": "int_header",
+        "content_length_absent": "null",
+        "nested_order": "as_received"
+      },
+      "ts_format": "python_isoformat_naive",
+      "layout": {
+        "indent": 2,
+        "key_separator": ": ",
+        "ensure_ascii": true,
+        "sort_keys": false
+      },
+      "tz_offset_s": 0
+    },
+    "delays": {
+      "n": 100,
+      "median_ms": 1.6800000000000002,
+      "p10_ms": 1.399,
+      "p90_ms": 1.9300000000000002
+    },
+    "delay_runs": [
+      {
+        "started": "2026-11-17T02:42:51.965900",
+        "seconds": 0.55,
+        "sent": 100,
+        "n": 100
+      }
+    ],
+    "stats": {
+      "seat1": {
+        "reads": 7,
+        "contained_reads": 7,
+        "cold_reads": 3,
+        "fakes": 308,
+        "format_changes": 2,
+        "last_fmt": "d6b84a47d339",
+        "splice_failed": 0
+      },
+      "seat0": {
+        "reads": 1,
+        "contained_reads": 0,
+        "cold_reads": 0,
+        "fakes": 0,
+        "format_changes": 0,
+        "last_fmt": null,
+        "splice_failed": 0
+      }
+    },
+    "errors": []
+  },
+  "answer_key_errors": [],
+  "F13_ii": {
+    "cold_reads": 3,
+    "format_changes": 2,
+    "cold_mismatch": [
+      280,
+      280
+    ]
+  }
+}
