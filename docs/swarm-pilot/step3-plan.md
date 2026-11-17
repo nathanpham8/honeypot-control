@@ -1159,3 +1159,19 @@ These replace the F3 and T7 rows of the Stage 2 table; the other rows stand.
 | Order among concurrent sends (F5) | 14 fake-vs-real inversions in 200 entries, against the answer-key order (itself biased late) | — |
 
 The work stops here for Nathan's go-ahead on the internet delay step.
+
+## Internet delay: Part 1 measurement
+
+Nathan's instruction, November 17, 2026: measure only, change nothing. The Stage 2 follow-up's known differences stand.
+
+### Method (recorded before any data)
+- **From the VM itself** (not a container): the VM is in GCP zone us-central1-a (Iowa), read from its own metadata server.
+- **Measure:** TCP connection time only. A `connect()` timed with a monotonic clock, then the socket is closed; no data is sent.
+  - Names are resolved once before measuring, so DNS is excluded.
+  - Failed or timed-out connects (2 s) are counted, not timed.
+- **Targets:**
+  - (a) the BashArena attacker address 185.199.108.153, port 80 (in BashArena it is the DNAT'd collection address; on the internet it is a GitHub Pages address);
+  - (b) AWS EC2 regional API endpoints in other US regions, port 443: us-east-1 (N. Virginia), us-east-2 (Ohio), us-west-1 (N. California), us-west-2 (Oregon).
+- **Sampling:** 300 per target, interleaved round-robin (one connect per target per round, target order shuffled each round), 50 ms pause between connects.
+- **Reported per target:** median, p10, p90, spread (p90 − p10), min, max, standard deviation, failures.
+- Tool: `tools/internet_delay_measure.py`; data: `analysis/swarm_pilot/internet_delay/part1.json`.
