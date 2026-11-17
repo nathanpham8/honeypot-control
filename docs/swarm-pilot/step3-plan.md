@@ -1232,3 +1232,50 @@ Delaying the calibration, delay-calibration and cold collectors with the real on
    - seat-side latency of an L0 log read (which never touches a collector) and of a task-service request is unchanged with netem on and off;
    - a delivered send's seat-side latency rises by about one RTT.
 5. **What would then need re-running** (Stage 1 sink timing, Stage 2 F3 and T7) is for Nathan to decide.
+
+## Internet delay Part 2: rules and design
+
+Recorded November 17, 2026, after Nathan's review of Part 1 and before any Part 2 code or data. Part 2 data goes to `analysis/swarm_pilot/internet_delay/`.
+
+### Nathan's rules
+1. **Round trip.** Emulate the round trip to the BashArena attacker address as measured: netem `delay 5.84ms 0.29ms distribution normal` per direction, on ports 8091, 8092, 8093 and 8100 to 8109. Shadows (8200 and up), 8081, 8082 and 8083 are not delayed.
+2. **No reordering.** Netem is configured so packets within one connection are not reordered. Retransmit counts are reported with netem on and off.
+3. **Limits.** Packet loss and bandwidth are not modeled; both are stated as limits.
+4. **Checks first.** Before any timing test, the checks in point 4 of the proposal are run and reported.
+5. **Nothing else changes.** The sink stays frozen as of `cc2c778` and the forger as of `0bed85c`; no sink, forger or exit code changes. Netem is an option, off by default, so earlier stages stay reproducible.
+6. **Re-run once with the usual pass lines, netem on:**
+   - T1, T3, T4, T5, T8 and T8b;
+   - T7 at 10, 100 and 1,000 entries;
+   - F3 idle and under load;
+   - F5 with concurrent sends;
+   - F14.
+
+   F1 warm, F8, e2e and the safe list are confirmed. Each result is reported next to its local result (Stage 1 final, Stage 2 follow-up): local is the worst case, delayed is the main setting.
+7. **No iteration.** Anything still failing is a known difference with its attacker sample counts.
+
+### Design (my choices within the rules)
+- **Option.** `swarm_compose(..., netem=None)` in `honeypot/swarm_layout.py`. `None` (the default) leaves the compose file exactly as before.
+  - A netem parameter string sets two router environment variables: `NETEM` (the parameters) and `NETEM_PORTS` (the delayed ports).
+  - The router's start script applies them with a new helper, `honeypot/swarm_netem.sh` (`on`, `off`, `status`), before it reports ready. So the delay is in place before the exit's boot calibration.
+  - The measurement tools and e2e tests take `SWARM_NETEM=basharena` from the environment and pass the rule 1 string; unset means no netem.
+- **Qdisc layout,** on `lo` in the router's network namespace (shared by the exit, the collector and the cold collectors):
+  - a `prio` qdisc with 3 bands, every priority mapped to band 1 (undelayed);
+  - netem attached to band 3: `delay 5.84ms 0.29ms distribution normal rate 100gbit`;
+  - `u32` filters sending TCP packets with destination port or source port in {8091, 8092, 8093, 8100, ..., 8109} to band 3: 13 ports × 2 directions.
+
+  Each direction of a loopback connection passes `lo`'s queue once, so each gets one netem delay.
+- **How reordering is prevented (rule 2).** With a `rate` set, netem never schedules a packet before the last packet already queued: its send time is the later of its own drawn time and the previous packet's (Linux `sch_netem`). That keeps packets of a connection, and of all delayed connections, in order.
+  - At 100 Gbit/s the added serialization time is at most 5.3 µs for a 64 KB loopback packet and negligible for small ones, so bandwidth is still not modeled (rule 3).
+  - Side effect: a packet that draws a shorter delay than the packet ahead of it waits for that packet. In bursts, delays sit slightly above the drawn distribution. Check (a) measures the result.
+- **Checks (rule 4).** On one stack with the answer-key option (for the shadow port), netem switched by the helper between blocks of 30 (10 on, 10 off):
+  - **(a)** TCP connect time from inside the exit container to each port: delayed ports 8091, 8092, 8093, 8100 to 8109; undelayed 8081, 8082, 8083, 8200. A temporary listener stands in for 8093, which exists only during arming. 100 per port per condition. Expected: about 11.7 ms on delayed ports, local on the others.
+  - **(b)** Seat-side latency, netem on vs off, 300 per condition, usual comparison: an L0 log read (never touches a collector; the exit armed at L0), and a request to the task service at 52.84.125.33 (DNAT to 8082). Expected: unchanged.
+  - **(c)** Seat-side latency of a delivered 100 B send, on vs off. Expected: about +11.7 ms.
+  - **(d)** Retransmits: the router namespace's TCP counters (`RetransSegs`, and the reordering and out-of-order counters in `TcpExt`) before and after the same workload with netem on and off. Workload: 200 sends of 100 B, 20 of 1 MB, 50 L1 reads.
+- **Re-runs (rule 6),** with `SWARM_NETEM=basharena` and output to `analysis/swarm_pilot/internet_delay/`:
+  - `tools/swarm_stage1_measure.py` (t1t3, t4, t5, t8, t8b);
+  - `tools/swarm_stage2_measure.py` (t7, f3, f3load, f5c, f1);
+  - `tests/test_swarm_l1_e2e.py` (F14, F8, F15, F16) and `tests/test_swarm_exit_e2e.py`, both with netem on;
+  - the safe list.
+
+  Same designs and pass lines as the local runs.
