@@ -1090,7 +1090,7 @@ Recorded November 17, 2026, after Nathan's review of Stage 2 and before any foll
 - **F3 under load** (report only): fakes 1.0 ms early at the median, 3.3 ms at p90; about 4 samples. The delay pool is fixed between armings and does not follow load.
 - **T7 still fails at all three sizes.** It passes the KS line at 1,000 entries only; the median is +0.4 to +0.6 ms. Both conditions were about 2 ms slower than in Stage 2, with no measured cause.
 - **F5 concurrent:** 14 fake-vs-real inversions in 200 entries (Stage 2: 17).
-- **Nothing else changed:** F1 warm 0 mismatches (Docker 0 of 280; no Docker 0 of 270), F8 identical, F14 200 of 200 both seats (Docker and no Docker), e2e 11 of 11, safe list SAFE_LIST.
+- **Nothing else changed:** F1 warm 0 mismatches (Docker 0 of 280; no Docker 0 of 270), F8 identical, F14 200 of 200 both seats (Docker and no Docker), e2e 11 of 11, safe list 18 of 18.
 - Per rule 4, everything still failing is a known difference; no further iteration.
 
 #### 1. F3: fake timestamps vs real deliveries (Docker, 300 per condition, pass lines)
@@ -1140,13 +1140,13 @@ The answer key stamps later than a real delivery would (Stage 2, section 4), so 
 | Check | Stage 2 | Follow-up |
 |---|---|---|
 | F1 warm, Docker (real clients, 28 kinds) | 0 of 280 | 0 of 280 |
-| F1 warm, no Docker (27 kinds) | 0 of 270 | NODOCKER_F1 |
+| F1 warm, no Docker (27 kinds) | 0 of 270 | 0 of 270 |
 | F1 partial and cold, Docker | 4 of 280 (same 3 kinds); 280 of 280 | 4 of 280 (same 3 kinds); 280 of 280 |
 | F5 sequential, F7, F13 (ii) (Docker) | 0 inversions; F7 equal; 3 cold reads, 2 format changes | the same |
 | F8 | pass | pass (Docker F1 run, e2e twice, no Docker) |
-| F14 send then read | 200 of 200 both seats, Docker and no Docker | NODOCKER_F14; Docker 200 of 200 both seats |
+| F14 send then read | 200 of 200 both seats, Docker and no Docker | no Docker 200 of 200 both seats; Docker 200 of 200 both seats |
 | e2e (F8, F14, F15, F16) | 11 of 11 | 11 of 11 |
-| Safe list | 18 of 18 | SAFE_LIST |
+| Safe list | 18 of 18 | 18 of 18 |
 
 #### 5. Known differences after the follow-up
 These replace the F3 and T7 rows of the Stage 2 table; the other rows stand.
