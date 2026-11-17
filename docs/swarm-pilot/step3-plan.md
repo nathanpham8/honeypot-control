@@ -1175,3 +1175,61 @@ Nathan's instruction, November 17, 2026: measure only, change nothing. The Stage
 - **Sampling:** 300 per target, interleaved round-robin (one connect per target per round, target order shuffled each round), 50 ms pause between connects.
 - **Reported per target:** median, p10, p90, spread (p90 − p10), min, max, standard deviation, failures.
 - Tool: `tools/internet_delay_measure.py`; data: `analysis/swarm_pilot/internet_delay/part1.json`.
+
+### Results (November 17, 2026)
+TCP connection time from the VM (us-central1-a), ms. 300 per target, interleaved; no failures.
+
+| Target | Median | p10 | p90 | Spread (p90 − p10) | Min | Max | SD |
+|---|---|---|---|---|---|---|---|
+| BashArena attacker address 185.199.108.153:80 | 11.69 | 11.18 | 12.23 | 1.05 | — | 18.13 | 0.59 |
+| AWS us-east-2 (Ohio) | 21.13 | 20.03 | 22.17 | 2.14 | — | 1,043.0 | 58.9 |
+| AWS us-east-1 (N. Virginia) | 30.14 | 28.42 | 31.66 | 3.24 | — | 32.66 | 1.22 |
+| AWS us-west-1 (N. California) | 37.35 | 36.79 | 37.93 | 1.14 | — | 39.01 | 0.47 |
+| AWS us-west-2 (Oregon) | 42.70 | 41.69 | 43.91 | 2.23 | — | 45.06 | 0.81 |
+
+(Minima are in `part1.json`.)
+- **One Ohio connect took 1,043 ms:** a SYN retransmission after the 1 s initial timeout (one lost packet in 300). It is kept in the data and drives that target's SD; quantiles are unaffected. Every other target's maximum is within 7 ms of its median.
+- **185.199.108.153 is a GitHub Pages address,** so 11.7 ms is the round trip to its nearest edge, not to a server an attacker would run. The four AWS regions give 21 to 43 ms for a server in another US region.
+- The distributions are tight and somewhat right-skewed: the median sits closer to p10 than to p90 for 3 of 5 targets.
+
+### What Part 2 would delay, and how (proposal; nothing applied)
+**Where the traffic is.**
+- The exit, the real collector and the ten cold-calibration collectors all run in the router's network namespace (`network_mode: service:router`). The calibration collector (8092), the delay-calibration collector (8093) and the shadow collectors (8200 and up) run inside the exit container, in the same namespace.
+- Every forward or read from the exit to a collector is therefore a loopback connection in that namespace.
+- Seats reach the exit only through the router's DNAT to 127.0.0.1:8081. Those packets arrive on the seat interfaces and are delivered locally; replies leave through the seat interfaces. Neither passes the loopback device's output queue, which is where the delay would act. Part 2 must confirm this by measurement (below).
+
+**What to delay.** TCP traffic on the router namespace's `lo` to or from these collector ports:
+
+| Port | Collector | Delayed |
+|---|---|---|
+| 8091 | real collector (forwards, the L1 clean read, the harness's direct reads) | yes |
+| 8092 | sink calibration collector (boot, arming and background calibration) | yes |
+| 8093 | forger delay-calibration collector (at L1 arming) | yes |
+| 8100 to 8109 | cold-calibration collectors | yes |
+| 8200 and up | shadow collectors (answer key, tests only) | no (left alone; answer-key timestamps then lose comparability, and F3's reference stays the real deliveries) |
+| 8081, 8082, 8083 | the exit and the task services, reached by seats and the harness | no |
+
+Delaying the calibration, delay-calibration and cold collectors with the real one keeps the sink's windows, its cold excess and the forger's delay pool measured on the same path as real forwards. No sink or exit code would change.
+
+**How: Linux `tc` netem in the router container** (it has `NET_ADMIN`; its start script already installs `iproute2`, which should provide `tc` on Alpine; to be confirmed).
+- A `prio` qdisc on `lo` with every priority mapped to an undelayed band, plus one band with netem. `u32` filters send a packet to the netem band when its TCP destination port or its TCP source port is one of the delayed ports.
+- On loopback, each direction of a connection passes `lo`'s output queue once. So requests (destination port) and replies (source port) each get one netem pass, and the round trip is split evenly across both directions.
+- **Per-direction settings,** for the round trip RTT with spread s = p90 − p10: delay = RTT / 2, jitter = (s / 2.563) / √2 with `distribution normal`. For a normal distribution, p90 − p10 = 2.563 SD; the round-trip variance splits evenly between two independent directions.
+
+| If Part 2 emulates | netem per direction |
+|---|---|
+| attacker address (11.69 ms; spread 1.05) | `delay 5.84ms 0.29ms distribution normal` |
+| us-east-2 Ohio (21.13; 2.14) | `delay 10.56ms 0.59ms distribution normal` |
+| us-east-1 N. Virginia (30.14; 3.24) | `delay 15.07ms 0.89ms distribution normal` |
+| us-west-1 N. California (37.35; 1.14) | `delay 18.67ms 0.31ms distribution normal` |
+| us-west-2 Oregon (42.70; 2.23) | `delay 21.35ms 0.61ms distribution normal` |
+
+**Points for Part 2 to decide or check.**
+1. **Which round trip to emulate:** the attacker address as measured (11.7 ms, a CDN edge), or a server in another US region (21 to 43 ms).
+2. **Reordering:** netem with jitter can reorder packets within a TCP connection. On loopback (MTU 65,536) a 1 MB body is about 16 segments, so reordering could cause duplicate ACKs and retransmits that a real path rarely shows. Options: jitter as specified and measure retransmits, or smaller or correlated jitter.
+3. **Not modeled:** packet loss (the one Ohio retransmission shows it happens, about 1 in 300 connects here), bandwidth (a 1 MB body over a real link adds transfer time that loopback does not), and the measured right skew (normal jitter is symmetric).
+4. **Checks before any timing test:**
+   - a TCP connect from the exit to each delayed port takes about the emulated RTT, and to 8081 and 8200 it does not;
+   - seat-side latency of an L0 log read (which never touches a collector) and of a task-service request is unchanged with netem on and off;
+   - a delivered send's seat-side latency rises by about one RTT.
+5. **What would then need re-running** (Stage 1 sink timing, Stage 2 F3 and T7) is for Nathan to decide.
