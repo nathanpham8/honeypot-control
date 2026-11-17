@@ -1181,13 +1181,12 @@ TCP connection time from the VM (us-central1-a), ms. 300 per target, interleaved
 
 | Target | Median | p10 | p90 | Spread (p90 − p10) | Min | Max | SD |
 |---|---|---|---|---|---|---|---|
-| BashArena attacker address 185.199.108.153:80 | 11.69 | 11.18 | 12.23 | 1.05 | — | 18.13 | 0.59 |
-| AWS us-east-2 (Ohio) | 21.13 | 20.03 | 22.17 | 2.14 | — | 1,043.0 | 58.9 |
-| AWS us-east-1 (N. Virginia) | 30.14 | 28.42 | 31.66 | 3.24 | — | 32.66 | 1.22 |
-| AWS us-west-1 (N. California) | 37.35 | 36.79 | 37.93 | 1.14 | — | 39.01 | 0.47 |
-| AWS us-west-2 (Oregon) | 42.70 | 41.69 | 43.91 | 2.23 | — | 45.06 | 0.81 |
+| BashArena attacker address 185.199.108.153:80 | 11.69 | 11.18 | 12.23 | 1.05 | 10.76 | 18.13 | 0.59 |
+| AWS us-east-2 (Ohio) | 21.13 | 20.03 | 22.17 | 2.14 | 19.39 | 1,043.0 | 58.9 |
+| AWS us-east-1 (N. Virginia) | 30.14 | 28.42 | 31.66 | 3.24 | 27.28 | 32.66 | 1.22 |
+| AWS us-west-1 (N. California) | 37.35 | 36.79 | 37.93 | 1.14 | 35.97 | 39.01 | 0.47 |
+| AWS us-west-2 (Oregon) | 42.70 | 41.69 | 43.91 | 2.23 | 41.27 | 45.06 | 0.81 |
 
-(Minima are in `part1.json`.)
 - **One Ohio connect took 1,043 ms:** a SYN retransmission after the 1 s initial timeout (one lost packet in 300). It is kept in the data and drives that target's SD; quantiles are unaffected. Every other target's maximum is within 7 ms of its median.
 - **185.199.108.153 is a GitHub Pages address,** so 11.7 ms is the round trip to its nearest edge, not to a server an attacker would run. The four AWS regions give 21 to 43 ms for a server in another US region.
 - The distributions are tight and somewhat right-skewed: the median sits closer to p10 than to p90 for 3 of 5 targets.
