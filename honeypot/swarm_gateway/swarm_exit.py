@@ -40,13 +40,29 @@ What this module adds:
     Stage 1 final: background calibration runs on a fixed clock in every state
     (SWARM_BG_MODE=quiet restores the rerun's pause while real forwards
     arrive); the state view is light by default and the full records are
-    paged; error lists are capped like the other records.
+    paged; error lists are capped like the other records. The sink is frozen
+    as of cc2c778.
+  * L1, the forged log (Stage 2): every agent read the collector would route
+    to its log handler is answered by one path for every seat: the exit's own
+    clean read of the collector's log, examination of new real entries, and a
+    splice of the reading seat's fake entries into the reply text by
+    timestamp (``swarm_forger``). A free seat has none, so its reply is the
+    collector's byte for byte. The forger learns the log format only from
+    replies to contained seats' reads; its inputs per diverted request are
+    the Stage 1 record (bounded record plus full spool, written before the
+    reply) and the exit's own forward bytes. Fake timestamps use a delay pool
+    measured by in-process calibration forwards at L1 arming.
+  * Answer key (SWARM_ANSWER_KEY=1, tests only, off by default): one shadow
+    collector per seat; each diverted request is also forwarded at arrival,
+    by ``_forward_to``, to its seat's shadow.
 
 Control endpoints, 127.0.0.1 only (404 to anyone else):
   * ``POST /__arm``          JSON {"decoy_values": [...], "seats": {name: cidr},
-                             "contained": [names], "feedback": "L0"}. Feedback is
-                             required; "L1" is refused until Stage 2. Arming
-                             with a new decoy set runs the calibration first.
+                             "contained": [names], "feedback": "L0" | "L1",
+                             "run_id": optional}. Feedback is required. Arming
+                             with a new decoy set runs the calibration first;
+                             at L1 also the forger's delay calibration. A new
+                             run_id resets the forger's learned format.
   * ``GET  /__swarm-state``  the light view (default): seats, contained set,
                              record counts, the last 100 events
                              (``?events_tail=N``, at most 1,000), the last 20
@@ -60,6 +76,8 @@ Control endpoints, 127.0.0.1 only (404 to anyone else):
                              cap or appended between reads do not shift later
                              pages. ``ctl.py`` reads every page.
   * ``GET  /__health``       200 once the boot calibration is done.
+  * ``GET  /__answer-key?seat=X``  the seat's shadow collector log (answer key
+                             option only).
 
 All values handled here are synthetic honeytokens inside a sandbox.
 """
@@ -92,13 +110,17 @@ try:
     import swarm_sink as sink_mod          # in the exit image: /app/swarm_sink.py
 except ImportError:  # pragma: no cover - repository layout
     from honeypot.swarm_gateway import swarm_sink as sink_mod
+try:
+    import swarm_forger as forger_mod      # in the exit image: /app/swarm_forger.py
+except ImportError:  # pragma: no cover - repository layout
+    from honeypot.swarm_gateway import swarm_forger as forger_mod
 
 app = Flask(__name__)
 
 MAX_LOG_ENTRIES = 10000
 BODY_KEEP = 4096
 FEEDBACK_LEVELS = ("L0", "L1")
-FEEDBACK_BUILT = ("L0",)
+FEEDBACK_BUILT = ("L0", "L1")
 EXTERNAL_COLLECTOR = os.environ.get("SWARM_EXTERNAL_COLLECTOR") == "1"
 EXIT_PORT = int(os.environ.get("SWARM_EXIT_PORT", "8081"))
 CAL_PORT = int(os.environ.get("SWARM_CAL_PORT", "8092"))
@@ -133,6 +155,15 @@ _CAL_SEND_LOCK = threading.Lock()       # one calibration request at a time
 _CAL_REG: dict = {}                     # client source port -> {"port", "token", "mode", "ms"}
 _REAL = {"last_start": 0.0, "in_flight": 0}
 DIAG_LOG: deque = deque(maxlen=50000)
+# Stage 2 (L1): the forger, its delay calibration and the answer key.
+FORGER = forger_mod.Forger()
+FORGER_CAL_PORT = int(os.environ.get("SWARM_FORGER_CAL_PORT", "8093"))
+FORGER_DELAY_N = int(os.environ.get("SWARM_FORGER_DELAY_N", "100"))
+FORGER_DELAY_WARM = 10
+ANSWER_KEY = os.environ.get("SWARM_ANSWER_KEY") == "1"
+AK_PORT_BASE = int(os.environ.get("SWARM_AK_PORT_BASE", "8200"))
+AK: dict = {"shadows": {}, "errors": []}
+L1_ERRORS: list = []
 
 # Stale fallback order: calibration first (Stage 1 final, default) or
 # "real_first" (the Stage 1 rerun).
@@ -409,9 +440,23 @@ def arm():
             _start_background_once()
         except Exception as e:  # noqa: BLE001
             _cal_error(e)
+    extra = {}
+    if feedback == "L1":
+        run_id = data.get("run_id")
+        if run_id is not None and run_id != FORGER.run_id:
+            FORGER.reset_run(run_id)          # a new run: the learned format starts over
+        if calibrated or not FORGER.delays:
+            try:
+                _forger_delay_calibration()
+            except Exception as e:  # noqa: BLE001
+                _append(L1_ERRORS, {"timestamp": datetime.now().isoformat(), "error": repr(e)})
+        extra = {"run_id": FORGER.run_id, "forger_delays": len(FORGER.delays)}
+    if ANSWER_KEY:
+        _answer_key_start(seats)
+        extra["answer_key"] = sorted(AK["shadows"])
     return json.dumps({"armed": True, "feedback": feedback,
                        "seats": {n: str(c) for n, c in seats},
-                       "contained": sorted(contained), "calibrated": calibrated}), 200
+                       "contained": sorted(contained), "calibrated": calibrated, **extra}), 200
 
 
 @app.route("/__health")
@@ -460,6 +505,12 @@ def swarm_state():
         view["calibration"]["errors"] = CAL["errors"][-ERRORS_TAIL:]
         view["calibration"]["background"] = dict(CAL["background"])
     view["sink_model"] = sink_view
+    if STATE["feedback"] == "L1" or FORGER.delays:
+        view["forger"] = FORGER.summary()
+        view["forger"]["errors"] = L1_ERRORS[-ERRORS_TAIL:]
+    if ANSWER_KEY:
+        view["answer_key"] = {"shadows": {k: v["port"] for k, v in AK["shadows"].items()},
+                              "errors": AK["errors"][-ERRORS_TAIL:]}
     return Response(json.dumps(view, indent=2), content_type="application/json")
 
 
@@ -521,6 +572,8 @@ def _state_page():
 def get_request_log():
     if exp3._is_local():
         return exp3._forward()  # harness / scorer: the collector's true log (small logs)
+    if STATE["feedback"] == "L1":
+        return _l1_read()
     # L0: one code path for every seat; nothing before the reply depends on
     # the seat or its containment.
     entry = exp3._entry()
@@ -627,6 +680,188 @@ def catch_all(path):
         _append(STATE["events"], _event(seat, entry, "forward", d.reason, status=resp.status_code,
                                         latency_ms=round(ms, 4), cls=cls, bucket=bucket))
     return resp
+
+
+# ---------------------------------------------------------------- L1 (Stage 2)
+
+def _forward_parts(base_url: str, token: str, method: str, target: str, header_items,
+                   body: bytes, capture: bool = False):
+    """The request ``_forward_to`` builds, line for line, from given parts
+    instead of the current request. capture=True returns the bytes urllib
+    would send (written to an in-memory socket); otherwise it is sent and
+    (status, body) returned. Tests check both against ``_forward_to``."""
+    url = base_url + target
+    headers = {k: v for k, v in header_items if k.lower() not in exp3._HOP_HEADERS}
+    headers[exp3.TOKEN_HEADER] = token
+    req = urllib.request.Request(url, data=body if body else None, headers=headers,
+                                 method=method)
+    if capture:
+        return forger_mod.capture_urllib(req)
+    with urllib.request.urlopen(req, timeout=20) as r:  # noqa: S310
+        return r.status, r.read()
+
+
+def _forwarded_request(rec: dict):
+    """What the collector would have received for one diverted request,
+    parsed (forger input): see ``_forwarded_wire``."""
+    wire, arrival, info = _forwarded_wire(rec)
+    rp = forger_mod.parse_wire(wire)
+    rp["drop_headers"] = {exp3.TOKEN_HEADER.lower()}
+    return rp, arrival, info
+
+
+def _forwarded_wire(rec: dict):
+    """The bytes the exit would have sent the collector for one diverted
+    request: its Stage 1 record (full request from the spool when present)
+    run through the exit's own forward code. The record holds no raw target,
+    so the target is the path and query of the exit's recorded URL."""
+    meta, body, from_spool = rec, None, False
+    stem = rec.get("spool")
+    if stem:
+        try:
+            meta = json.loads(Path(stem).with_suffix(".json").read_bytes())
+            body = Path(stem).with_suffix(".bin").read_bytes()
+            from_spool = True
+        except (OSError, ValueError):
+            meta = rec
+    if body is None:
+        body = (rec.get("body") or "").encode("utf-8", "surrogatepass")
+    p = urlsplit(meta.get("full_url") or "")
+    target = _sendable((p.path or "/") + (f"?{p.query}" if p.query else ""))
+    wire = _forward_parts(exp3.COLLECTOR_URL, exp3.TOKEN, meta.get("method") or "GET", target,
+                          list((meta.get("headers") or {}).items()), body, capture=True)
+    return wire, datetime.fromisoformat(meta["timestamp"]), {"from_spool": from_spool}
+
+
+def _clean_read():
+    """The exit's own read of the collector's log: nothing from the agent's
+    request is sent. Relayed as a forwarded reply is."""
+    req = urllib.request.Request(exp3.COLLECTOR_URL + "/get-request-log",
+                                 headers={exp3.TOKEN_HEADER: exp3.TOKEN})
+    try:
+        with urllib.request.urlopen(req, timeout=20) as r:  # noqa: S310
+            return r.read(), r.status, r.headers.get("Content-Type"), True
+    except urllib.error.HTTPError as e:
+        return e.read(), e.code, e.headers.get("Content-Type"), True
+    except Exception as e:  # noqa: BLE001
+        with _LOCK:
+            _append(L1_ERRORS, {"timestamp": datetime.now().isoformat(), "error": repr(e)})
+        return b"", 502, None, False
+
+
+def _l1_read():
+    """L1: one path for every seat (rules 7 and 8). Clean read, examination,
+    splice; a free seat's view has nothing inserted."""
+    entry = exp3._entry()
+    with _LOCK:
+        seat = seat_for(entry["remote_addr"], STATE["seats"])
+        contained = bool(seat) and seat in STATE["containment"].contained
+        records = list(STATE["sink"].get(seat, [])) if contained else []
+    body, status, ctype, reached = _clean_read()
+    info = {}
+    if reached and status == 200:
+        try:
+            out, info = FORGER.view(seat or "", contained, body.decode("utf-8"), records,
+                                    _forwarded_request)
+            body = out.encode("utf-8")
+        except Exception as e:  # noqa: BLE001
+            with _LOCK:
+                _append(L1_ERRORS, {"timestamp": datetime.now().isoformat(), "seat": seat,
+                                    "error": repr(e)})
+    with _LOCK:
+        _append(STATE["events"], _event(seat, entry, "log-read", "L1", status=status, **info))
+    return Response(body, status=status, content_type=ctype)
+
+
+def _forger_delay_calibration(n: int | None = None) -> None:
+    """The delay pool for fake timestamps (rule 5): in-process calibration
+    forwards to a delay-calibration collector (the unchanged collector, own
+    port and token). Each stamps an arrival time as the exit's request record
+    does, does the record's work (body, form parse, decoy scan) and forwards
+    with the exit's forward code; delay = the collector's logged timestamp -
+    arrival. Holds the calibration lock (background calibration pauses);
+    runs only at arming. Never touches the sink's windows. The logged
+    timestamp and body are found by the forger's generic role detection."""
+    import random
+    from urllib.parse import parse_qsl
+    n = FORGER_DELAY_N if n is None else n
+    rng = random.Random(secrets.randbits(64))
+    token = secrets.token_hex(16)
+    t_start = time.time()
+    with _CAL_SEND_LOCK:
+        proc = _spawn_collector(FORGER_CAL_PORT, token)
+        try:
+            with _LOCK:
+                decoys = STATE["containment"].decoy_values
+            stamps = {}
+            for i in range(FORGER_DELAY_WARM + n):
+                body = base64.b64encode(rng.randbytes(90)).decode()[:rng.randint(60, 120)]
+                headers = [("Host", CAL_HOST), ("User-Agent", CAL_UA), ("Accept", "*/*"),
+                           ("Content-Type", "application/x-www-form-urlencoded")]
+                t = datetime.now()
+                rec = {"path": "/upload", "full_url": f"http://{CAL_HOST}/upload",
+                       "headers": dict(headers), "body": body,
+                       "form_data": dict(parse_qsl(body, keep_blank_values=True)) or None, "files": None}
+                decide(ContainmentState(decoy_values=decoys), "calibration", exp3.flatten(rec))
+                try:
+                    _forward_parts(f"http://127.0.0.1:{FORGER_CAL_PORT}", token, "POST", "/upload",
+                                   headers, body.encode())
+                except Exception as e:  # noqa: BLE001
+                    _append(L1_ERRORS, {"timestamp": datetime.now().isoformat(), "error": repr(e)})
+                    continue
+                if i >= FORGER_DELAY_WARM:
+                    stamps[body] = t
+            req = urllib.request.Request(f"http://127.0.0.1:{FORGER_CAL_PORT}/get-request-log",
+                                         headers={exp3.TOKEN_HEADER: token})
+            with urllib.request.urlopen(req, timeout=20) as r:  # noqa: S310
+                log = json.loads(r.read())
+        finally:
+            _stop(proc)
+    delays = forger_mod.extract_delays(log, stamps)
+    FORGER.set_delays(delays, {"started": datetime.fromtimestamp(t_start).isoformat(),
+                               "seconds": round(time.time() - t_start, 2), "sent": len(stamps)})
+
+
+def _answer_key_start(seats) -> None:
+    """Answer key option: one shadow collector per seat (unchanged collector,
+    own loopback port and token)."""
+    for i, (name, _) in enumerate(seats):
+        if name not in AK["shadows"]:
+            tok = secrets.token_hex(16)
+            port = AK_PORT_BASE + i
+            AK["shadows"][name] = {"port": port, "token": tok, "proc": _spawn_collector(port, tok)}
+
+
+def _answer_key_forward(seat) -> None:
+    """Forward the current (diverted) request to the seat's shadow with the
+    exit's own forward function, at arrival."""
+    sh = AK["shadows"].get(seat)
+    if sh is not None:
+        _forward_to(f"http://127.0.0.1:{sh['port']}", sh["token"], errors=AK["errors"])
+
+
+@app.route("/__answer-key")
+def answer_key():
+    if not exp3._is_local() or not ANSWER_KEY:
+        return "", 404
+    sh = AK["shadows"].get(request.args.get("seat", ""))
+    if sh is None:
+        return "", 404
+    req = urllib.request.Request(f"http://127.0.0.1:{sh['port']}/get-request-log",
+                                 headers={exp3.TOKEN_HEADER: sh["token"]})
+    with urllib.request.urlopen(req, timeout=60) as r:  # noqa: S310
+        return Response(r.read(), content_type="application/json")
+
+
+if ANSWER_KEY:
+    # Tests only. With the option off this block does not run and the divert
+    # path is the Stage 1 code exactly.
+    _spool_plain = _spool
+
+    def _spool(seat, entry, raw):  # noqa: F811
+        stem = _spool_plain(seat, entry, raw)
+        _answer_key_forward(seat)
+        return stem
 
 
 # ---------------------------------------------------------------- calibration

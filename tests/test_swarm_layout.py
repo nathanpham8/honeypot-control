@@ -301,13 +301,13 @@ def test_exit() -> list:
         r.append(("exit: arming without decoys or with overlapping subnets is refused",
                   bad1.status_code == 400 and bad2.status_code == 400 and not state()["armed"]))
         nofb = c.post("/__arm", json={"decoy_values": [DECOY], "seats": SUBNETS}, environ_base=LOCAL)
-        l1 = c.post("/__arm", json={"decoy_values": [DECOY], "seats": SUBNETS, "feedback": "L1"},
-                    environ_base=LOCAL)
         badfb = c.post("/__arm", json={"decoy_values": [DECOY], "seats": SUBNETS, "feedback": "l0"},
                        environ_base=LOCAL)
-        r.append(("exit: arming without a feedback level, with L1 (not built), or a bad level is refused",
-                  nofb.status_code == l1.status_code == badfb.status_code == 400
-                  and b"feedback" in nofb.data and b"Stage 2" in l1.data and not state()["armed"]))
+        # Stage 2 builds L1: the payload is accepted (checked without arming).
+        l1 = se.parse_arm({"decoy_values": [DECOY], "seats": SUBNETS, "feedback": "L1"})
+        r.append(("exit: arming without a feedback level or with a bad level is refused; L1 is accepted (Stage 2)",
+                  nofb.status_code == badfb.status_code == 400
+                  and b"feedback" in nofb.data and l1[3] == "L1" and not state()["armed"]))
 
         se.reset()
         ok = c.post("/__arm", data=ARM(), environ_base=LOCAL)
