@@ -1048,6 +1048,7 @@ class Forger:
                     fakes.append((ts_dt, seq, ftext))
                 fakes.sort(key=lambda f: (f[0], f[1]))
             ties = 0
+            pos: list = []
             if fakes and segments:
                 real_fmt = self.learner.format()
                 sep = real_fmt.layout["key_separator"]
@@ -1061,21 +1062,25 @@ class Forger:
                         dt = real_fmt.parse_ts(v) if v is not None else None
                         return dt or datetime.min
                 tsq = _Ts()
-                pos = []
                 for ts_dt, _, _ in fakes:
                     p = bisect.bisect_right(tsq, ts_dt)
                     if p > 0 and tsq[p - 1] == ts_dt:
                         ties += 1
                     pos.append(p)
-                merged, j = [], 0
-                for i, seg in enumerate(segments):
-                    while j < len(fakes) and pos[j] <= i:
-                        merged.append(fakes[j][2])
-                        j += 1
-                    merged.append(seg)
-                merged += [f[2] for f in fakes[j:]]
-            else:
-                merged = segments + [f[2] for f in fakes]
+            elif fakes:
+                pos = [0] * len(fakes)
+            # One merge for every view (rule 8): the loop walks every real
+            # entry the same way whether or not a fake is inserted; a free
+            # seat's view runs it with nothing to insert.
+            merged, j, nf = [], 0, len(fakes)
+            for i, seg in enumerate(segments):
+                while j < nf and pos[j] <= i:
+                    merged.append(fakes[j][2])
+                    j += 1
+                merged.append(seg)
+            while j < nf:
+                merged.append(fakes[j][2])
+                j += 1
             capped = 0
             if self.cap and len(merged) > self.cap:
                 capped = len(merged) - self.cap

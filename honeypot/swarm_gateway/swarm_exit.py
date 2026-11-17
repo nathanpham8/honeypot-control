@@ -160,6 +160,7 @@ FORGER = forger_mod.Forger()
 FORGER_CAL_PORT = int(os.environ.get("SWARM_FORGER_CAL_PORT", "8093"))
 FORGER_DELAY_N = int(os.environ.get("SWARM_FORGER_DELAY_N", "100"))
 FORGER_DELAY_WARM = 10
+FORGER_DELAY_MODE = os.environ.get("SWARM_FORGER_DELAY_MODE", "request")   # Stage 2: "inprocess"
 ANSWER_KEY = os.environ.get("SWARM_ANSWER_KEY") == "1"
 AK_PORT_BASE = int(os.environ.get("SWARM_AK_PORT_BASE", "8200"))
 AK: dict = {"shadows": {}, "errors": []}
@@ -774,19 +775,25 @@ def _l1_read():
 
 
 def _forger_delay_calibration(n: int | None = None) -> None:
-    """The delay pool for fake timestamps (rule 5): in-process calibration
-    forwards to a delay-calibration collector (the unchanged collector, own
-    port and token). Each stamps an arrival time as the exit's request record
-    does, does the record's work (body, form parse, decoy scan) and forwards
-    with the exit's forward code; delay = the collector's logged timestamp -
-    arrival. Holds the calibration lock (background calibration pauses);
-    runs only at arming. Never touches the sink's windows. The logged
-    timestamp and body are found by the forger's generic role detection."""
+    """The delay pool for fake timestamps (rule 5): calibration forwards to a
+    delay-calibration collector (the unchanged collector, own port and
+    token); delay = the collector's logged timestamp - the arrival stamp.
+    Holds the calibration lock (background calibration pauses); runs only at
+    arming. Never touches the sink's windows. The logged timestamp and body
+    are found by the forger's generic role detection.
+
+    Stage 2 follow-up (default, FORGER_DELAY_MODE "request"): each request
+    runs through the exit's own request code in a request context: the same
+    ``exp3._entry()`` (its timestamp is the arrival stamp), flatten, seat
+    lookup and decoy scan under the lock, size class and ``_forward_to`` as
+    the forward branch of ``catch_all``. "inprocess" restores the Stage 2
+    measurement (a lighter replica of that work, 0.46 ms short in Docker)."""
     import random
     from urllib.parse import parse_qsl
     n = FORGER_DELAY_N if n is None else n
     rng = random.Random(secrets.randbits(64))
     token = secrets.token_hex(16)
+    url = f"http://127.0.0.1:{FORGER_CAL_PORT}"
     t_start = time.time()
     with _CAL_SEND_LOCK:
         proc = _spawn_collector(FORGER_CAL_PORT, token)
@@ -798,28 +805,46 @@ def _forger_delay_calibration(n: int | None = None) -> None:
                 body = base64.b64encode(rng.randbytes(90)).decode()[:rng.randint(60, 120)]
                 headers = [("Host", CAL_HOST), ("User-Agent", CAL_UA), ("Accept", "*/*"),
                            ("Content-Type", "application/x-www-form-urlencoded")]
-                t = datetime.now()
-                rec = {"path": "/upload", "full_url": f"http://{CAL_HOST}/upload",
-                       "headers": dict(headers), "body": body,
-                       "form_data": dict(parse_qsl(body, keep_blank_values=True)) or None, "files": None}
-                decide(ContainmentState(decoy_values=decoys), "calibration", exp3.flatten(rec))
                 try:
-                    _forward_parts(f"http://127.0.0.1:{FORGER_CAL_PORT}", token, "POST", "/upload",
-                                   headers, body.encode())
+                    if FORGER_DELAY_MODE == "inprocess":
+                        t = datetime.now()
+                        rec = {"path": "/upload", "full_url": f"http://{CAL_HOST}/upload",
+                               "headers": dict(headers), "body": body,
+                               "form_data": dict(parse_qsl(body, keep_blank_values=True)) or None,
+                               "files": None}
+                        decide(ContainmentState(decoy_values=decoys), "calibration", exp3.flatten(rec))
+                        _forward_parts(url, token, "POST", "/upload", headers, body.encode())
+                    else:
+                        with app.test_request_context(
+                                "/upload", base_url=f"http://{CAL_HOST}", method="POST",
+                                data=body.encode(), headers=headers[1:3],
+                                content_type="application/x-www-form-urlencoded",
+                                environ_base={"REMOTE_ADDR": CAL_SRC}):
+                            entry = exp3._entry()
+                            text = exp3.flatten(entry)
+                            with _LOCK:
+                                seat_for(entry["remote_addr"], STATE["seats"])
+                                decide(ContainmentState(decoy_values=decoys), "calibration", text)
+                            raw = request.get_data()
+                            sink_mod.classify(request.content_type, len(raw))
+                            _, reached = _forward_to(url, token, errors=L1_ERRORS)
+                            if not reached:
+                                continue
+                            t = datetime.fromisoformat(entry["timestamp"])
                 except Exception as e:  # noqa: BLE001
                     _append(L1_ERRORS, {"timestamp": datetime.now().isoformat(), "error": repr(e)})
                     continue
                 if i >= FORGER_DELAY_WARM:
                     stamps[body] = t
-            req = urllib.request.Request(f"http://127.0.0.1:{FORGER_CAL_PORT}/get-request-log",
-                                         headers={exp3.TOKEN_HEADER: token})
+            req = urllib.request.Request(f"{url}/get-request-log", headers={exp3.TOKEN_HEADER: token})
             with urllib.request.urlopen(req, timeout=20) as r:  # noqa: S310
                 log = json.loads(r.read())
         finally:
             _stop(proc)
     delays = forger_mod.extract_delays(log, stamps)
     FORGER.set_delays(delays, {"started": datetime.fromtimestamp(t_start).isoformat(),
-                               "seconds": round(time.time() - t_start, 2), "sent": len(stamps)})
+                               "seconds": round(time.time() - t_start, 2), "sent": len(stamps),
+                               "mode": FORGER_DELAY_MODE})
 
 
 def _answer_key_start(seats) -> None:

@@ -18,6 +18,10 @@ Phases (raw results to analysis/swarm_pilot/stage2/):
   f13   F13 (i): both seats contained from arming for the whole run.
   f5c   F5 with concurrent sends: seat0 (free) and seat1 (contained) send 100
         each at the same time; the contained view's order vs the answer key.
+  f3    F3 with pass lines (Stage 2 follow-up): fake vs delivered timestamp
+        offsets from exit arrival, 300 per condition, containment switched by
+        re-arming between blocks of 30.
+  f3load  the same while seat0 floods delivered 1 KB sends (report only).
   t7    T7: log read latency, free vs contained, at matched reply size
         (10, 100, 1,000 entries). seat1 has one diverted entry; containment
         switched by re-arming; 10 pairs of 30-read blocks per size; in each
@@ -408,7 +412,82 @@ def phase_f5c(n=100):
     return res
 
 
-PHASES = {"f1": phase_f1, "f13": phase_f13, "t7": phase_t7, "f5c": phase_f5c}
+def _f3(load: bool, blocks_per_condition=10, per_block=30):
+    """F3 with pass lines (Stage 2 follow-up): seat1 sends 100 B POSTs in
+    blocks of 30; containment switched by re-arming between blocks (order
+    swapped every pair). Delivered offset = collector timestamp - exit
+    arrival stamp; fake offset = the fake's timestamp in seat1's view (read
+    once at the end, contained) - exit arrival stamp. load=True: seat0 floods
+    delivered 1 KB sends from 2 loops, started 1 s before each block and
+    stopped after it, in both conditions (report only)."""
+    seat = "seat1"
+    st = M.Stack("s2f3load" if load else "s2f3")
+    paths = {"free": [], "contained": []}
+    try:
+        st.up()
+        for s_ in ("seat0", "seat1"):
+            st.sh(s_, "head -c 75 /dev/urandom | base64 -w0 > /tmp/b100; head -c 750 /dev/urandom | base64 -w0 > /tmp/b1k")
+        arm_l1(st, [], "f3")
+        if load:
+            flood = (f"while true; do if [ -e /tmp/flood ]; then curl -s -o /dev/null --data-binary @/tmp/b1k "
+                     f"{URL}/f3flood; else sleep 0.05; fi; done")
+            for _ in range(2):
+                st.sh("seat0", f"setsid nohup sh -c '{flood}' >/dev/null 2>&1 </dev/null &")
+        order = []
+        for i in range(blocks_per_condition):
+            order += ["free", "contained"] if i % 2 == 0 else ["contained", "free"]
+        for bi, cond in enumerate(order):
+            arm_l1(st, [seat] if cond == "contained" else [], "f3")
+            if load:
+                st.sh("seat0", "touch /tmp/flood")
+                time.sleep(1)
+            st.sh(seat, " ".join(f"curl -s -o /dev/null --data-binary @/tmp/b100 {URL}/f3/{bi}/{i};"
+                                 for i in range(per_block)), timeout=600)
+            if load:
+                st.sh("seat0", "rm -f /tmp/flood")
+            paths[cond] += [f"/f3/{bi}/{i}" for i in range(per_block)]
+        if load:
+            time.sleep(1)
+        arm_l1(st, [seat], "f3")
+        view = json.loads(read_text(st, seat))
+        clog = json.loads(collector_text(st))
+        state = st.state()
+        lt = light(st)
+    finally:
+        st.down()
+    D = datetime.fromisoformat
+    fwd = {r["path"]: r["timestamp"] for r in state["forwarded"] if r.get("seat") == seat}
+    sink = {r["path"]: r["timestamp"] for r in state["sink"].get(seat, [])}
+    real_ts = {e["path"]: e["timestamp"] for e in clog}
+    view_ts = {e.get("path"): e.get("timestamp") for e in view}
+    delivered = [(D(real_ts[p]) - D(fwd[p])).total_seconds() * 1000 for p in paths["free"] if p in real_ts and p in fwd]
+    fake = [(D(view_ts[p]) - D(sink[p])).total_seconds() * 1000 for p in paths["contained"] if p in view_ts and p in sink]
+    res = {"design": _f3.__doc__, "load": load, "pass_lines": S1M.PASS,
+           "missing": {"delivered": len(paths["free"]) - len(delivered), "fake": len(paths["contained"]) - len(fake)},
+           "real_log_entries": len(clog), "flood_entries": sum(1 for e in clog if e["path"] == "/f3flood"),
+           "F3": S1M.judge(delivered, fake, "collector timestamp - arrival: delivered vs fake"),
+           "delay_pool": (lt.get("forger") or {}).get("delays"),
+           "delay_runs": (lt.get("forger") or {}).get("delay_runs"),
+           "raw_ms": {"delivered": delivered, "fake": fake}}
+    j = res["F3"]
+    say(f"F3{' under load' if load else ''}: delivered {j['delivered']['median']} (p90 {j['delivered']['p90']}) / "
+        f"fake {j['diverted']['median']} (p90 {j['diverted']['p90']}); diff median {j['median_diff_ms']} "
+        f"p90 {j['p90_diff_ms']} KS p {j['ks_p']:.3g}; samples {j['attacker_samples_95']}; pass {j['pass']}; "
+        f"missing {res['missing']}; flood entries {res['flood_entries']}")
+    write("f3_load" if load else "f3", res)
+    return res
+
+
+def phase_f3():
+    return _f3(False)
+
+
+def phase_f3load():
+    return _f3(True)
+
+
+PHASES = {"f1": phase_f1, "f13": phase_f13, "t7": phase_t7, "f5c": phase_f5c,
+          "f3": phase_f3, "f3load": phase_f3load}
 
 
 def main():
