@@ -78,6 +78,12 @@ dnsmasq --no-resolv --server=127.0.0.11 --no-hosts --cache-size=0 --bind-interfa
   $DNS_IFS --except-interface=lo --pid-file=/tmp/dnsmasq.pid
 conntrack -E -e NEW >"$FLOWS_LOG" 2>/dev/null &
 
+# Internet delay Part 2 (only when the compose option netem is set): delay
+# the exit's collector connections on lo before anything else uses them.
+if [ -n "${NETEM:-}" ]; then
+  sh /swarm_netem.sh on
+fi
+
 touch /tmp/router-ready
 echo "router: ready (blocks: $BLOCKS)"
 exec tail -f /dev/null

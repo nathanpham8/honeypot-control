@@ -97,7 +97,9 @@ URL = f"http://{COLLECTION_IP}"
 class Stack:
     def __init__(self, workdir: Path):
         self.compose = workdir / "compose.yml"
-        self.compose.write_text(compose_text(TASK, 2, task_services=True))
+        # SWARM_NETEM (internet delay Part 2): preset name or netem parameters; unset = none.
+        self.compose.write_text(compose_text(TASK, 2, task_services=True,
+                                             netem=os.environ.get("SWARM_NETEM") or None))
         self.base = ["docker", "compose", "-p", PROJECT, "-f", str(self.compose)]
 
     def dc(self, *args, input=None, timeout=120):

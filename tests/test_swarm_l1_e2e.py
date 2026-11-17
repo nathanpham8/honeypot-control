@@ -57,7 +57,8 @@ class Stack(E.Stack):
     def __init__(self, workdir: Path):
         self.compose = workdir / "compose.yml"
         self.compose.write_text(compose_text(E.TASK, 2, task_services=True,
-                                             exit_env={"SWARM_ANSWER_KEY": "1"}))
+                                             exit_env={"SWARM_ANSWER_KEY": "1"},
+                                             netem=os.environ.get("SWARM_NETEM") or None))
         self.base = ["docker", "compose", "-p", f"swarm-l1-e2e-{os.getpid()}", "-f", str(self.compose)]
 
     def view(self, seat):

@@ -71,8 +71,12 @@ class Stack:
             exit_env = json.loads(os.environ.get("SWARM_EXIT_ENV") or "{}")
         self.dir = Path(tempfile.mkdtemp(prefix=f"stage0_{tag}_"))
         self.project = f"swarm-stage0-{tag}-{os.getpid()}"
+        self.tag = tag
+        # Internet delay Part 2: SWARM_NETEM (a preset name such as
+        # "basharena", or netem parameters); unset = no netem (default).
+        self.netem = os.environ.get("SWARM_NETEM") or None
         (self.dir / "compose.yml").write_text(compose_text(TASK, 2, task_services=True,
-                                                           exit_env=exit_env))
+                                                           exit_env=exit_env, netem=self.netem))
         self.base = ["docker", "compose", "-p", self.project, "-f", str(self.dir / "compose.yml")]
 
     def dc(self, *args, input=None, timeout=600):
@@ -134,7 +138,22 @@ class Stack:
                              capture_output=True, text=True).stdout.strip()
         return out
 
+    def netem_stats(self) -> dict:
+        """Packets sent and dropped by the netem qdisc (netem runs only)."""
+        out = self.sh("router", "tc -s qdisc show dev lo").stdout
+        m = re.search(r"qdisc netem.*?Sent (\d+) bytes (\d+) pkt \(dropped (\d+)", out, re.S)
+        return {"bytes": int(m.group(1)), "packets": int(m.group(2)), "dropped": int(m.group(3))} if m else {"raw": out}
+
     def down(self):
+        if self.netem:
+            try:
+                rec = {"tag": self.tag, "netem": self.netem, **self.netem_stats()}
+                out = Path(os.environ.get("SWARM_MEASURE_OUT") or OUT)
+                out.mkdir(parents=True, exist_ok=True)
+                with open(out / "netem_stats.jsonl", "a") as f:
+                    f.write(json.dumps(rec) + "\n")
+            except Exception as e:  # noqa: BLE001
+                print(f"netem stats not read: {e!r}", flush=True)
         self.dc("down", "-v", "--remove-orphans", timeout=300)
 
 

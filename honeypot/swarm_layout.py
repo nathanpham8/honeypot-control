@@ -66,6 +66,12 @@ COLLECTOR_MEM = "2g"
 COLD_N = 10                          # cold-calibration collectors (step 3, Stage 1 rerun)
 COLD_PORT_BASE = 8100
 FLOWS_LOG = "/tmp/flows.log"         # in the router: conntrack NEW events
+NETEM_SCRIPT = HERE / "swarm_netem.sh"
+# Internet delay Part 2: the round trip measured from the VM to the BashArena
+# attacker address (11.69 ms), half per direction; "rate" keeps packets in
+# order; the queue limit keeps netem from dropping packets.
+NETEM_BASHARENA = "delay 5.84ms 0.29ms distribution normal rate 100gbit limit 100000"
+NETEM_PRESETS = {"basharena": NETEM_BASHARENA}
 
 _SEAT_ROUTE_CMD = (
     "sh -c '\n"
@@ -132,14 +138,19 @@ def swarm_compose(task_id: str, n_seats: int = 2, *, task_services: bool = True,
                   database_build_context: str | None = None,
                   token: str | None = None,
                   host_addrs: list[str] | None = None,
-                  exit_env: dict | None = None) -> dict:
+                  exit_env: dict | None = None,
+                  netem: str | None = None) -> dict:
     """The compose file for one swarm as a dict (``compose_text`` dumps it).
 
     Images must already exist unless a build context is given; the task image
     tags follow the stock ``bash-arena-*-{task_id}`` names. ``token`` is the
     exit-to-collector token (new random one by default); ``host_addrs`` are the
     host addresses the router blocks (this host's by default). ``exit_env``
-    adds environment variables to the exit (measurement options only)."""
+    adds environment variables to the exit (measurement options only).
+    ``netem`` (internet delay Part 2; off by default): netem parameters, or a
+    preset name ("basharena"), applied by the router to the exit's
+    connections to the collector, calibration, delay-calibration and cold
+    collectors (``netem_ports``); None leaves the compose file unchanged."""
     seats = seat_names(n_seats)
     token = token or secrets.token_hex(16)
     # The cold collectors' token is derived from the exit-collector token, so a
@@ -198,6 +209,12 @@ def swarm_compose(task_id: str, n_seats: int = 2, *, task_services: bool = True,
                         "interval": "3s", "timeout": "5s", "retries": 40,
                         "start_period": "20s"},
     }
+
+    if netem:
+        params = NETEM_PRESETS.get(netem, netem)
+        services["router"]["environment"].update(
+            {"NETEM": params, "NETEM_PORTS": " ".join(map(str, netem_ports()))})
+        services["router"]["volumes"].append(f"{NETEM_SCRIPT}:/swarm_netem.sh:ro")
 
     # Healthchecks never read the request log (it can be large); after start
     # they run every 30 s, so they add almost no load.
@@ -276,6 +293,14 @@ def swarm_compose(task_id: str, n_seats: int = 2, *, task_services: bool = True,
     volumes = {seat_volume(s): {} for s in seats}
     volumes.update({"board_harness": {}, "board_snapshots": {}})
     return {"networks": networks, "volumes": volumes, "services": services}
+
+
+def netem_ports() -> list[int]:
+    """Ports whose loopback traffic gets the emulated internet delay: the real
+    collector, the sink's calibration collector, the forger's
+    delay-calibration collector and the cold-calibration collectors. Not the
+    exit (8081), the task services (8082, 8083) or the shadows (8200 and up)."""
+    return [COLLECTOR_PORT, 8092, 8093] + [COLD_PORT_BASE + i for i in range(COLD_N)]
 
 
 def compose_text(task_id: str, n_seats: int = 2, **kw) -> str:

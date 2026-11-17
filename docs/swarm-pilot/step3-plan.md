@@ -1279,3 +1279,4 @@ Recorded November 17, 2026, after Nathan's review of Part 1 and before any Part 
   - the safe list.
 
   Same designs and pass lines as the local runs.
+- **Note added before any Part 2 data:** netem's default queue limit (1,000 packets) is raised to 100,000 (`limit 100000`), so the delay queue never drops packets under the floods in T5, T8b and F3 under load; loss is not modeled. Drops are read from `tc -s` after each phase. A feasibility check in a throwaway container (no stack, not data) confirmed Alpine's `tc` supports this netem line with the normal distribution table and `rate 100gbit`.
