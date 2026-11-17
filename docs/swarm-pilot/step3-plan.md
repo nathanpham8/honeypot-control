@@ -1042,3 +1042,32 @@ seat1 (one diverted entry) reads; containment switched by re-arming; 10 pairs of
 4. **T7:** a known difference by rule 10. If more work on read timing is wanted later, the first candidate is making the merge step do the same work with and without fakes (section 9).
 
 The work stops here for Nathan's go-ahead on Stage 3.
+
+## Stage 2 review: rules for the Stage 2 follow-up
+
+Recorded November 17, 2026, after Nathan's review of Stage 2 and before any follow-up code or data. One round, then no further iteration. Stage 2 numbers stay as they are; follow-up data goes to `analysis/swarm_pilot/stage2_followup/` and is reported next to them.
+
+### Nathan's rules
+1. **F3 fix.** The delay pool is measured through the exit's own request code: one request context per calibration request, calling the same `_entry()`, decoy scan and `_forward_to` as the real path (Stage 2 results, section 4). The sink stays frozen as of `cc2c778`; the divert path is unchanged.
+2. **Rule 8 fix.** The read path does the same work with and without fakes: the merge walks every real entry the same way whether or not a fake is inserted (Stage 2 results, section 9). This completes rule 8; it is not a new timing design.
+3. **Re-run once, usual pass lines** (300 per condition, KS p > 0.01, |median difference| < 0.3 ms, |p90 difference| < 1 ms):
+   - F3 (Docker);
+   - F3 under load from the other seat (report only);
+   - F5 with concurrent sends;
+   - T7 at 10, 100 and 1,000 entries.
+
+   Also re-run F1 warm, F8, F14 and the safe list, to confirm nothing else changed.
+4. **No further iteration.** Anything still failing is logged as a known difference with its attacker sample counts.
+
+### Design (my choices within the rules)
+- **Delay calibration (rule 1).** For each of the 100 measured requests (after 10 discarded), the exit opens a Flask test request context: POST `/upload`, `Host: 185.199.108.153`, curl's `User-Agent` and `Accept`, a 60 to 120 byte urlencoded body, remote address the calibration source.
+  - Inside it, it runs what the forward branch of `catch_all` runs between the arrival stamp and the forward: `exp3._entry()` (whose timestamp is the arrival stamp), `exp3.flatten`, seat lookup and decoy scan under the exit's lock (scan on a fresh containment state with the armed decoys, as calibration requests do), `get_data` and size class, then `_forward_to` to the delay-calibration collector.
+  - Delay = the collector's logged timestamp − the entry's timestamp.
+  - Not included, in either path: the WSGI server's request parsing before the stamp. The real-forward counters (`_REAL`) are not touched.
+- **Merge (rule 2).** `Forger.view` builds every view with one loop over the real entries, which inserts any fakes due before each entry and then appends the entry. A free seat's view runs the same loop with nothing to insert. Fake rendering and the bisection over real timestamps still run only when the seat has fakes.
+- **F3 (Docker, pass lines).**
+  - seat1 sends 100 B urlencoded POSTs (curl default), unique paths, in blocks of 30. Containment is switched by re-arming between blocks: 10 free and 10 contained blocks, alternating, order swapped every pair. That gives 300 per condition.
+  - Delivered offset = collector timestamp − the exit's arrival stamp (forwarded record). Fake offset = the fake's timestamp in seat1's view (read once at the end, contained) − the exit's arrival stamp (sink record).
+  - Compared with the usual pass lines and attacker sample count.
+- **F3 under load (report only).** The same design on a fresh stack, while seat0 floods delivered 1 KB sends from 2 loops. The flood is started 1 s before each block and stopped after it, in both conditions. The pool is fixed between armings, so fakes are not expected to follow load.
+- **F5 concurrent, T7, F1, F8, F14:** the Stage 2 scripts unchanged (`f5c`, `t7`, `f1` in `tools/swarm_stage2_measure.py`; `tests/test_swarm_l1_e2e.py`; `tests/test_swarm_l1.py` in the safe list), output to the follow-up folder.
