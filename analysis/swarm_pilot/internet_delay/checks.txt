@@ -1,0 +1,23 @@
+(a) port 8091: on 12.295 (p10 11.726, p90 12.742), off 0.189
+(a) port 8092: on 12.338 (p10 11.79, p90 13.06), off 0.195
+(a) port 8093: on 12.302 (p10 11.873, p90 12.882), off 0.191
+(a) port 8100: on 12.322 (p10 11.76, p90 12.874), off 0.221
+(a) port 8101: on 12.38 (p10 11.907, p90 12.887), off 0.192
+(a) port 8102: on 12.351 (p10 11.834, p90 12.896), off 0.197
+(a) port 8103: on 12.295 (p10 11.656, p90 12.802), off 0.186
+(a) port 8104: on 12.353 (p10 11.864, p90 12.855), off 0.192
+(a) port 8105: on 12.351 (p10 11.76, p90 12.83), off 0.2
+(a) port 8106: on 12.386 (p10 11.888, p90 12.936), off 0.215
+(a) port 8107: on 12.314 (p10 11.848, p90 12.933), off 0.222
+(a) port 8108: on 12.318 (p10 11.782, p90 12.842), off 0.199
+(a) port 8109: on 12.415 (p10 11.848, p90 12.9), off 0.202
+(a) port 8081: on 0.255 (p10 0.201, p90 0.412), off 0.218
+(a) port 8082: on 0.225 (p10 0.189, p90 0.347), off 0.225
+(a) port 8083: on 0.233 (p10 0.186, p90 0.375), off 0.215
+(a) port 8200: on 0.227 (p10 0.191, p90 0.366), off 0.219
+(b) l0_read: off 2.567 / on 2.644; diff median 0.077 p90 0.248 KS p 0.00862; samples 76
+(b) task_service: off 2.468 / on 2.516; diff median 0.048 p90 0.149 KS p 0.167; samples 206
+(c) delivered_send: off 6.346 / on 30.468; diff median 24.122 p90 24.337 KS p 1.79e-133; samples 1
+(d) netem off: {'seconds': 37.7, 'delta': {'RetransSegs': 93, 'TCPSACKReorder': 3, 'TCPTSReorder': 0, 'TCPRenoReorder': 0, 'TCPOFOQueue': 4, 'TCPFastRetrans': 1, 'TCPSlowStartRetrans': 0, 'TCPTimeouts': 0, 'TCPLossProbes': 130, 'TCPSpuriousRTOs': 0, 'TCPDSACKRecv': 72}}
+(d) netem on: {'seconds': 85.3, 'delta': {'RetransSegs': 95, 'TCPSACKReorder': 295, 'TCPTSReorder': 4, 'TCPRenoReorder': 0, 'TCPOFOQueue': 213, 'TCPFastRetrans': 5, 'TCPSlowStartRetrans': 0, 'TCPTimeouts': 0, 'TCPLossProbes': 90, 'TCPSpuriousRTOs': 0, 'TCPDSACKRecv': 94}}
+wrote /home/nspham/honeypot-control/analysis/swarm_pilot/internet_delay/checks.json

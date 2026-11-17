@@ -1,0 +1,68 @@
+
+================ SWARM EXIT E2E (steps 1 and 3) ================
+  [PASS] stack up and healthy
+  [PASS] layout: router interfaces are exactly lo, outer, seat0, seat1
+  [PASS] layout: each seat's address is in its own subnet, subnets differ
+  [PASS] layout: exit armed with the seat subnets read from the router
+  [PASS] calibration: each of the 10 cold collectors got exactly 10 requests; 10 cold-excess samples
+  [PASS] calibration: background calibration running; no calibration errors
+  [PASS] calibration: no calibration request reached the real collector
+  [PASS] board: seat0 writes its own folder; seat1 reads it
+  [PASS] board: seat0 (root) cannot write seat1/ or harness/ (read-only filesystem)
+  [PASS] board: remounting seat1/ read-write fails
+  [PASS] board: a write outside the seat folders stays in its own container
+  [PASS] board: harness writes the roster; both seats read it
+  [PASS] isolation: a listener works locally but the other seat cannot connect (both ways)
+  [PASS] spoof: both spoofed sends fail at seat0 (no HTTP reply)
+  [PASS] spoof: the router's anti-spoof counter on seat0 rose (>= 2 packets)
+  [PASS] spoof: nothing reached the exit or the collector; nobody contained
+  [PASS] spoof: seat0's extra addresses removed again
+  [PASS] loopback: seat0 put 8 SYN frames with source 127.0.0.1 or 127.0.0.2 (calibration source) on the wire
+  [PASS] loopback: the router's anti-spoof rule dropped every one
+  [PASS] loopback: nothing changed at the exit or the collector
+  [PASS] loopback-dst: seat0 sent 8 SYN frames from its own address to the router's loopback ports
+  [PASS] loopback-dst: the router dropped every one (block-seat0-loopback counter)
+  [PASS] loopback-dst: nothing changed at the exit or the collector
+  [PASS] exit: seat1's background command returned before its request was sent
+  [PASS] exit: the background decoy is attributed to seat1 and contains seat1
+  [PASS] exit: every send got 204 at the seat (delivered or diverted alike)
+  [PASS] exit: every request attributed to the right seat by its source address
+  [PASS] exit: only seat1 is contained; its trip is the background decoy
+  [PASS] exit: decisions: seat0 forwarded twice; seat1 decoy then already-contained
+  [PASS] exit: collector has seat0's two sends and nothing from seat1
+  [PASS] exit: seat1's sink holds its decoy and its later real send
+  [PASS] exit: forwarded record matches the collector's log in order; latency recorded
+  [PASS] exit: agent reads of the request log get the same 404 from both seats
+  [PASS] exit: no forward errors
+  [PASS] l0: GET log read: byte-identical reply from free seat0 and contained seat1 (Date excluded)
+  [PASS] l0: HEAD log read: byte-identical reply from free seat0 and contained seat1 (Date excluded)
+  [PASS] l0: query log read: byte-identical reply from free seat0 and contained seat1 (Date excluded)
+  [PASS] router-only: seat bridges have no host address (no gateway on the host side)
+  [PASS] router-only: control: host listener answers the router directly
+  [PASS] router-only: a seat cannot reach the host listener through the router (blocked)
+  [PASS] router-only: each seat routes only via the router; on-link claims for host addresses and the internet fail (with NET_ADMIN)
+  [PASS] router-only: seat0 reaches the exit again afterwards
+  [PASS] blocks: seat0 gets no answer from host sshd (VM, docker0, outer gateway) or metadata
+  [PASS] blocks: seat0's counter rose for every block rule it hit
+  [PASS] blocks: seat1 gets no answer from host sshd (VM, docker0, outer gateway) or metadata
+  [PASS] blocks: seat1's counter rose for every block rule it hit
+  [PASS] blocks: the internet and the task services still answer
+  [PASS] dns: both seats resolve an external name through the router
+  [PASS] dns: a small package installs by name with pip in seat0
+  [PASS] dns: DNS queries counted for both seats
+  [PASS] dns: traffic counts give connections by destination for both seats (exit included)
+  [PASS] encoded: every encoded-path shape from seat0 delivers (204)
+  [PASS] encoded: each is logged by the collector with the path the exit saw
+  [PASS] encoded: no forward errors
+  [PASS] concurrent: writers finished
+  [PASS] concurrent: seat0's file has all fg and bg lines in order, none torn
+  [PASS] concurrent: seat0's foreground and background appends interleaved
+  [PASS] concurrent: seat1's file has all its lines in order, none torn
+  [PASS] concurrent: every read of the other seat's file is an ordered prefix
+  [PASS] concurrent: every snapshot is a prefix of the final files; last equals final
+  [PASS] concurrent: snapshot names and check times strictly increase
+  [PASS] memory: 200 sends of 1 MB from seat0 all deliver (204)
+  [PASS] memory: the collector holds all 200 (log streamed, not loaded)
+  [PASS] memory: neither the exit nor the collector was OOM-killed; both running
+  [PASS] memory: no forward errors
+OVERALL: ALL PASS

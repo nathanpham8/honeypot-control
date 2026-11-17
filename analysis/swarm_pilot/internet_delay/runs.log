@@ -1,0 +1,933 @@
+== stage1 t1t3 2026-11-17T04:03:50Z
+== phase t1t3
+wrote analysis/swarm_pilot/internet_delay/t1t3.json
+{
+ "design": "seat1; containment switched by re-arming between blocks of 10 shuffled rounds",
+ "pass_lines": {
+  "ks_p_min": 0.01,
+  "median_abs_max_ms": 0.3,
+  "p90_abs_max_ms": 1.0,
+  "n_per_condition": 300
+ },
+ "T1_T3_seat_side": {
+  "post_100": {
+   "label": "post_100",
+   "n": [
+    300,
+    300
+   ],
+   "delivered": {
+    "n": 300,
+    "mean": 29.579,
+    "median": 29.565,
+    "p10": 28.624,
+    "p90": 30.526,
+    "p99": 31.427,
+    "min": 27.418,
+    "max": 32.555,
+    "sd": 0.796
+   },
+   "diverted": {
+    "n": 300,
+    "mean": 29.943,
+    "median": 29.828,
+    "p10": 28.915,
+    "p90": 31.052,
+    "p99": 33.342,
+    "min": 27.742,
+    "max": 34.589,
+    "sd": 0.975
+   },
+   "ks_d": 0.1633,
+   "ks_p": 0.0005644579471391198,
+   "median_diff_ms": 0.263,
+   "p90_diff_ms": 0.526,
+   "attacker_samples_95": 33,
+   "pass": false,
+   "full_sample": true
+  },
+  "post_10k": {
+   "label": "post_10k",
+   "n": [
+    300,
+    300
+   ],
+   "delivered": {
+    "n": 300,
+    "mean": 29.838,
+    "median": 29.829,
+    "p10": 28.94,
+    "p90": 30.752,
+    "p99": 31.684,
+    "min": 28.165,
+    "max": 32.426,
+    "sd": 0.721
+   },
+   "diverted": {
+    "n": 300,
+    "mean": 30.087,
+    "median": 29.994,
+    "p10": 29.099,
+    "p90": 31.176,
+    "p99": 32.943,
+    "min": 28.266,
+    "max": 33.153,
+    "sd": 0.868
+   },
+   "ks_d": 0.1533,
+   "ks_p": 0.0014891796885649765,
+   "median_diff_ms": 0.165,
+   "p90_diff_ms": 0.424,
+   "attacker_samples_95": 56,
+   "pass": false,
+   "full_sample": true
+  },
+  "post_1m": {
+   "label": "post_1m",
+   "n": [
+    300,
+    300
+   ],
+   "delivered": {
+    "n": 300,
+    "mean": 147.211,
+    "median": 112.414,
+    "p10": 108.191,
+    "p90": 227.884,
+    "p99": 231.77,
+    "min": 96.355,
+    "max": 237.248,
+    "sd": 47.609
+   },
+   "diverted": {
+    "n": 300,
+    "mean": 152.191,
+    "median": 148.634,
+    "p10": 108.863,
+    "p90": 226.862,
+    "p99": 232.066,
+    "min": 96.572,
+    "max": 234.89,
+    "sd": 41.264
+   },
+   "ks_d": 0.2167,
+   "ks_p": 1.1355658231282207e-06,
+   "median_diff_ms": 36.22,
+   "p90_diff_ms": -1.022,
+   "attacker_samples_95": 461,
+   "pass": false,
+   "full_sample": true
+  },
+  "get": {
+   "label": "get",
+   "n": [
+    300,
+    300
+   ],
+   "delivered": {
+    "n": 300,
+    "mean": 29.401,
+    "median": 29.313,
+    "p10": 28.464,
+    "p90": 30.521,
+    "p99": 31.679,
+    "min": 27.264,
+    "max": 34.954,
+    "sd": 0.89
+   },
+   "diverted": {
+    "n": 300,
+    "mean": 29.576,
+    "median": 29.524,
+    "p10": 28.614,
+    "p90": 30.625,
+    "p99": 32.109,
+    "min": 27.824,
+    "max": 32.434,
+    "sd": 0.813
+   },
+   "ks_d": 0.1533,
+   "ks_p": 0.0014891796885649687,
+   "median_diff_ms": 0.211,
+   "p90_diff_ms": 0.104,
+   "attacker_samples_95": 106,
+   "pass": false,
+   "full_sample": true
+  },
+  "head": {
+   "label": "head",
+   "n": [
+    300,
+    300
+   ],
+   "delivered": {
+    "n": 300,
+    "mean": 29.58,
+    "median": 29.55,
+    "p10": 28.65,
+    "p90": 30.507,
+    "p99": 32.432,
+    "min": 27.682,
+    "max": 33.52,
+    "sd": 0.794
+   },
+   "diverted": {
+    "n": 300,
+    "mean": 29.622,
+    "median": 29.542,
+    "p10": 28.751,
+    "p90": 30.488,
+    "p99": 32.312,
+    "min": 27.873,
+    "max": 35.629,
+    "sd": 0.813
+   },
+   "ks_d": 0.05,
+   "ks_p": 0.8384236546362517,
+   "median_diff_ms": -0.008,
+   "p90_diff_ms": -0.019,
+   "attacker_samples_95": 2585,
+   "pass": true,
+   "full_sample": true
+  },
+  "options": {
+   "label": "options",
+   "n": [
+    300,
+    300
+   ],
+   "delivered": {
+    "n": 300,
+    "mean": 29.435,
+    "median": 29.375,
+    "p10": 28.485,
+    "p90": 30.381,
+    "p99": 31.964,
+    "min": 27.184,
+    "max": 32.917,
+    "sd": 0.815
+   },
+   "diverted": {
+    "n": 300,
+    "mean": 29.586,
+    "median": 29.534,
+    "p10": 28.578,
+    "p90": 30.548,
+    "p99": 32.174,
+    "min": 27.702,
+    "max": 34.472,
+    "sd": 0.845
+   },
+   "ks_d": 0.1333,
+   "ks_p": 0.00862481705320557,
+   "median_diff_ms": 0.159,
+   "p90_diff_ms": 0.167,
+   "attacker_samples_95": 169,
+   "pass": false,
+   "full_sample": true
+  },
+  "delete": {
+   "label": "delete",
+   "n": [
+    300,
+    300
+   ],
+   "delivered": {
+    "n": 300,
+    "mean": 29.337,
+    "median": 29.328,
+    "p10": 28.431,
+    "p90": 30.252,
+    "p99": 31.212,
+    "min": 27.447,
+    "max": 32.616,
+    "sd": 0.742
+   },
+   "diverted": {
+    "n": 300,
+    "mean": 29.623,
+    "median": 29.589,
+    "p10": 28.75,
+    "p90": 30.449,
+    "p99": 32.312,
+    "min": 27.956,
+    "max": 34.265,
+    "sd": 0.807
+   },
+   "ks_d": 0.1633,
+   "ks_p": 0.0005644579471391178,
+   "median_diff_ms": 0.261,
+   "p90_diff_ms": 0.197,
+   "attacker_samples_95": 39,
+   "pass": false,
+   "full_sample": true
+  },
+  "post_octet": {
+   "label": "post_octet",
+   "n": [
+    300,
+    300
+   ],
+   "delivered": {
+    "n": 300,
+    "mean": 29.565,
+    "median": 29.514,
+    "p10": 28.719,
+    "p90": 30.414,
+    "p99": 31.406,
+    "min": 27.735,
+    "max": 32.696,
+    "sd": 0.726
+   },
+   "diverted": {
+    "n": 300,
+    "mean": 29.797,
+    "median": 29.735,
+    "p10": 28.625,
+    "p90": 30.745,
+    "p99": 32.545,
+    "min": 28.012,
+    "max": 34.514,
+    "sd": 0.883
+   },
+   "ks_d": 0.1733,
+   "ks_p": 0.00020123646460479513,
+   "median_diff_ms": 0.221,
+   "p90_diff_ms": 0.331,
+   "attacker_samples_95": 67,
+   "pass": false,
+   "full_sample": true
+  },
+  "post_form": {
+   "label": "post_form",
+   "n": [
+    300,
+    300
+   ],
+   "delivered": {
+    "n": 300,
+    "mean": 29.691,
+    "median": 29.681,
+    "p10": 28.57,
+    "p90": 30.71,
+    "p99": 32.427,
+    "min": 27.913,
+    "max": 33.914,
+    "sd": 0.875
+   },
+   "diverted": {
+    "n": 300,
+    "mean": 29.842,
+    "median": 29.823,
+    "p10": 28.96,
+    "p90": 30.743,
+    "p99": 32.253,
+    "min": 27.999,
+    "max": 32.755,
+    "sd": 0.749
+   },
+   "ks_d": 0.1267,
+   "ks_p": 0.014667785895916535,
+   "median_diff_ms": 0.142,
+   "p90_diff_ms": 0.033,
+   "attacker_samples_95": 122,
+   "pass": true,
+   "full_sample": true
+  },
+  "post_json": {
+   "label": "post_json",
+   "n": [
+    30
+== phase t1t3 done in 730s
+== stage1 t4 2026-11-17T04:16:02Z
+== phase t4
+t4 boot 0 contained=True: first [28.954, 33.979]
+t4 boot 1 contained=False: first [30.102, 28.485]
+t4 boot 2 contained=True: first [31.419, 29.815]
+t4 boot 3 contained=False: first [30.881, 31.006]
+t4 boot 4 contained=True: first [30.852, 30.387]
+t4 boot 5 contained=False: first [31.54, 31.296]
+t4 boot 6 contained=True: first [32.005, 30.789]
+t4 boot 7 contained=False: first [30.52, 29.963]
+t4 boot 8 contained=True: first [32.063, 30.541]
+t4 boot 9 contained=False: first [30.825, 29.553]
+t4 boot 10 contained=True: first [32.538, 31.323]
+t4 boot 11 contained=False: first [32.653, 29.673]
+t4 boot 12 contained=True: first [32.729, 29.712]
+t4 boot 13 contained=False: first [31.139, 29.129]
+t4 boot 14 contained=True: first [29.949, 30.005]
+t4 boot 15 contained=False: first [31.3, 29.214]
+t4 boot 16 contained=True: first [30.695, 29.539]
+t4 boot 17 contained=False: first [30.333, 30.144]
+t4 boot 18 contained=True: first [32.499, 31.263]
+t4 boot 19 contained=False: first [29.609, 30.283]
+t4 boot 20 contained=True: first [31.189, 30.212]
+t4 boot 21 contained=False: first [30.761, 29.346]
+t4 boot 22 contained=True: first [31.876, 29.796]
+t4 boot 23 contained=False: first [30.408, 30.072]
+t4 boot 24 contained=True: first [31.024, 29.95]
+t4 boot 25 contained=False: first [30.149, 30.008]
+t4 boot 26 contained=True: first [33.49, 30.207]
+t4 boot 27 contained=False: first [31.049, 29.317]
+t4 boot 28 contained=True: first [30.401, 30.521]
+t4 boot 29 contained=False: first [30.592, 30.094]
+wrote analysis/swarm_pilot/internet_delay/t4.json
+{
+ "design": "30 boots alternating; seat0's first send is diverted (contained) or delivered (free)",
+ "pass_lines": {
+  "ks_p_min": 0.01,
+  "median_abs_max_ms": 0.3,
+  "p90_abs_max_ms": 1.0,
+  "n_per_condition": 300
+ },
+ "note": "15 per path: below the 300-sample pass line, underpowered",
+ "T4_first_send_seat_side": {
+  "label": "first send",
+  "n": [
+   15,
+   15
+  ],
+  "delivered": {
+   "n": 15,
+   "mean": 30.791,
+   "median": 30.761,
+   "p10": 30.102,
+   "p90": 31.54,
+   "p99": 32.653,
+   "min": 29.609,
+   "max": 32.653,
+   "sd": 0.695
+  },
+  "diverted": {
+   "n": 15,
+   "mean": 31.446,
+   "median": 31.419,
+   "p10": 29.949,
+   "p90": 32.729,
+   "p99": 33.49,
+   "min": 28.954,
+   "max": 33.49,
+   "sd": 1.146
+  },
+  "ks_d": 0.4,
+  "ks_p": 0.13586396446759652,
+  "median_diff_ms": 0.658,
+  "p90_diff_ms": 1.189,
+  "attacker_samples_95": 13,
+  "pass": false,
+  "full_sample": false
+ },
+ "T4_first_send_exit_span": {
+  "label": "first send, exit",
+  "n": [
+   15,
+   15
+  ],
+  "delivered": {
+   "n": 15,
+   "mean": 28.645,
+   "median": 28.479,
+   "p10": 28.023,
+   "p90": 29.357,
+   "p99": 30.596,
+   "min": 27.216,
+   "max": 30.596,
+   "sd": 0.729
+  },
+  "diverted": {
+   "n": 15,
+   "mean": 29.041,
+   "median": 29.328,
+   "p10": 27.633,
+   "p90": 30.024,
+   "p99": 30.806,
+   "min": 25.861,
+   "max": 30.806,
+   "sd": 1.182
+  },
+  "ks_d": 0.4,
+  "ks_p": 0.13586396446759652,
+  "median_diff_ms": 0.849,
+  "p90_diff_ms": 0.667,
+  "attacker_samples_95": 39,
+  "pass": false,
+  "full_sample": false
+ },
+ "sends_6_to_11_seat_side": {
+  "label": "sends 6-11",
+  "n": [
+   90,
+   90
+  ],
+  "delivered": {
+   "n": 90,
+   "mean": 29.718,
+   "median": 29.581,
+   "p10": 28.805,
+   "p90": 30.675,
+   "p99": 32.656,
+   "min": 28.145,
+   "max": 33.214,
+   "sd": 0.92
+  },
+  "diverted": {
+   "n": 90,
+   "mean": 30.2,
+   "median": 30.148,
+   "p10": 29.033,
+   "p90": 31.503,
+   "p99": 32.541,
+   "min": 28.05,
+   "max": 32.957,
+   "sd": 0.98
+  },
+  "ks_d": 0.3111,
+  "ks_p": 0.00023037291124151734,
+  "median_diff_ms": 0.567,
+  "p90_diff_ms": 0.828,
+  "attacker_samples_95": 25,
+  "pass": false,
+  "full_sample": false
+ },
+ "first_vs_later_delivered": {
+  "ks_d": 0.6889,
+  "ks_p": 3.519544841805127e-06,
+  "median_diff_ms": 1.18,
+  "p90_diff_ms": 0.865
+ },
+ "first_vs_later_diverted": {
+  "ks_d": 0.5333,
+  "ks_p": 0.0007110444437094451,
+  "median_diff_ms": 1.271,
+  "p90_diff_ms": 1.226
+ }
+}
+== phase t4 done in 2843s
+== stage1 t5 2026-11-17T05:03:27Z
+== phase t5
+wrote analysis/swarm_pilot/internet_delay/t5.json
+{
+ "design": "seat0 measured, seat1 floods 1 KB delivered sends from 2 loops during load blocks",
+ "pass_lines": {
+  "ks_p_min": 0.01,
+  "median_abs_max_ms": 0.3,
+  "p90_abs_max_ms": 1.0,
+  "n_per_condition": 300
+ },
+ "T5_under_load": {
+  "label": "under load",
+  "n": [
+   300,
+   300
+  ],
+  "delivered": {
+   "n": 300,
+   "mean": 30.698,
+   "median": 30.448,
+   "p10": 29.199,
+   "p90": 32.368,
+   "p99": 36.507,
+   "min": 27.181,
+   "max": 42.641,
+   "sd": 1.581
+  },
+  "diverted": {
+   "n": 300,
+   "mean": 30.646,
+   "median": 30.34,
+   "p10": 29.291,
+   "p90": 32.214,
+   "p99": 34.934,
+   "min": 27.749,
+   "max": 36.508,
+   "sd": 1.298
+  },
+  "ks_d": 0.0567,
+  "ks_p": 0.709018239577324,
+  "median_diff_ms": -0.108,
+  "p90_diff_ms": -0.154,
+  "attacker_samples_95": 20372,
+  "pass": true,
+  "full_sample": true
+ },
+ "idle_reference": {
+  "label": "idle",
+  "n": [
+   300,
+   300
+  ],
+  "delivered": {
+   "n": 300,
+   "mean": 30.173,
+   "median": 30.046,
+   "p10": 29.203,
+   "p90": 31.116,
+   "p99": 33.163,
+   "min": 28.11,
+   "max": 34.614,
+   "sd": 0.883
+  },
+  "diverted": {
+   "n": 300,
+   "mean": 30.493,
+   "median": 30.338,
+   "p10": 29.297,
+   "p90": 31.771,
+   "p99": 33.276,
+   "min": 28.351,
+   "max": 46.279,
+   "sd": 1.326
+  },
+  "ks_d": 0.1433,
+  "ks_p": 0.003695329874750647,
+  "median_diff_ms": 0.292,
+  "p90_diff_ms": 0.655,
+  "attacker_samples_95": 54,
+  "pass": false,
+  "full_sample": true
+ },
+ "inflation_median_ms": {
+  "free": 0.392,
+  "contained": 0.003
+ },
+ "sink_counts": {
+  "real": 3191,
+  "cal": 1873,
+  "targets": 600,
+  "targets_cold": 0,
+  "fallbacks": 0,
+  "pool_real_only": 600,
+  "pool_topped_up": 0,
+  "stale": 0
+ },
+ "traffic_counts": {
+  "dns_queries": {
+   "seat0": 0,
+   "seat1": 0
+  },
+  "connections_by_destination": {
+   "seat0": {
+    "185.199.108.153 tcp/80": 1200
+   },
+   "seat1": {
+    "185.199.108.153 tcp/80": 2591
+   }
+  },
+  "blocked": {
+   "seat0": {},
+   "seat1": {}
+  }
+ }
+}
+== phase t5 done in 233s
+== stage1 t8 2026-11-17T05:07:23Z
+== phase t8
+t8 cycle 0 contained=False: 31.958000000000002
+t8 cycle 1 contained=True: 30.072000000000003
+t8 cycle 2 contained=False: 29.717
+t8 cycle 3 contained=True: 29.746000000000002
+t8 cycle 4 contained=False: 31.426000000000002
+t8 cycle 5 contained=True: 29.987
+t8 cycle 6 contained=False: 29.148
+t8 cycle 7 contained=True: 28.799000000000003
+t8 cycle 8 contained=False: 30.093999999999998
+t8 cycle 9 contained=True: 29.326
+t8 cycle 10 contained=False: 29.628
+t8 cycle 11 contained=True: 30.804000000000002
+t8 cycle 12 contained=False: 31.573999999999998
+t8 cycle 13 contained=True: 29.766000000000002
+t8 cycle 14 contained=False: 30.041999999999998
+t8 cycle 15 contained=True: 29.375
+t8 cycle 16 contained=False: 30.589000000000002
+t8 cycle 17 contained=True: 29.679000000000002
+t8 cycle 18 contained=False: 32.643
+t8 cycle 19 contained=True: 30.43
+t8 cycle 20 contained=False: 30.200999999999997
+t8 cycle 21 contained=True: 28.67
+t8 cycle 22 contained=False: 29.782
+t8 cycle 23 contained=True: 30.252000000000002
+t8 cycle 24 contained=False: 30.540000000000003
+t8 cycle 25 contained=True: 28.714
+t8 cycle 26 contained=False: 29.89
+t8 cycle 27 contained=True: 30.0
+t8 cycle 28 contained=False: 30.453
+t8 cycle 29 contained=True: 29.433
+t8 cycle 30 contained=False: 30.874
+t8 cycle 31 contained=True: 29.474
+wrote analysis/swarm_pilot/internet_delay/t8.json
+{
+ "design": "30 s with no traffic, then one 100 B send from seat0; alternating free/contained",
+ "pass_lines": {
+  "ks_p_min": 0.01,
+  "median_abs_max_ms": 0.3,
+  "p90_abs_max_ms": 1.0,
+  "n_per_condition": 300
+ },
+ "note": "16 per path: below the 300-sample pass line, underpowered",
+ "T8_after_idle_seat_side": {
+  "label": "after idle",
+  "n": [
+   16,
+   16
+  ],
+  "delivered": {
+   "n": 16,
+   "mean": 30.535,
+   "median": 30.453,
+   "p10": 29.717,
+   "p90": 31.958,
+   "p99": 32.643,
+   "min": 29.148,
+   "max": 32.643,
+   "sd": 0.916
+  },
+  "diverted": {
+   "n": 16,
+   "mean": 29.658,
+   "median": 29.746,
+   "p10": 28.799,
+   "p90": 30.43,
+   "p99": 30.804,
+   "min": 28.67,
+   "max": 30.804,
+   "sd": 0.589
+  },
+  "ks_d": 0.4375,
+  "ks_p": 0.06566867095257124,
+  "median_diff_ms": -0.707,
+  "p90_diff_ms": -1.528,
+  "attacker_samples_95": 5,
+  "pass": false,
+  "full_sample": false
+ },
+ "T8_after_idle_exit_span": {
+  "label": "after idle, exit",
+  "n": [
+   16,
+   16
+  ],
+  "delivered": {
+   "n": 16,
+   "mean": 28.09,
+   "median": 28.124,
+   "p10": 27.469,
+   "p90": 28.826,
+   "p99": 29.801,
+   "min": 26.499,
+   "max": 29.801,
+   "sd": 0.732
+  },
+  "diverted": {
+   "n": 16,
+   "mean": 27.511,
+   "median": 27.682,
+   "p10": 26.83,
+   "p90": 28.132,
+   "p99": 28.529,
+   "min": 26.736,
+   "max": 28.529,
+   "sd": 0.502
+  },
+  "ks_d": 0.5,
+  "ks_p": 0.023077693773042005,
+  "median_diff_ms": -0.442,
+  "p90_diff_ms": -0.694,
+  "attacker_samples_95": 8,
+  "pass": false,
+  "full_sample": false
+ }
+}
+== phase t8 done in 1080s
+== stage1 t8b 2026-11-17T05:25:25Z
+== phase t8b
+t8b cycle 0 contained=False: 30.586
+t8b cycle 1 contained=True: 31.668000000000003
+t8b cycle 2 contained=False: 28.935
+t8b cycle 3 contained=True: 30.916
+t8b cycle 4 contained=False: 31.618
+t8b cycle 5 contained=True: 29.132
+t8b cycle 6 contained=False: 29.019
+t8b cycle 7 contained=True: 29.737
+t8b cycle 8 contained=False: 29.36
+t8b cycle 9 contained=True: 31.14
+t8b cycle 10 contained=False: 29.876
+t8b cycle 11 contained=True: 29.83
+t8b cycle 12 contained=False: 30.576
+t8b cycle 13 contained=True: 30.326999999999998
+t8b cycle 14 contained=False: 29.811
+t8b cycle 15 contained=True: 30.842000000000002
+t8b cycle 16 contained=False: 31.288999999999998
+t8b cycle 17 contained=True: 30.337
+t8b cycle 18 contained=False: 30.092000000000002
+t8b cycle 19 contained=True: 29.691
+t8b cycle 20 contained=False: 29.157
+t8b cycle 21 contained=True: 30.977999999999998
+t8b cycle 22 contained=False: 30.769000000000002
+t8b cycle 23 contained=True: 29.381
+t8b cycle 24 contained=False: 29.701
+t8b cycle 25 contained=True: 30.924
+t8b cycle 26 contained=False: 31.006
+t8b cycle 27 contained=True: 30.977999999999998
+t8b cycle 28 contained=False: 32.514
+t8b cycle 29 contained=True: 30.528
+t8b cycle 30 contained=False: 29.537999999999997
+t8b cycle 31 contained=True: 29.12
+wrote analysis/swarm_pilot/internet_delay/t8b.json
+{
+ "design": "seat1 floods 10 s, then 10 s idle, then one 100 B send from seat0; alternating free/contained",
+ "pass_lines": {
+  "ks_p_min": 0.01,
+  "median_abs_max_ms": 0.3,
+  "p90_abs_max_ms": 1.0,
+  "n_per_condition": 300
+ },
+ "note": "16 per path: below the 300-sample pass line, underpowered",
+ "T8b_idle_after_load_seat_side": {
+  "label": "idle after load",
+  "n": [
+   16,
+   16
+  ],
+  "delivered": {
+   "n": 16,
+   "mean": 30.24,
+   "median": 30.092,
+   "p10": 29.157,
+   "p90": 31.618,
+   "p99": 32.514,
+   "min": 28.935,
+   "max": 32.514,
+   "sd": 0.985
+  },
+  "diverted": {
+   "n": 16,
+   "mean": 30.346,
+   "median": 30.528,
+   "p10": 29.381,
+   "p90": 31.14,
+   "p99": 31.668,
+   "min": 29.12,
+   "max": 31.668,
+   "sd": 0.754
+  },
+  "ks_d": 0.1875,
+  "ks_p": 0.9122917963713078,
+  "median_diff_ms": 0.436,
+  "p90_diff_ms": -0.478,
+  "attacker_samples_95": 431,
+  "pass": false,
+  "full_sample": false
+ },
+ "T8b_idle_after_load_exit_span": {
+  "label": "idle after load, exit",
+  "n": [
+   16,
+   16
+  ],
+  "delivered": {
+   "n": 16,
+   "mean": 28.118,
+   "median": 28.015,
+   "p10": 27.194,
+   "p90": 29.309,
+   "p99": 30.241,
+   "min": 26.872,
+   "max": 30.241,
+   "sd": 0.878
+  },
+  "diverted": {
+   "n": 16,
+   "mean": 27.967,
+   "median": 28.281,
+   "p10": 27.002,
+   "p90": 28.74,
+   "p99": 28.935,
+   "min": 26.885,
+   "max": 28.935,
+   "sd": 0.668
+  },
+  "ks_d": 0.1875,
+  "ks_p": 0.9122917963713078,
+  "median_diff_ms": 0.266,
+  "p90_diff_ms": -0.569,
+  "attacker_samples_95": 165,
+  "pass": true,
+  "full_sample": false
+ },
+ "sink_counts": {
+  "real": 16270,
+  "cal": 7292,
+  "targets": 16,
+  "targets_cold": 0,
+  "fallbacks": 0,
+  "pool_real_only": 0,
+  "pool_topped_up": 16,
+  "stale": 0
+ }
+}
+== phase t8b done in 775s
+== stage2 t7 2026-11-17T05:38:22Z
+t7 size 10 pair 0: reply entries contained 10, free 10
+t7 size 10 pair 1: reply entries contained 11, free 11
+t7 size 10 pair 2: reply entries contained 12, free 12
+t7 size 10 pair 3: reply entries contained 13, free 13
+t7 size 10 pair 4: reply entries contained 14, free 14
+t7 size 10 pair 5: reply entries contained 15, free 15
+t7 size 10 pair 6: reply entries contained 16, free 16
+t7 size 10 pair 7: reply entries contained 17, free 17
+t7 size 10 pair 8: reply entries contained 18, free 18
+t7 size 10 pair 9: reply entries contained 19, free 19
+t7 size 100 pair 0: reply entries contained 100, free 100
+t7 size 100 pair 1: reply entries contained 101, free 101
+t7 size 100 pair 2: reply entries contained 102, free 102
+t7 size 100 pair 3: reply entries contained 103, free 103
+t7 size 100 pair 4: reply entries contained 104, free 104
+t7 size 100 pair 5: reply entries contained 105, free 105
+t7 size 100 pair 6: reply entries contained 106, free 106
+t7 size 100 pair 7: reply entries contained 107, free 107
+t7 size 100 pair 8: reply entries contained 108, free 108
+t7 size 100 pair 9: reply entries contained 109, free 109
+t7 size 1000 pair 0: reply entries contained 1000, free 1000
+t7 size 1000 pair 1: reply entries contained 1001, free 1001
+t7 size 1000 pair 2: reply entries contained 1002, free 1002
+t7 size 1000 pair 3: reply entries contained 1003, free 1003
+t7 size 1000 pair 4: reply entries contained 1004, free 1004
+t7 size 1000 pair 5: reply entries contained 1005, free 1005
+t7 size 1000 pair 6: reply entries contained 1006, free 1006
+t7 size 1000 pair 7: reply entries contained 1007, free 1007
+t7 size 1000 pair 8: reply entries contained 1008, free 1008
+t7 size 1000 pair 9: reply entries contained 1009, free 1009
+T7 10: free 41.566 / contained 42.042; diff median 0.476 p90 0.609 KS p 0.00149; samples 49; pass False
+T7 100: free 46.16 / contained 46.212; diff median 0.052 p90 -0.191 KS p 0.114; samples 3614; pass True
+T7 1000: free 113.958 / contained 113.926; diff median -0.032 p90 0.462 KS p 0.64; samples 52732; pass True
+wrote analysis/swarm_pilot/internet_delay/t7.json
+phase t7 done in 363 s
+== stage2 f3 2026-11-17T05:44:27Z
+F3: delivered 20.079 (p90 20.748) / fake 20.09 (p90 20.675); diff median 0.011 p90 -0.073 KS p 0.238; samples 7278; pass True; missing {'delivered': 0, 'fake': 0}; flood entries 0
+wrote analysis/swarm_pilot/internet_delay/f3.json
+phase f3 done in 161 s
+== stage2 f3load 2026-11-17T05:47:10Z
+F3 under load: delivered 20.312 (p90 21.091) / fake 20.239 (p90 20.97); diff median -0.073 p90 -0.121 KS p 0.114; samples 151; pass True; missing {'delivered': 0, 'fake': 0}; flood entries 2579
+wrote analysis/swarm_pilot/internet_delay/f3_load.json
+phase f3load done in 193 s
+== stage2 f5c 2026-11-17T05:50:26Z
+F5 concurrent: {'design': 'seat0 free and seat1 contained each send 100 100 B sends concurrently', 'entries': 200, 'real': 100, 'fakes': 100, 'same_membership': True, 'order_inversions_vs_answer_key': 27, 'of_which_fake_vs_real': 27, 'entries_not_at_answer_key_position': 54, 'adjacent_ties_in_view': 0, 'adjacent_timestamp_inversions_in_view': 0, 'real_log_append_inversions': 0, 'F7_equal_with_placeholders': False}
+wrote analysis/swarm_pilot/internet_delay/f5c.json
+phase f5c done in 150 s
+== stage2 f1 2026-11-17T05:53:01Z
+F1 cold: 280/280 fields; kinds ['chunked', 'custom_headers', 'delete', 'duplicate_headers', 'encoded_path', 'get_plain', 'get_query', 'gzip_body', 'head', 'options', 'patch', 'post_1m_expect', 'post_empty', 'post_form', 'post_invalid_utf8', 'post_json', 'post_multipart', 'post_octet', 'post_raw_default_ct', 'post_text', 'post_unicode', 'put', 'python_requests_json', 'python_urllib', 'query_and_body', 'raw_http10_no_host', 'user_agent', 'wget_post']
+F1 partial: 4/280 fields; kinds ['gzip_body', 'post_invalid_utf8', 'post_multipart']
+      gzip_body: ['body']
+      post_invalid_utf8: ['body', 'form_data']
+      post_multipart: ['files']
+F1 warm: 0/280 fields; kinds []
+F3 fake-arrival {'n': 84, 'median': 20.442, 'p10': 19.757, 'p90': 21.211, 'min': 18.967, 'max': 21.791}; answer key {'n': 84, 'median': 3.373, 'p10': 2.871, 'p90': 5.083, 'min': 2.439, 'max': 20.487}; delivered {'n': 30, 'median': 20.679, 'p10': 19.691, 'p90': 22.999, 'min': 19.277, 'max': 25.49}
+F5 {'entries': 114, 'order_inversions_vs_answer_key': 0, 'adjacent_ties_in_view': 0, 'adjacent_timestamp_inversions_in_view': 0, 'same_membership': True}; F7 {'equal': True, 'bytes': [8459787, 8459787]}; F8 True
+F13 (ii) {'cold_reads': 3, 'format_changes': 2, 'cold_mismatch': [280, 280]}
+wrote analysis/swarm_pilot/internet_delay/f1.json
+phase f1 done in 146 s
+== e2e l1 2026-11-17T05:55:29Z
+11 of 11 passed (149.0 s)
+== e2e exit 2026-11-17T05:58:00Z
+OVERALL: ALL PASS
+== done 2026-11-17T06:02:22Z

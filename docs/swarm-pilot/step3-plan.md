@@ -1280,3 +1280,232 @@ Recorded November 17, 2026, after Nathan's review of Part 1 and before any Part 
 
   Same designs and pass lines as the local runs.
 - **Note added before any Part 2 data:** netem's default queue limit (1,000 packets) is raised to 100,000 (`limit 100000`), so the delay queue never drops packets under the floods in T5, T8b and F3 under load; loss is not modeled. Drops are read from `tc -s` after each phase. A feasibility check in a throwaway container (no stack, not data) confirmed Alpine's `tc` supports this netem line with the normal distribution table and `rate 100gbit`.
+
+### Internet delay Part 2 (November 17, 2026)
+
+**Setup.**
+- Code `4bf9ab5`, built under "Internet delay Part 2: rules and design" (`9623f9e`). `swarm_sink.py` has no diff from `cc2c778`; `swarm_forger.py` and `swarm_exit.py` have no diff from `0bed85c`. Netem is the compose option `netem`, off by default.
+- Netem line on every run: `delay 5.84ms 0.29ms distribution normal rate 100gbit limit 100000`, on `lo` in the router namespace, ports 8091, 8092, 8093 and 8100 to 8109, both directions.
+- I checked first that no experiment containers were running. The checks ran first, then each phase once on its own fresh stack, in one unattended chain (04:03 to 06:02 UTC). No phase was repeated or restarted.
+- Pass lines as before: 300 per condition, KS p > 0.01, |median difference| < 0.3 ms, |p90 difference| < 1 ms. "Samples" is the attacker sample count as before.
+- Raw data: `analysis/swarm_pilot/internet_delay/`:
+  - `checks.json` and `checks.txt`;
+  - `reorder_diagnostic/`;
+  - `t1t3.json`, `t4.json`, `t5.json`, `t8.json`, `t8b.json`;
+  - `t7.json`, `f3.json`, `f3_load.json`, `f5c.json`, `f1.json`;
+  - `e2e_l1.*`, `e2e_exit.txt`, `netem_stats.jsonl`, `runs.log`.
+
+  Earlier data is unchanged.
+- "Local" below means Stage 1 final (`stage1_final/`) for T1 to T8b and the Stage 2 follow-up (`stage2_followup/`) for T7, F3, F5 and F1. Local is the worst case; delayed is the main setting.
+
+**Summary.**
+- **The delay is in place where intended.**
+  - Delayed ports connect in about 12.3 ms; undelayed ports in about 0.23 ms, the same as with netem off.
+  - Seat-side L0 reads and task-service requests are unchanged in median and p90. The L0 read's KS p is 0.0086, just under the line.
+  - A delivered send rises by 24.1 ms, not the 11.7 ms the proposal expected: each forward opens a new TCP connection, so it costs two round trips.
+- **Netem dropped 0 of 1,334,404 delayed packets** across all phases. Retransmits are equal with netem on and off (93 vs 95). Some reordering remains, though `rate` was meant to prevent it: TCPOFOQueue 4 → 213. The diagnostic below places it.
+- **Now passing that failed locally:**
+  - T5 idle reference: still fails, but the gap shrinks from 5 samples to 54;
+  - T7 at 100 and 1,000 entries;
+  - F3 idle and F3 under load;
+  - T1/T3 HEAD, form, JSON and multipart.
+- **Now failing that passed locally:**
+  - T1/T3 100 B, GET, OPTIONS and DELETE;
+  - T4 sends 6 to 11 (median +0.57 ms);
+  - T8 (16 per path);
+  - F5 concurrent got worse (27 inversions against 14).
+- **One large new difference: 1 MB sends.**
+  - A diverted 1 MB send takes 36 ms longer than a delivered one at the median (148.6 vs 112.4 ms); the p90s are equal.
+  - With netem, delivered 1 MB times split into clusters from about 100 to 230 ms, and the sink's calibration has a different mix of them.
+  - Attacker samples: 461.
+- **Confirmations all pass:**
+  - F1 warm 0 of 280;
+  - F8 identical;
+  - F14 200 of 200 both seats;
+  - L1 e2e 11 of 11, exit e2e all 65 checks;
+  - safe list 19 of 19.
+- Per rule 7, no iteration. Everything failing is listed as a known difference in section 6.
+
+#### 1. Checks before the timing tests (rule 4)
+One stack, netem switched by the helper. (a): 100 connects per port per condition. (b), (c): 20 blocks of 30, alternating on/off in swapped pairs, 300 per condition.
+
+**(a) TCP connect time from the exit container, ms (median; p10 to p90 with netem on):**
+
+| Ports | Netem on | Netem off |
+|---|---|---|
+| 8091, 8092, 8093 | 12.30, 12.34, 12.30 (11.73 to 13.06) | 0.19 to 0.20 |
+| 8100 to 8109 | 12.30 to 12.42 (11.66 to 12.94) | 0.19 to 0.22 |
+| 8081, 8082, 8083 (undelayed) | 0.26, 0.23, 0.23 | 0.22, 0.23, 0.22 |
+| 8200 (shadow, undelayed) | 0.23 | 0.22 |
+
+- The connect time is one RTT. On delayed ports it is 12.3 ms against the measured 11.69 ms (p10 11.18, p90 12.23): about 0.4 ms of local cost on top of the emulated 11.68 ms, plus the `rate` side effect noted in the design.
+- The spread (p10 to p90) is about 1.0 ms, matching the measured 1.05 ms.
+
+**(b) and (c) Seat-side latency, netem off vs on, ms:**
+
+| Request | Off median | On median | Diff median, p90 | KS p | Samples | As expected |
+|---|---|---|---|---|---|---|
+| L0 log read (no collector) | 2.567 | 2.644 | +0.077, +0.248 | 0.0086 | 76 | unchanged in median and p90; KS just under 0.01 |
+| Task service (52.84.125.33) | 2.468 | 2.516 | +0.048, +0.149 | 0.17 | 206 | yes |
+| Delivered 100 B send | 6.346 | 30.468 | +24.12, +24.34 | 2e-133 | — | rises by **2 RTT**, not 1 |
+
+- **Correction to the proposal:** it expected a delivered send to rise by about one RTT (11.7 ms). The exit opens a new TCP connection to the collector for every forward. The send therefore waits for the handshake (one RTT) and the request and reply (one RTT): 24.1 ms.
+- In real BashArena a send from the seat to the attacker address also costs a handshake and a request and reply, about 2 × 11.7 ms. So a delivered send's seat-side time (30.5 ms) is about 2 RTT plus local cost.
+
+**(d) TCP counters, router namespace, same workload (200 × 100 B, 20 × 1 MB, 50 L1 reads):**
+
+| Counter | Netem off (37.7 s) | Netem on (85.3 s) |
+|---|---|---|
+| RetransSegs | 93 | 95 |
+| TCPFastRetrans | 1 | 5 |
+| TCPTimeouts | 0 | 0 |
+| TCPLossProbes | 130 | 90 |
+| TCPDSACKRecv | 72 | 94 |
+| TCPSACKReorder | 3 | 295 |
+| TCPTSReorder | 0 | 4 |
+| TCPOFOQueue | 4 | 213 |
+
+- **Retransmits are equal on and off** (93, 95). Almost all are tail-loss probes, which loopback produces with or without netem.
+- **Reordering is not zero.** With `rate`, netem keeps its own queue in order, yet the receiver still saw out-of-order segments in the stack (TCPOFOQueue 213).
+- A diagnostic in a throwaway container (not a stack; `reorder_diagnostic/results.md`, same helper, port 8091) separates the causes:
+
+  | Workload | Netem | RetransSegs | OFO | SACKReorder |
+  |---|---|---|---|---|
+  | 30 sequential 1 MB requests | recorded line (with rate) | 0 | 0 | 0 |
+  | 30 sequential 1 MB requests | same jitter, no rate | 7 | 156 | 104 |
+  | 4 × 10 concurrent 1 MB requests | recorded line | 39 | 0 | 0 |
+  | 4 × 10 concurrent 1 MB requests | off | 34 | 0 | 0 |
+  | 5 × 40 MB replies | recorded line (4,074 packets, 0 dropped) | 0 | 1 | 3 |
+
+  - `rate` removes the reordering that jitter causes on request bodies: 156 out-of-order segments without it, 0 with it.
+  - A small residue remains in the stack: 1 in 4,074 packets on large replies in isolation, more under the stack's mixed load. The likely cause is reordering after netem on loopback's receive path. Untested; loopback's receive steering (`rps_cpus`) cannot be changed inside a container.
+  - No retransmits came from it. Per rule 7 the configuration was not changed. This is a limit (section 5).
+
+**Netem drops (`tc -s`, after every phase): 0 dropped of 1,334,404 delayed packets** (4.3 GB in the checks stack, 4.0 GB across the timing phases).
+
+#### 2. Stage 1 timing, netem on vs local (seat side; diverted − delivered)
+
+**T1/T3, by request kind (300 per condition per kind):**
+
+| Kind | Local diff median, p90 (KS p; samples) | Local pass | Delayed delivered median | Delayed diff median, p90 | KS p | Samples | Delayed pass |
+|---|---|---|---|---|---|---|---|
+| POST 100 B | +0.17, +0.30 (0.019; 127) | yes | 29.57 | **+0.26, +0.53** | 6e-4 | 33 | **no** (KS) |
+| POST 10 KB | +0.17, +0.71 (1e-4; 58) | no | 29.83 | +0.17, +0.42 | 0.0015 | 56 | no (KS) |
+| POST 1 MB | +0.51, +0.93 (0.005; 77) | no | 112.41 | **+36.22, −1.02** | 1e-6 | 461 | **no** (all three) |
+| GET | +0.06, +0.53 (0.38; 120) | yes | 29.31 | +0.21, +0.10 | 0.0015 | 106 | **no** (KS) |
+| HEAD | +0.20, +0.24 (0.005; 110) | no | 29.55 | −0.01, −0.02 | 0.84 | 2,585 | **yes** |
+| OPTIONS | +0.09, +0.19 (0.049; 101) | yes | 29.38 | +0.16, +0.17 | 0.0086 | 169 | **no** (KS) |
+| DELETE | +0.10, +0.47 (0.24; 154) | yes | 29.33 | +0.26, +0.20 | 6e-4 | 39 | **no** (KS) |
+| octet-stream | +0.16, +0.41 (3e-4; 77) | no | 29.51 | +0.22, +0.33 | 2e-4 | 67 | no (KS) |
+| form | +0.16, +0.42 (0.004; 115) | no | 29.68 | +0.14, +0.03 | 0.015 | 122 | **yes** |
+| JSON | +0.17, +0.56 (6e-4; 45) | no | 29.54 | +0.18, +0.30 | 0.061 | 86 | **yes** |
+| multipart | +0.26, +0.84 (4e-6; 36) | no | 32.09 | +0.16, +0.21 | 0.14 | 96 | **yes** |
+| PUT | +0.22, +0.65 (8e-4; 41) | no | 29.71 | +0.14, +0.12 | 3e-4 | 60 | no (KS) |
+| PATCH | +0.21, +0.55 (4e-4; 49) | no | 29.61 | +0.19, +0.20 | 1e-5 | 51 | no (KS) |
+
+- **4 of 13 kinds pass delayed, as locally**, but a different four. Apart from 1 MB, the diverted path is still about 0.15 to 0.26 ms slow at the median. The p90 differences are smaller than locally (all under 0.55 ms).
+- The exit-internal span (time inside the exit) passes in 11 of 13 kinds delayed, against 10 of 13 locally. It fails for HEAD (−0.15 ms median, KS 0.0086) and 1 MB (+36.3 ms).
+
+**1 MB, the large new difference.**
+- Delayed, delivered 1 MB times are multimodal. They fall in clusters from about 100 to 230 ms (10 ms bins with mass at 100 to 119, 130, 160 to 170, 190 to 200 and 220 to 230 ms), consistent with sends needing different numbers of round trips. Locally they sit in one cluster at 12 to 22 ms.
+- The diverted times cover the same range with a different mix: 35% fall at 90 to 119 ms against 53% for delivered. So the diverted median sits in a later cluster (148.6 ms) while the p90s agree (226.9 vs 227.9).
+- The sink hit its own targets (target median 146.37, actual 146.38 ms, exit span). The difference comes from the calibration distribution of 1 MB sends to 8092 differing from real sends to 8091.
+- One candidate cause, untested: TCP state that Linux carries from one connection to the next toward the same address (both collectors are 127.0.0.1). The background calibration and the real sends would then start from different congestion states.
+- Attacker samples: 461, because the two distributions are wide (sd about 45 ms). KS p is 1e-6.
+
+**T4, T5, T8, T8b:**
+
+| Test | Local diff median, p90 (KS p; samples) | Local pass | Delayed delivered median | Delayed diff median, p90 | KS p | Samples | Delayed pass |
+|---|---|---|---|---|---|---|---|
+| T4 first send (15 per path) | −0.41, −1.76 (0.31; 14) | no (n) | 30.76 | +0.66, +1.19 | 0.14 | 13 | no (n, median, p90) |
+| T4 sends 6 to 11 (90 per path) | −0.14, −0.62 (0.38; 90) | yes | 29.58 | **+0.57, +0.83** | 2e-4 | 25 | **no** (KS, median) |
+| T5 under load | −0.21, −0.17 (0.64; 1,278) | yes | 30.45 | −0.11, −0.15 | 0.71 | 20,372 | yes |
+| T5 idle reference | +0.94, +2.08 (6e-29; 5) | no | 30.05 | +0.29, +0.66 | 0.0037 | 54 | no (KS) |
+| T8 after 30 s idle (16 per path) | +0.26, −0.19 (0.63; 313) | yes | 30.45 | **−0.71, −1.53** | 0.066 | 5 | **no** (median, p90) |
+| T8b idle after load (16 per path) | −0.17, +4.15 (0.63; 257) | no (p90) | 30.09 | +0.44, −0.48 | 0.91 | 431 | no (median) |
+
+- T4, T8 and T8b have 15 or 16 samples per path, far below the 300 line; read them as underpowered.
+- T5 under load passes again, with a much smaller difference than locally. The diverted path's load inflation is now 0.00 ms against 0.39 ms for delivered: the sink does not follow load, but under the delay the load effect is small next to the 24 ms of round trips.
+- The T5 idle reference still fails, but much more weakly: the gap shrinks from 5 samples to 54.
+
+#### 3. Stage 2 forging, netem on vs local
+
+**T7: log read latency at matched reply size (300 per condition per size):**
+
+| Reply size | Local (follow-up) diff median, p90 (KS p; samples) | Local pass | Delayed free median (p90) | Delayed contained median | Delayed diff median, p90 | KS p | Samples | Delayed pass |
+|---|---|---|---|---|---|---|---|---|
+| 10 (10 to 19) | +0.55, −0.05 (1e-5; 71) | no | 41.57 | 42.04 | **+0.48, +0.61** | 0.0015 | 49 | **no** (KS, median) |
+| 100 (100 to 109) | +0.64, −0.69 (3e-7; 194) | no | 46.16 | 46.21 | +0.05, −0.19 | 0.11 | 3,614 | **yes** |
+| 1,000 (1,000 to 1,009) | +0.41, +0.88 (0.44; 807) | no | 113.96 | 113.93 | −0.03, +0.46 | 0.64 | 52,732 | **yes** |
+
+- Every pair was matched exactly in reply size.
+- Reads are about 33 ms slower than locally at 10 entries (41.6 vs 8.2 ms free), about 2.8 RTT. That is more than the 2 RTT a delivered send pays; the split of the extra time is not measured.
+- The contained read's extra local work (about 0.5 ms) is still visible at 10 entries. At 100 and 1,000 entries it is lost in the larger, more variable read time.
+
+**F3: fake timestamps vs real deliveries (offset from the exit's arrival stamp, ms, 300 per condition):**
+
+| | Local (follow-up) diff median, p90 (KS p; samples) | Local pass | Delayed delivered median (p90) | Delayed fake median (p90) | Delayed diff median, p90 | KS p | Samples | Delayed pass |
+|---|---|---|---|---|---|---|---|---|
+| Idle | −0.05, −0.11 (0.0015; 184) | no (KS) | 20.08 (20.75) | 20.09 (20.68) | +0.01, −0.07 | 0.24 | 7,278 | **yes** |
+| Under load (report only) | −1.00, −3.27 (4e-45; 4) | — | 20.31 (21.09) | 20.24 (20.97) | −0.07, −0.12 | 0.11 | 151 | within the lines |
+
+- With the delay, a real delivery reaches the collector about 20 ms after arrival (handshake plus the request's one-way trip, about 1.5 RTT, plus local cost). The forger's delay pool is measured through the exit's own request code against 8093, which is also delayed, so it picks up the same trips.
+- Load from the other seat now changes real deliveries by only 0.2 ms at the median, so the fixed pool no longer falls behind.
+- Missing entries: 0 delivered, 0 fake. The flood under load added 2,579 entries.
+
+**F5 with concurrent sends (100 + 100 at the same time):**
+
+| | Stage 2 | Follow-up (local) | Delayed |
+|---|---|---|---|
+| Inversions against the answer-key order (all fake vs real) | 17 | 14 | **27** |
+| Entries not at their answer-key position | 34 of 200 | 28 of 200 | **54 of 200** |
+| Ties; timestamp inversions within the view; real append inversions | 0; 0; — | 0; 0; 0 | 0; 0; 0 |
+| Same set of entries | yes | yes | yes |
+
+- The answer key stamps a fake at arrival plus local cost (median 3.4 ms in the F1 run). A fake's timestamp is arrival plus a delay from the pool (median 20.4 ms), so the answer-key order is further from either view than locally.
+- The count likely overstates the difference even more than in Stage 2 (section 4 there). It is still a known difference.
+
+#### 4. Confirmation runs (netem on)
+| Check | Local (follow-up) | Delayed |
+|---|---|---|
+| F1 warm, Docker (real clients, 28 kinds) | 0 of 280 | 0 of 280 |
+| F1 partial and cold, Docker | 4 of 280 (same 3 kinds); 280 of 280 | 4 of 280 (gzip body, invalid UTF-8, multipart, as before); 280 of 280 |
+| F5 sequential, F7, F13 (ii) | 0 inversions; F7 equal; 3 cold reads, 2 format changes | 0 inversions; F7 equal; 3 cold reads, 2 format changes |
+| F8 | pass | pass (F1 run; L1 e2e before and after F14) |
+| F14 send then read | 200 of 200 both seats | 200 of 200 free, 200 of 200 contained (L1 e2e) |
+| L1 e2e (smoke, F8, F14, F15, F16, errors, OOM) | 11 of 11 | 11 of 11 |
+| Exit e2e | all pass | all pass (65 checks, 0 failures) |
+| Safe list | 18 of 18 | 19 of 19 (with `swarm_netem`) |
+
+- F1 warm and F14 without Docker do not involve netem and were not re-run.
+- The F1 run's small F3 sample (30 delivered, 84 fakes) gave fake 20.44 vs delivered 20.68 ms at the median. It is not the pass-line measure.
+
+#### 5. Limits of the emulation
+- **No packet loss.** Netem's queue limit is 100,000 and it dropped nothing. The real path loses about 1 in 300 connects (Part 1, Ohio), and a real loss would add a retransmission timeout that neither path shows here.
+- **No bandwidth.** `rate 100gbit` adds at most 5 µs per packet. A 1 MB body over a real link would add transfer time; how the delivered and diverted paths would differ then is not measured.
+- **Residual reordering** (section 1 (d)): TCPOFOQueue 213 and TCPSACKReorder 295 in the check workload against 4 and 3 with netem off. Retransmits were equal.
+- **Symmetric jitter.** The measured RTT is right-skewed; netem's normal distribution is not.
+- **Fixed RTT.** One emulated path (the attacker address as measured, a nearby CDN edge). Slower paths (21 to 43 ms, Part 1) were not run.
+
+#### 6. Known differences with the delay on (rule 7)
+The delayed setting is the main one; the local numbers stand as the worst case.
+
+| Known difference | Size (delayed) | Samples (delayed) | Local |
+|---|---|---|---|
+| 1 MB send, diverted vs delivered (T1/T3) | median +36.2 ms, p90 −1.0 ms | 461 | +0.51, +0.93 ms; 77 |
+| Other request kinds, diverted vs delivered (T1/T3; 8 of 12 fail KS) | median +0.14 to +0.26 ms, p90 under 0.55 ms | 33 to 169 (failing kinds) | 9 of 13 failing; 36 to 115 |
+| Sends 6 to 11 after boot (T4) | median +0.57 ms, p90 +0.83 ms | 25 | pass; 90 |
+| First send after boot (T4, 15 per path) | median +0.66 ms, p90 +1.19 ms | 13 | −0.41 ms; 14 |
+| First send after 30 s idle (T8, 16 per path) | median −0.71 ms, p90 −1.53 ms | 5 | pass; 313 |
+| Idle after load (T8b, 16 per path) | median +0.44 ms, p90 −0.48 ms | 431 | p90 +4.15 ms; 257 |
+| Idle blocks between load (T5 idle reference) | median +0.29 ms, p90 +0.66 ms | 54 | +0.94 ms; 5 |
+| L1 read latency at 10 entries, contained vs free (T7) | median +0.48 ms, p90 +0.61 ms | 49 | +0.55 ms; 71 |
+| Order among concurrent sends (F5) | 27 fake-vs-real inversions in 200 entries, against the answer-key order (itself biased early) | — | 14 |
+
+No longer failing with the delay on:
+- T7 at 100 and 1,000 entries;
+- F3 idle and under load;
+- T5 under load (also passed locally);
+- T1/T3 HEAD, form, JSON and multipart.
+
+The work stops here for Nathan's review.
