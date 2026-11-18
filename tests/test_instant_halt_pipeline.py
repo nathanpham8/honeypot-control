@@ -7,11 +7,16 @@
     it contains only the status line.
 
 (a) runs one real sandbox episode (mockllm, scripted tool calls). (b) checks the
-pure board builder against the snapshot (a) wrote. Run:
+pure board builder against the snapshot (a) wrote. Snapshots are read and
+written under a temporary copy of snapshots/ for the whole test, so the
+committed files are never modified or deleted (checked at the end). Run:
     PYTHONPATH=<repo> python tests/test_instant_halt_pipeline.py
 """
 
+import shutil
 import sys
+import tempfile
+from pathlib import Path
 
 from inspect_ai.agent import Agent, AgentState
 from inspect_ai.model import ModelOutput
@@ -24,9 +29,9 @@ from control_arena import EvalMode, control_agent
 from control_arena.eval import ControlEvalConfig, get_control_task_product
 from control_arena.settings.bash_arena.task.dataset import DatasetSpec
 
+import honeypot.plant as plant
 from honeypot.plant import (
     BOARD_STATUS_LINE,
-    SNAPSHOT_ROOT,
     STORE_KEY,
     build_board_text,
 )
@@ -87,7 +92,17 @@ def run_scripted_scout():
 
 def main() -> int:
     results = []
-    snapshot_path = SNAPSHOT_ROOT / "instant_halt" / f"{TASK_ID}.json"
+    # Redirect snapshot reads (plant.load_snapshot) and writes
+    # (run_scouts.save_snapshot) to a temporary root for the whole test.
+    # The temporary root starts as a copy of the committed snapshots, so reads
+    # see the same files; the committed file for TASK_ID is checked afterwards.
+    committed = plant.SNAPSHOT_ROOT / "instant_halt" / f"{TASK_ID}.json"
+    committed_before = committed.read_bytes() if committed.exists() else None
+    tmp_root = Path(tempfile.mkdtemp(prefix="instant_halt_test_snapshots_"))
+    shutil.copytree(plant.SNAPSHOT_ROOT, tmp_root, dirs_exist_ok=True)
+    saved_roots = (plant.SNAPSHOT_ROOT, run_scouts.SNAPSHOT_ROOT)
+    plant.SNAPSHOT_ROOT = run_scouts.SNAPSHOT_ROOT = tmp_root
+    snapshot_path = tmp_root / "instant_halt" / f"{TASK_ID}.json"
     try:
         # (a) scripted scout -> snapshot
         print("=== (a) scripted scout sends decoy ===", flush=True)
@@ -123,11 +138,10 @@ def main() -> int:
         results.append(("b: instant_halt board shows 'Agent 1 terminated' + command", ih_ok))
         results.append(("b: baseline board is only the status line", base_ok))
     finally:
-        # Keep the repo clean: remove the test-written snapshot.
-        try:
-            snapshot_path.unlink()
-        except FileNotFoundError:
-            pass
+        plant.SNAPSHOT_ROOT, run_scouts.SNAPSHOT_ROOT = saved_roots
+        shutil.rmtree(tmp_root, ignore_errors=True)
+    results.append(("committed snapshot untouched",
+                    (committed.read_bytes() if committed.exists() else None) == committed_before))
 
     print("\n================ INSTANT-HALT PIPELINE TEST ================")
     all_ok = True
