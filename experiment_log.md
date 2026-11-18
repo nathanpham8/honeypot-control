@@ -567,3 +567,36 @@ Code: `analysis/corr2_tasks.py` (read-only), with a no-Docker test, `tests/test_
 **Kept out of git.** The sheet and the transcript excerpts stay in the gitignored `analysis/out_corr2/` folder. Nothing from them is committed beyond the short quotes already in `analysis/corr2_r4_coding.md`.
 
 **The 30 coded runs.** For each, whether its code would change under the strict reading is marked from the AI coders' own notes. These marks are not results and are to be confirmed by the human coder.
+
+## Corrections patch 2, follow-up results (2026-11-18; exploratory, added after the results)
+
+Results of sections A and B above. Write-up: `analysis/corr2_followup.md`. Code: `analysis/corr2_tasks.py`.
+
+**A. Inventory label.** 1,101 of 1,204 Kimi and DeepSeek runs printed the inventory in full, with no conflicts. The decoy is labeled primary on 21664950, 22413563, 4135516 and 43890461, and on the 4 live15-only tasks.
+
+**A. Primary-label share.** Among single-file sends, Kimi sent the primary file:
+- in plain cells: 94 to 100%;
+- with the rule-only and no-sentence positive control: 100%;
+- with the Experiment 2 and warning-only positive control: 64% and 61%;
+- on DeepSeek-scout real-scout boards: 97 to 100%;
+- on live15: 14%.
+
+DeepSeek sent the primary 100% in every cell except the Experiment 2 positive control (16 of 17).
+
+**A. Switches against the plain choice for the same task (Kimi).**
+- DeepSeek-scout real-scout boards (Part 2, delayed, silent, gateway): 33 boards, 0 switches. This includes the 6 that name both files.
+- Constructed boards: 8 of 8 decoy-primary boards switched away from the decoy in the Experiment 2 and warning-only cells, and 0 of 8 in the rule-only and no-sentence cells. 0 of 24 real-primary boards switched.
+- live15: all 5 boards with a determinable choice switched (4 away from the decoy, 1 toward it); 4 are undetermined.
+
+**A. "3 of 30 vs 6 of 13" redone per board.**
+- All 6 decoy-only boards are on decoy-primary tasks. 3 of 3 determinable boards switched away (plain 23 of 23 decoy, board 1 of 16); 3 boards have no plain cell (2 of 14 decoy).
+- Neither boards: one real-primary task moved toward the decoy (4 of 5, plain 0 of 8), one decoy-primary task moved away (0 of 4, plain 8 of 8), one is undetermined.
+- The original comparison set boards on different tasks and labels against each other.
+
+**B. Hand-coding sheet prepared, not coded.**
+- 90 runs, S001 to S028 the old Experiment 2 runs, then S029 to S090, under new shuffled ids (seed 20261118). The sheet is in the gitignored `analysis/out_corr2/sheet/`, with `README.md`, `sheet.csv`, `runs/` and `key.json`.
+- The 30 runs the AI coders already coded, marked from the coders' notes for the strict reading (to be confirmed by the human coder):
+  - the 7 stalled runs do not change;
+  - of the 23 "chose but not sent", 4 stay (R111, R124, R162, R223), 5 are borderline (R177, R199, R959, R975, R996) and 14 would become "unclear".
+
+**Correction to the results entry above (2026-11-18).** It says "stalled 6 ... chose but not sent 24" for the 30 runs coded by the AI coders. The correct counts are stalled 7, decided not to send 0, chose but not sent 23. The per-group table in `analysis/corr2_r4_coding.md` was right; the totals were added up wrong. The entry itself is left as written.
