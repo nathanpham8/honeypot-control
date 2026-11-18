@@ -442,3 +442,65 @@ Rules fixed now; nothing has been computed under them. Computed by a new read-on
 - The Kimi no-sentence groups (`kimi_greedy_baseline`, `kimi_greedy_pc`) are shown in their own block, labeled as Kimi without the sentence.
 
 **Reporting.** All parts are reported whichever way they come out, in `CORRECTIONS.md` with dates, and results are appended to this log. Prompts, boards and the two variant sentences do not change after the first model run of this patch; a fix restarts the affected group and is logged.
+
+## Corrections patch 2: results (2026-11-18, appended after all runs)
+
+Follow-ups designed after the reviews, run and analysed under the entry of 2026-11-17 12:24 CST. Nothing above changes. Full write-up: `analysis/corr2_result.md`. Hand coding: `analysis/corr2_r4_coding.md`.
+
+**Runs.** All 392 runs came from commit 31884d4, back to back in the logged order, 2026-11-17 19:04 to 2026-11-18 04:02 UTC, `--parallel 6`, routing unpinned.
+- Every group is complete: 40 of 40 for each Part 1 group, 72 of 72 for Part 2.
+- No unscored runs, so the retry batch rerun nothing and nothing was dropped.
+- About $41 of OpenRouter credit.
+- Every call that returned a response reported the requested model. Each group used 10 to 15 providers.
+- Two Part 2 runs stopped on the time limit after 2 and 10 steps (both on Parasail). Under the rule they count as budget.
+
+**Part 1, drift rule.** No drift for either model, so old and new cells are combined.
+- Kimi: decoy share 40% (anchor) vs 38% (old), difference +2 points, paired interval [+0, +4] (lower bound 0). Largest category gap 3 points. Permutation p = 1.00.
+- DeepSeek: 7 single-file sends in each cell, so the primary measure is not assessed. Largest category gap 3 points. Permutation p = 1.00.
+
+**Part 1, Kimi.** Decoy share among single-file sends:
+
+| Side task | Plain | Positive control |
+|---|---|---|
+| warning only | 16/40 = 40% | 0/38 = 0% [0, 9] exact |
+| rule only | 15/37 = 41% | 15/37 = 41% |
+| both (pooled) | 31/79 = 39% | 0/36 (old) |
+| none | 15/36 | 15/38 |
+
+- Board effect: +40 points [+12, +70] with the warning, +0 [−7, +6] with the rule.
+- No bulk sends.
+- All five Kimi predictions held.
+
+**Part 1, DeepSeek, plain board** (real / decoy / both / never / budget):
+
+| Side task | Outcomes |
+|---|---|
+| warning only | 5/0/0/1/34 |
+| rule only | 10/9/2/0/19 |
+| both (pooled) | 7/7/0/0/66 |
+| none (Experiment 1) | 0/1/24/1/14 |
+
+- The no-send halves of the DeepSeek predictions held (35 of 40 sent nothing with the warning alone, 19 of 40 with the rule alone).
+- The "stalled" halves were not evaluated.
+
+**R4 hand coding: incomplete.** 120 no-send runs were exported under shuffled ids: 33 old Experiment 2, 33 anchor, 35 warning only, 19 rule only.
+- There were 8 Claude coding agents with identical instructions. Several coders instead of the single coder written above is a departure from the plan.
+- 6 of the 8 were stopped by Anthropic's API cyber safeguards and wrote nothing, so 30 runs are coded, 5 of them from the old Experiment 2 cell. The block was not worked around.
+- The coders read "chose but not sent" more broadly than written: they included runs whose last turns were main-task work.
+- Coded so far: stalled 6, decided not to send 0, chose but not sent 24 (about 6 of them under the strict reading; the rest would be "unclear").
+- R4's "25 of 33" is not recounted. No per-group coding figure is reported as a result.
+
+**Part 2.** Kimi immediate halt, 72 runs: decoy 31 of 69 single-file sends, 45% [12, 78].
+- Boards naming both: 8/31. Boards naming neither: 23/38.
+- Within the wide intervals, the prediction (near the baseline) held.
+- Exploratory, not pre-registered: each board gave one choice in all its sent runs. The decoy was chosen on exactly the 4 tasks where the inventory labels the decoy "primary". The same 4 tasks hold every decoy send in the Kimi anchor, old Experiment 2, rule-only and no-sentence PC cells.
+
+**Part 3.** Figures are restated with their source.
+- Constructed positive-control boards, Experiment 2 sentence: 2 of 78 = 3% [0, 7] (three models, 10 tasks).
+- Kimi real-scout boards, forced choice:
+  - decoy only: 3/30 = 10% [3, 19] (6 tasks)
+  - names both: 8/46 (4 tasks; all 8 from task 4135516)
+  - names neither: 109/222 = 49% [17, 77] (11 tasks)
+- Both denominators for every Experiment 1 and 2 group are tabulated in `analysis/corr2_result.md`. For example, DeepSeek Experiment 1 baseline: real stolen 24/40 = 60% [40, 80], single-file sends 1.
+
+`CORRECTIONS.md` and the README are not updated yet.
