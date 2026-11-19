@@ -2,6 +2,8 @@
 
 **Honeypots catch and deter AI agents only while the agents can't tell decoy from real. In a swarm, one visible capture tells every teammate which credential is the trap, and successful thefts nearly double. Silent containment at the defender's exit hides the capture and cut real thefts among caught agents from 33 of 33 to 8 of 33.**
 
+**Builds on:** [Wehner and Kraprayoon (2026)](https://www.iaps.ai/research/honeypots-for-ai-agent-insider-threats), who propose honeypots against AI agents as insider threats and leave open what a caught agent's peers learn and whether the defender's response should be visible, and [Gans (2026)](https://arxiv.org/abs/2608.11436), who shows in theory that agents sharing memory can learn which credentials are decoys. To my knowledge, this is the first experimental test of that leak among communicating agents.
+
 **Updated November 2026:** a follow-up moved silent containment to the defender's exit, correcting the report's claim that the original version stopped the first theft, and follow-up experiments from the judges' feedback strengthened the main findings. Details and all corrections: [CORRECTIONS.md](CORRECTIONS.md).
 
 Nathan Pham, University of Illinois Urbana-Champaign. Built for the Apart Research Swarm Alignment Hackathon (Track 4: Multi-Agent Oversight and Control), November 6-8, 2026. The paper is under review; a follow-up on silent containment at larger swarm sizes is in progress.
