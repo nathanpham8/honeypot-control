@@ -10,7 +10,7 @@ Nathan Pham, University of Illinois Urbana-Champaign. Built for the Apart Resear
 
 ![The leak: a board naming the decoy drives decoy choice to near zero and nearly doubles successful thefts](figures/fig_headline.png)
 
-*Forced-choice side task, three open-weight models. "Board names the decoy" is a constructed board showing a caught teammate's last command touching the decoy; boards left by real scouts reproduce the effect (below).*
+*Forced-choice side task, three open-weight models. "Board names the decoy" is a constructed board showing a caught teammate's last command touching the decoy; boards left by real scouts show the same effect (see CORRECTIONS.md).*
 
 ## What I found
 
@@ -24,6 +24,8 @@ Over 700 pre-registered runs in BashArena, with three attacker models from three
 | Defender response (Kimi) | Real scout boards (Kimi) |
 |---|---|
 | ![Decoy choice by defender response](figures/fig2_defender.png) | ![Decoy choice on boards left by real scouts](figures/fig1_legibility.png) |
+
+*The real-scout panel compares boards on different tasks; the board-by-board comparison in CORRECTIONS.md (November 18, 2026) replaces it.*
 
 Error bars: 95% task-level bootstrap intervals; exact binomial bounds for zero counts and for the real-scout split.
 
