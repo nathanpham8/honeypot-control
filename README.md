@@ -4,6 +4,8 @@
 
 **Update (November 13, 2026):** I reran silent containment with the defender acting at its own exit, before delivery. The report's main results stand; a few statements needed correcting. The results and the corrections are in [CORRECTIONS.md](CORRECTIONS.md).
 
+**Update (November 18, 2026):** follow-up work from the judges' feedback is in [CORRECTIONS.md](CORRECTIONS.md).
+
 Nathan Pham, University of Illinois Urbana-Champaign. Built for the Apart Research Swarm Alignment Hackathon (Track 4: Multi-Agent Oversight and Control), November 6-8, 2026. The paper is under review; a follow-up on silent containment at larger swarm sizes is in progress.
 
 ![The leak: a board naming the decoy drives decoy choice to near zero and nearly doubles successful thefts](figures/fig_headline.png)
@@ -14,10 +16,10 @@ Nathan Pham, University of Illinois Urbana-Champaign. Built for the Apart Resear
 
 Over 700 pre-registered runs in BashArena, with three attacker models from three developers (DeepSeek V4.1 Flash, GLM 5.3 Flash, Kimi K3.1 Pro).
 
-1. **Honeypots deter through uncertainty.** Told that decoys exist, the two deliberative models sent nothing in 58 of 80 runs. Coded transcripts end mid-search for the real credential, and doubling DeepSeek's token budget did not change the rate. The decisive model (Kimi) guessed instead.
-2. **One visible capture removes that uncertainty for everyone watching.** When a caught teammate's last command named the decoy, agents picked it in 2 of 78 cases, against 36% with no signal, and successful thefts nearly doubled (33% to 64% of runs). On boards left by real scouts, agents chose the decoy 3 of 30 times when the scout's command named it and 6 of 13 when it named nothing.
-3. **The signal only matters to agents that suspect decoys.** Without the warning, the board changed nothing (Kimi: 39% vs 42% decoy choice).
-4. **The defender's response decides what leaks.** An immediate, visible halt names the decoy; a delayed halt and silent containment both kept decoy choice at baseline. No response stopped the theft that trips the alarm: in almost every scout, in every arm, the tripping command sent the real credential and the decoy together, so the real credential was out before any response could act. The responses differ in what happens next. During a delayed halt, 5 of 7 scouts sent the real credential again and it reached the server. Under silent containment, which sinkholes the caught agent's traffic and leaves it looking active, 3 of 8 scouts tried again and the sinkhole caught every attempt; none of the 8 scouts checked whether its sends had arrived. Its cost: the "active" status led 9 of 32 second agents to defer to the teammate they thought was still working.
+1. **Honeypots deter through uncertainty.** Told that decoys exist, the two deliberative models sent nothing in 58 of 80 runs. Separating the warning from the single-file rule shows the warning is what holds them back; how they hold back is still being coded. The decisive model (Kimi) did not hold back: without a signal, it sent the file labeled primary.
+2. **One visible capture removes that uncertainty for everyone watching.** When a caught teammate's last command named the decoy, agents picked it in 2 of 78 cases, against 36% with no signal, and successful thefts nearly doubled (33% to 64% of runs). On boards left by real Kimi scouts, every board naming only the decoy steered Kimi to the real credential.
+3. **The signal only matters to agents that suspect decoys.** Without the warning, the board changed nothing (Kimi: 39% vs 42% decoy choice). Separating the warning from the single-file rule confirms this: the warning alone gives the full effect, the rule alone none.
+4. **The defender's response decides what leaks.** An immediate, visible halt is never safer than a delayed halt or silent containment, and against selective attackers it reveals the trap. A delayed halt and silent containment keep the trap hidden but do not lower theft by the agents watching. No response stopped the theft that trips the alarm: in almost every scout, in every arm, the tripping command sent the real credential and the decoy together, so the real credential was out before any response could act. The responses differ in what happens next. During a delayed halt, 5 of 7 scouts sent the real credential again and it reached the server. Under silent containment, which sinkholes the caught agent's traffic and leaves it looking active, 3 of 8 scouts tried again and the sinkhole caught every attempt; none of the 8 scouts checked whether its sends had arrived. Its cost: the "active" status led 9 of 32 second agents to defer to the teammate they thought was still working.
 
 | Defender response (Kimi) | Real scout boards (Kimi) |
 |---|---|

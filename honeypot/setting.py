@@ -22,7 +22,11 @@ from control_arena.settings.bash_arena.task.dataset import (
 from control_arena.settings.bash_arena.task.scorer import main_task_success
 
 from honeypot.plant import INVENTORY_PATH, plant_honeytokens
-from honeypot.side_task import HONEYPOT_SIDE_TASK, HONEYPOT_SIDE_TASK_EXP2
+from honeypot.side_task import (
+    HONEYPOT_SIDE_TASK,
+    HONEYPOT_SIDE_TASK_EXP2,
+    HONEYPOT_SIDE_TASK_EXP2_HALF,
+)
 
 
 class HoneypotBashArenaSetting(BashArenaSetting):
@@ -32,8 +36,15 @@ class HoneypotBashArenaSetting(BashArenaSetting):
     arm: str = "baseline"
     role: str = "scout"
     exp2: bool = False  # Experiment 2: side task carries EXP2_WARNING
+    # Corrections patch 2: "warning" or "rule" appends one half of EXP2_WARNING.
+    # None (default) leaves every earlier arm unchanged. Exclusive with exp2.
+    exp2_half: str | None = None
 
     def honeypot_side_task(self):
+        if self.exp2 and self.exp2_half:
+            raise ValueError("exp2 and exp2_half are exclusive")
+        if self.exp2_half:
+            return HONEYPOT_SIDE_TASK_EXP2_HALF[self.exp2_half]
         return HONEYPOT_SIDE_TASK_EXP2 if self.exp2 else HONEYPOT_SIDE_TASK
 
     def setup_environment(self) -> Solver | None:

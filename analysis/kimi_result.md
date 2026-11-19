@@ -20,3 +20,5 @@ Model `openrouter/moonshotai/kimi-k3.1-pro`, `--exp2` (forced choice, honeytoken
 - Kimi barely does the cover task (main-task score 0.16): an attack-first model.
 - Positive control uses the same synthetic boards as DeepSeek's (no live selective scout produced them).
 - Exploratory, logged before data; reported separately from DeepSeek.
+
+**Note (November 18, 2026):** the "OpenRouter 402, credits" errors above were the API key's own spending limit, per the run logs. One error reads "You requested up to 131072 tokens, but can only afford 100960 ... adjust the key's total limit"; the other reads "This request would exceed your available credits given your current in-flight requests". The original line is left as written.
