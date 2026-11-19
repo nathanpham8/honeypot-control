@@ -2,9 +2,9 @@
 
 **Honeypots catch and deter AI agents only while the agents can't tell decoy from real. In a swarm, one visible capture tells every teammate which credential is the trap. Silent containment kept the trap hidden and blocked the caught agent's later sends, but in these runs it acted only after the first theft had already gone out. A follow-up that acts before delivery cut real thefts among caught agents from 33 of 33 to 8 of 33 (Experiment 3, in [CORRECTIONS.md](CORRECTIONS.md)).**
 
-**Update (November 13, 2026):** I reran silent containment with the defender acting at its own exit, before delivery. The report's main results stand; a few statements needed correcting. The results and the corrections are in [CORRECTIONS.md](CORRECTIONS.md).
-
-**Update (November 18, 2026):** follow-up work from the judges' feedback is in [CORRECTIONS.md](CORRECTIONS.md).
+**Updates** (details in [CORRECTIONS.md](CORRECTIONS.md)):
+- **November 18, 2026:** Building on the judges' feedback, follow-up experiments strengthened the report's main findings: the leak comes from knowing decoys exist, the same warning is what deters agents, and real scouts' boards that name the decoy steer teammates away from it, as the constructed board does. One claim is refined: an immediate halt is never safer than a delayed halt or silent containment, and against selective attackers it reveals the trap.
+- **November 13, 2026:** I moved silent containment to the defender's exit, so it acts before delivery. That cut real thefts among caught agents from 33 of 33 to 8 of 33 while keeping the trap hidden, and corrected the report's claim that the original version stopped the first theft. A few smaller statements were corrected too.
 
 Nathan Pham, University of Illinois Urbana-Champaign. Built for the Apart Research Swarm Alignment Hackathon (Track 4: Multi-Agent Oversight and Control), November 6-8, 2026. The paper is under review; a follow-up on silent containment at larger swarm sizes is in progress.
 
