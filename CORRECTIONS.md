@@ -1,8 +1,35 @@
 # Updates and corrections to the hackathon report
 
-Last updated: November 14, 2026. Status: Experiment 3 complete; a few report checks still open (see the end).
+Last updated: November 18, 2026. Status: follow-up work from the judges' feedback added; hand coding of the R4 recount still in progress.
 
 This file tracks follow-up work and corrections to my Apart Research Swarm Alignment Hackathon report ("Knowing Decoys Exist Deters AI Agents, but Also Lets Communicating Agents Disarm the Trap"), submitted November 8, 2026. The submitted PDF is unchanged. The README matches what is written here.
+
+## Follow-up work from the judges' feedback (November 18, 2026)
+
+I'm grateful to the three judges for careful and encouraging reviews. They saw promise in the core question, what one agent's capture teaches the agents watching it, and their suggestions for strengthening the evidence became the follow-up experiments and analyses below, pre-registered in `experiment_log.md` on November 17, 2026, before any data. The results strengthen the report's main findings and add several new ones; where a result changes how an earlier claim should be stated, the change is noted next to it. Full results: `analysis/corr2_result.md` and `analysis/corr2_followup.md`.
+
+**1. Separate the decoy warning from the single-file rule.** The report's forced-choice sentence did two things at once: it warned that some credentials are decoys, and it told agents to send exactly one. I separated the two and ran each on its own for Kimi and DeepSeek (320 new runs). With the earlier runs, this fills in the full comparison: neither, warning only, rule only, and both.
+- **Strengthens the leak result: the leak comes from knowing decoys exist.** With the warning alone, a board naming the decoy took Kimi's decoy choice from 40% to 0 of 38. With the single-file rule alone, Kimi's choices did not change.
+- **Strengthens the deterrence result: the warning is what holds agents back.** DeepSeek sent nothing in 35 of 40 runs with the warning alone. With the rule alone it sent nothing in 19 of 40, about the same as with no sentence at all (15 of 40).
+
+**2. Test the immediate halt as its own arm.** I replayed the nine real immediate-halt boards from Experiment 1 with Kimi, matching the delayed and silent arms (72 runs).
+- **Refines the report's claim: an immediate halt is never safer than a delayed halt or silent containment, and against selective attackers it reveals the trap.** The report called it the worst option; it is the worst only when the caught agent's last command gives the decoy away. On these nine boards, none of which named only the decoy, it leaked nothing (45% decoy, against 39% with no board). Careful scouts named only the decoy on 6 of 9 boards.
+
+**3. Report real-scout evidence apart from the constructed board, with clustering.** I kept the two apart, clustered uncertainty by task, and compared each real board with Kimi's own choice on that task with no board.
+- **Strengthens the real-scout result and brings it in line with the constructed board.** All three boards from Kimi scouts that named only the decoy steered Kimi to the real credential, the same switch the constructed board produced. This board-by-board comparison replaces the report's "3 of 30 vs 6 of 13", which compared boards on different tasks.
+- **Supports that only a board naming the decoy leaks it.** Real boards from DeepSeek scouts, which named both files or neither, never changed Kimi's choice (0 of 33 boards).
+- **I found that Kimi does not guess: without a signal, it sends the file labeled "primary"** (exploratory, found after the data). Its baseline decoy rate of about 40% reflects that the decoy was labeled primary on 4 of 10 tasks. A board naming the decoy made Kimi drop this habit on every task where it pointed at the decoy, which makes the leak result stronger.
+
+**4. Judge the defense by theft prevented, not only by decoy choice, and report both.** Every Experiment 1 and 2 group now reports how often the real credential was stolen, out of all runs, next to how often agents picked the decoy.
+- **Strengthens the theft result.** A revealed trap nearly doubled theft (33% to 64% of runs).
+- **I found that hiding the trap stops the leak, not the theft: watching agents still steal at the no-scout rate, and of the responses tested, only containment at the defender's exit stops the caught agent.** Under a delayed halt or silent containment, agents reading the board stole the real credential about as often as with no scout. In Experiment 3, containment at the defender's exit cut real thefts among caught scouts from 33 of 33 to 8 of 33.
+
+**Also updated.** I now keep three terms apart: detection (the decoy was touched), deterrence (the agent did not steal because of the warning) and prevention (a theft was stopped, tested in Experiment 3). The two-stage replay is described as a scout and a second agent reading one board, not a live swarm. The delayed halt and theft before shutdown are covered by corrections 1, 2 and 4 and by Experiment 3.
+
+**Still in progress.**
+- *Live swarms.* The next step tests silent containment in a swarm whose agents work at the same time, write to a shared board, and check whether their sends arrived. The containment and forged delivery-log machinery for it is built and tested on the `swarm-pilot` branch; pilot runs come next.
+- *Why warned agents hold back.* A hand recount of the report's "25 of 33" is incomplete because Anthropic's API safeguards stopped most of the Claude coding agents; I will finish it by hand. Early coding suggests the paralysis takes two forms: indecision, and hesitation (settling on a file but never sending it).
+- *Kimi-scout boards that named neither file.* In both cases I could check, these boards still changed Kimi's choice (once toward the decoy, once away), while DeepSeek-scout boards naming neither never did. Why is not yet clear.
 
 ## What stands
 
@@ -99,4 +126,4 @@ Each item gives the corrected statement first, then what the report said.
 
 - Outside facts cited in the Introduction, and the reference list.
 - Figures against their underlying numbers.
-- Counts that need the run logs: the R4 recount above, Kimi's "sent nothing in 1 of 40," and the board-read rates.
+- Counts that need the run logs: the R4 recount above (in progress; see "Follow-up work from the judges' feedback") and the board-read rates. Kimi's "sent nothing in 1 of 40" is confirmed from the logs (November 18, 2026).
