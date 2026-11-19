@@ -3,6 +3,7 @@
 All numbers are taken from the paper (Results R2, R3, R5) and analysis/*_result.md.
 """
 import os
+from decimal import ROUND_HALF_UP, Decimal
 
 import matplotlib
 
@@ -12,6 +13,11 @@ import matplotlib.pyplot as plt
 OUT = os.path.dirname(os.path.abspath(__file__))
 BLUE, LIGHT, INK, MUTED, GRID = "#2a78d6", "#a9c8ef", "#1a1a1a", "#6b6b6b", "#e6e6e6"
 plt.rcParams.update({"font.family": "DejaVu Sans", "font.size": 12})
+
+
+def pct(v):
+    """Percentage label rounded half up (32.5 -> 33%), not Python's round-half-to-even."""
+    return f"{Decimal(repr(v)).quantize(Decimal(1), rounding=ROUND_HALF_UP)}%"
 
 
 def style(ax, ylabel):
@@ -36,7 +42,7 @@ def bars(ax, ticklabels, vals, lo, hi):
     err = [[v - l for v, l in zip(vals, lo)], [h - v for v, h in zip(vals, hi)]]
     ax.errorbar(x, vals, yerr=err, fmt="none", ecolor=INK, elinewidth=1.5, capsize=5, zorder=3)
     for i, v in enumerate(vals):
-        ax.text(i, hi[i] + 2.5, f"{v:.0f}%", ha="center", va="bottom", fontsize=13, fontweight="bold", color=INK)
+        ax.text(i, hi[i] + 2.5, pct(v), ha="center", va="bottom", fontsize=13, fontweight="bold", color=INK)
     ax.set_xticks(x)
     ax.set_xticklabels(ticklabels, color=INK, fontsize=11)
     return x
@@ -67,8 +73,8 @@ for i, ((bk, bn), (pk, pn)) in enumerate(zip(base, pc)):
     bv, pv = 100 * bk / bn, 100 * pk / pn
     b.bar(i - w / 2, bv, width=w, color=LIGHT, zorder=2, label="No board" if i == 0 else None)
     b.bar(i + w / 2, pv, width=w, color=BLUE, zorder=2, label="Board names the decoy" if i == 0 else None)
-    b.text(i - w / 2, bv + 2, f"{bv:.0f}%", ha="center", va="bottom", fontsize=10, color=INK)
-    b.text(i + w / 2, pv + 2, f"{pv:.0f}%", ha="center", va="bottom", fontsize=10, fontweight="bold", color=INK)
+    b.text(i - w / 2, bv + 2, pct(bv), ha="center", va="bottom", fontsize=10, color=INK)
+    b.text(i + w / 2, pv + 2, pct(pv), ha="center", va="bottom", fontsize=10, fontweight="bold", color=INK)
 b.set_xticks(range(len(models)))
 b.set_xticklabels(models, color=INK, fontsize=11)
 b.set_ylim(0, 118)
@@ -98,7 +104,6 @@ bars(ax,
       "Silent containment\nscout shown active,\ntraffic sinkholed\nn = 64",
       "Visible signal\nboard names\nthe decoy\nn = 36"],
      [38, 46, 38, 0], lo=[10, 15, 12, 0], hi=[69, 86, 75, 9.7])
-chance_line(ax, 3.45)
 ax.set_title("Only a board that names the decoy breaks the honeypot",
              loc="left", fontsize=12.5, fontweight="bold", color=INK)
 save(fig, "fig2_defender.png")

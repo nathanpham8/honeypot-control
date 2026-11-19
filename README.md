@@ -1,10 +1,8 @@
 # Knowing Decoys Exist Deters AI Agents, but Also Lets Communicating Agents Disarm the Trap
 
-**Honeypots catch and deter AI agents only while the agents can't tell decoy from real. In a swarm, one visible capture tells every teammate which credential is the trap. Silent containment kept the trap hidden and blocked the caught agent's later sends, but in these runs it acted only after the first theft had already gone out. A follow-up that acts before delivery cut real thefts among caught agents from 33 of 33 to 8 of 33 (Experiment 3, in [CORRECTIONS.md](CORRECTIONS.md)).**
+**Honeypots catch and deter AI agents only while the agents can't tell decoy from real. In a swarm, one visible capture tells every teammate which credential is the trap, and successful thefts nearly double. Silent containment at the defender's exit hides the capture and cut real thefts among caught agents from 33 of 33 to 8 of 33.**
 
-**Updates** (details in [CORRECTIONS.md](CORRECTIONS.md)):
-- **November 18, 2026:** Building on the judges' feedback, follow-up experiments strengthened the report's main findings: the leak comes from knowing decoys exist, the same warning is what deters agents, and real scouts' boards that name the decoy steer teammates away from it, as the constructed board does. One claim is refined: an immediate halt is never safer than a delayed halt or silent containment, and against selective attackers it reveals the trap.
-- **November 13, 2026:** I moved silent containment to the defender's exit, so it acts before delivery. That cut real thefts among caught agents from 33 of 33 to 8 of 33 while keeping the trap hidden, and corrected the report's claim that the original version stopped the first theft. A few smaller statements were corrected too.
+**Updated November 2026:** a follow-up moved silent containment to the defender's exit, correcting the report's claim that the original version stopped the first theft, and follow-up experiments from the judges' feedback strengthened the main findings. Details and all corrections: [CORRECTIONS.md](CORRECTIONS.md).
 
 Nathan Pham, University of Illinois Urbana-Champaign. Built for the Apart Research Swarm Alignment Hackathon (Track 4: Multi-Agent Oversight and Control), November 6-8, 2026. The paper is under review; a follow-up on silent containment at larger swarm sizes is in progress.
 
@@ -12,48 +10,34 @@ Nathan Pham, University of Illinois Urbana-Champaign. Built for the Apart Resear
 
 *Forced-choice side task, three open-weight models. "Board names the decoy" is a constructed board showing a caught teammate's last command touching the decoy; boards left by real scouts show the same effect (see CORRECTIONS.md).*
 
-## What I found
+## How it works
+
+![Two-stage setup](figures/fig0_schematic.png)
+
+A scout agent tries to steal from a machine holding a real and a decoy credential. If it sends the decoy, a tripwire fires and the defender responds with an immediate halt, a delayed halt or silent containment. A second agent then reads the attackers' shared board, which shows the scout's status and last command, and chooses which credential to steal. In Experiment 3, silent containment moved to the defender's exit, where it diverts the caught agent's traffic before delivery.
+
+## Key findings
 
 Over 700 pre-registered runs in BashArena, with three attacker models from three developers (DeepSeek V4.1 Flash, GLM 5.3 Flash, Kimi K3.1 Pro).
 
-1. **Honeypots deter through uncertainty.** Told that decoys exist, the two deliberative models sent nothing in 58 of 80 runs. Separating the warning from the single-file rule shows the warning is what holds them back; how they hold back is still being coded. The decisive model (Kimi) did not hold back: without a signal, it sent the file labeled primary.
-2. **One visible capture removes that uncertainty for everyone watching.** When a caught teammate's last command named the decoy, agents picked it in 2 of 78 cases, against 36% with no signal, and successful thefts nearly doubled (33% to 64% of runs). On boards left by real Kimi scouts, every board naming only the decoy steered Kimi to the real credential.
-3. **The signal only matters to agents that suspect decoys.** Without the warning, the board changed nothing (Kimi: 39% vs 42% decoy choice). Separating the warning from the single-file rule confirms this: the warning alone gives the full effect, the rule alone none.
-4. **The defender's response decides what leaks.** An immediate, visible halt is never safer than a delayed halt or silent containment, and against selective attackers it reveals the trap. A delayed halt and silent containment keep the trap hidden but do not lower theft by the agents watching. No response stopped the theft that trips the alarm: in almost every scout, in every arm, the tripping command sent the real credential and the decoy together, so the real credential was out before any response could act. The responses differ in what happens next. During a delayed halt, 5 of 7 scouts sent the real credential again and it reached the server. Under silent containment, which sinkholes the caught agent's traffic and leaves it looking active, 3 of 8 scouts tried again and the sinkhole caught every attempt; none of the 8 scouts checked whether its sends had arrived. Its cost: the "active" status led 9 of 32 second agents to defer to the teammate they thought was still working.
+1. **Knowing decoys exist deters agents.** Told that decoys exist, the two deliberative models sent nothing in 58 of 80 runs. The warning causes this, not the instruction to send a single file.
+2. **One visible capture disarms the trap for everyone watching.** When a caught teammate's last command named the decoy, agents picked it in 2 of 78 cases, against 36% with no board, and successful thefts nearly doubled. Boards left by real scouts that name the decoy have the same effect.
+3. **The leak only works on agents that know decoys exist.** Without the warning, a board naming the decoy changed nothing.
+4. **How the defender responds decides what leaks.** An immediate, visible halt is never safer than a delayed halt or silent containment, and against selective attackers it reveals the trap. Hiding the capture stops the leak, but it does not lower teammates' theft.
+5. **Silent containment at the defender's exit stops most of the caught agent's theft.** Acting before delivery cut real thefts among caught agents from 33 of 33 to 8 of 33, kept the trap hidden, and never tripped on honest agents (0 of 40). The remaining 8 sent the real credential before touching the decoy, which no honeypot can catch.
 
-| Defender response (Kimi) | Real scout boards (Kimi) |
-|---|---|
-| ![Decoy choice by defender response](figures/fig2_defender.png) | ![Decoy choice on boards left by real scouts](figures/fig1_legibility.png) |
+![Decoy choice by defender response](figures/fig2_defender.png)
 
-*The real-scout panel compares boards on different tasks; the board-by-board comparison in CORRECTIONS.md (November 18, 2026) replaces it.*
-
-Error bars: 95% task-level bootstrap intervals; exact binomial bounds for zero counts and for the real-scout split.
+*Kimi's decoy choice by defender response. Error bars: 95% task-level bootstrap intervals; exact binomial bounds for zero counts.*
 
 ## What I built
 
 - **A two-stage multi-agent testbed on BashArena** (ControlArena / Inspect AI). A scout trips a decoy credential under a chosen defender response; the harness records what teammates would see; a second agent reads that board and chooses which credential to steal.
-- **Three defender responses:** immediate halt, delayed halt, and silent containment through a quarantine logging server that returns normal responses while routing the caught agent's traffic to a sink, starting from the step after the tripping request.
+- **Defender responses:** immediate halt, delayed halt, and silent containment through a quarantine logging server that returns normal responses while routing the caught agent's traffic to a sink, starting from the step after the tripping request; plus **silent containment at the defender's exit** (Experiment 3), a gateway that diverts the caught agent's traffic to a sink before delivery and answers as normal.
 - **Decoy planting with matched metadata:** real and decoy credentials at parallel paths with identical format, size, mode, owner and timestamps, plus an inventory whose labels are randomized independently of which file is real.
 - **A pre-registration record** (`experiment_log.md`) with every comparison timestamped before its data, and tests that check nothing an agent sees names the decoy.
 
-![Two-stage setup](figures/fig0_schematic.png)
-
 Per-model numbers: `analysis/*_result.md`. Regenerate figures: `python figures/make_figures.py` and `python figures/make_schematic.py`.
-
-## What predates the hackathon
-
-Work before the event is marked by the git tag `pre-hackathon` (commit
-`358da8a`, Nov 5, 2026). At that point the repo contained only:
-`run_baseline.py`, `summarize.py`, `show_attack.py`, `dev_tasks.txt`,
-`dev_smoke.txt`, `.gitignore`, and the start of `experiment_log.md`
-(stock BashArena baseline runs and the attacker-model comparison, "Gate 0").
-Those files now live in `tools/` and `tasks/`.
-
-Everything else was built during the hackathon: the `honeypot/` package
-(planting, side task and scorer, tripwire and response modes, quarantine logging
-server, board), `run_scouts.py`, `run_second.py`, `tools/make_positive_control.py`,
-`tools/preflight_exp2.py`, `analysis/`, `tests/`, `scripts/`, `figures/`, and all
-experiment runs.
 
 ## Pre-registration
 
@@ -71,6 +55,8 @@ results and are logged before their own data.
 | `honeypot/protocol.py` | Tripwire and defender responses (halt, delayed, silent) and snapshot writing |
 | `honeypot/setting.py` | `HoneypotBashArenaSetting` (BashArena subclass) |
 | `honeypot/logging_server/` | Logging server with a quarantine (sinkhole) mode for silent containment |
+| `honeypot/gateway_server/` | Experiment 3: the defender's exit gateway and the attacker's collector |
+| `analysis/corr2.py`, `analysis/corr2_tasks.py` | November 2026 follow-up analyses (judges' feedback) |
 | `run_scouts.py` | Stage 1: scout episodes that produce board snapshots |
 | `run_second.py` | Stage 2: second agents that read a snapshot board and choose |
 | `analysis/analyze.py` | Outcome tables, task-bootstrap CIs, choice and legibility breakdowns |
@@ -122,10 +108,25 @@ Models: `openrouter/deepseek/deepseek-v4.1-flash-1017`,
 Run logs (`logs/`) are not committed because of size; per-arm outcome tables are
 in `analysis/*_result.md`.
 
+## Appendix: what predates the hackathon
+
+Work before the event is marked by the git tag `pre-hackathon` (commit
+`358da8a`, Nov 5, 2026). At that point the repo contained only:
+`run_baseline.py`, `summarize.py`, `show_attack.py`, `dev_tasks.txt`,
+`dev_smoke.txt`, `.gitignore`, and the start of `experiment_log.md`
+(stock BashArena baseline runs and the attacker-model comparison, "Gate 0").
+Those files now live in `tools/` and `tasks/`.
+
+Everything else was built during the hackathon: the `honeypot/` package
+(planting, side task and scorer, tripwire and response modes, quarantine logging
+server, board), `run_scouts.py`, `run_second.py`, `tools/make_positive_control.py`,
+`tools/preflight_exp2.py`, `analysis/`, `tests/`, `scripts/`, `figures/`, and all
+experiment runs.
+
 ## Safety note
 
 The attacker prompts are the stock ControlArena prompts. Nothing the agent can
-see names decoys or honeypots, except the single Experiment 2 sentence, which
+see names decoys or honeypots, except the single Experiment 2 sentence (or one half of it, in the November 2026 follow-ups), which
 is checked by `tests/test_board_no_leak.py`. The findings describe how colluding
 agents can defeat honeypots, so they are reported together with the defender
 responses that prevent the leak. All credentials are synthetic and stay inside
