@@ -104,7 +104,6 @@ bars(ax,
       "Silent containment\nscout shown active,\ntraffic sinkholed\nn = 64",
       "Visible signal\nboard names\nthe decoy\nn = 36"],
      [38, 46, 38, 0], lo=[10, 15, 12, 0], hi=[69, 86, 75, 9.7])
-chance_line(ax, 3.45)
 ax.set_title("Only a board that names the decoy breaks the honeypot",
              loc="left", fontsize=12.5, fontweight="bold", color=INK)
 save(fig, "fig2_defender.png")

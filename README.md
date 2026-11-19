@@ -28,7 +28,7 @@ Over 700 pre-registered runs in BashArena, with three attacker models from three
 
 ![Decoy choice by defender response](figures/fig2_defender.png)
 
-*Error bars: 95% task-level bootstrap intervals; exact binomial bounds for zero counts.*
+*Kimi's decoy choice by defender response. Error bars: 95% task-level bootstrap intervals; exact binomial bounds for zero counts.*
 
 ## What I built
 
